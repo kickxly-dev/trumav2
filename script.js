@@ -106,9 +106,15 @@ class Navigation {
     setupSmoothScroll() {
         this.navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                
+                // Skip external links (like auth.html)
+                if (href.startsWith('http') || href.includes('.html')) {
+                    return; // Allow normal navigation
+                }
+                
                 e.preventDefault();
-                const targetId = link.getAttribute('href');
-                const targetSection = document.querySelector(targetId);
+                const targetSection = document.querySelector(href);
                 
                 if (targetSection) {
                     const offsetTop = targetSection.offsetTop - 80;
