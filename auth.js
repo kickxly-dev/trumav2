@@ -15,7 +15,6 @@ class AuthSystem {
 
     async login(email, password) {
         try {
-            console.log('Attempting login to:', '/api/auth/login');
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -23,8 +22,6 @@ class AuthSystem {
                 },
                 body: JSON.stringify({ email, password })
             });
-
-            console.log('Login response status:', response.status);
 
             const data = await response.json();
 
@@ -40,8 +37,7 @@ class AuthSystem {
                 return { success: false, error: data.error || 'Login failed' };
             }
         } catch (error) {
-            console.error('Login error:', error);
-            return { success: false, error: 'Network error. Please check if server is running.' };
+            return { success: false, error: 'Network error. Please try again.' };
         }
     }
 
@@ -155,8 +151,6 @@ async function handleLogin(event) {
     hideAllMessages();
     setLoading('login', true);
     
-    console.log('Login attempt:', { email, adminCode: adminCode ? '***' : 'missing' });
-    
     // Check admin code first
     if (adminCode !== '4567') {
         setLoading('login', false);
@@ -168,8 +162,6 @@ async function handleLogin(event) {
     const result = await auth.login(email, password);
     
     setLoading('login', false);
-    
-    console.log('Login result:', result);
     
     if (result.success) {
         // Check if user is admin
