@@ -14,7 +14,11 @@ class AuthSystem {
 
     async login(email, password) {
         try {
-            const response = await fetch('/api/auth/login', {
+            // Use current port for API calls
+            const currentPort = window.location.port || '10000';
+            const apiUrl = `http://localhost:${currentPort}/api/auth/login`;
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,7 +46,10 @@ class AuthSystem {
 
     async signup(name, email, password) {
         try {
-            const response = await fetch('/api/auth/signup', {
+            const currentPort = window.location.port || '10000';
+            const apiUrl = `http://localhost:${currentPort}/api/auth/signup`;
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
