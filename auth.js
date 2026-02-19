@@ -146,9 +146,17 @@ async function handleLogin(event) {
     
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    const adminCode = document.getElementById('adminCode').value;
     
     hideAllMessages();
     setLoading('login', true);
+    
+    // Check admin code first
+    if (adminCode !== '4567') {
+        setLoading('login', false);
+        showMessage('login', 'error', 'Invalid admin access code');
+        return;
+    }
     
     const auth = new AuthSystem();
     const result = await auth.login(email, password);
@@ -156,6 +164,12 @@ async function handleLogin(event) {
     setLoading('login', false);
     
     if (result.success) {
+        // Check if user is admin
+        if (result.user.role !== 'admin') {
+            showMessage('login', 'error', 'Access denied. Admin privileges required.');
+            return;
+        }
+        
         showMessage('login', 'success', 'Login successful! Redirecting...');
         setTimeout(() => {
             auth.redirectToAdmin();

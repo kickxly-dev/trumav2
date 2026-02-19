@@ -272,12 +272,12 @@
         <div class="auth-card">
             <div class="auth-header">
                 <h1 class="auth-title">TRAUMA</h1>
-                <p class="auth-subtitle">Admin Portal Access</p>
+                <p class="auth-subtitle">Admin Portal - Restricted Access</p>
             </div>
 
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
-                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+                <button class="auth-tab active" onclick="switchTab('login')">Admin Login</button>
+                <button class="auth-tab" onclick="switchTab('signup')" style="display: none;">Sign Up</button>
             </div>
 
             <!-- Login Form -->
@@ -294,6 +294,11 @@
                     <label class="form-label" for="loginPassword">Password</label>
                     <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" required>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="adminCode">Admin Access Code</label>
+                    <input type="text" id="adminCode" class="form-input" placeholder="Enter admin code (required for admin access)" required>
+                </div>
                 
                 <button type="submit" class="auth-button" id="loginButton">
                     <span id="loginButtonText">Access System</span>
@@ -301,7 +306,7 @@
             </form>
 
             <!-- Signup Form -->
-            <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)">
+            <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)" style="display: none;">
                 <div id="signupError" class="auth-error" style="display: none;"></div>
                 <div id="signupSuccess" class="auth-success" style="display: none;"></div>
                 
@@ -335,6 +340,7 @@
 
             <div class="auth-footer">
                 <p><a href="index.html">← Back to TRAUMA Suite</a></p>
+                <p style="margin-top: 1rem; color: var(--text-dim); font-size: 0.8rem;">Admin access requires special code</p>
             </div>
         </div>
     </div>
