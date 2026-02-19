@@ -11,11 +11,15 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        value: postgresql://truma_user:RYDDrD3u2xXpo7IENKk0zXYP2xDjAsaM@dpg-d6b647bnv86c73a76i9g-a.oregon-postgres.render.com/truma
+      - key: JWT_SECRET
+        value: trauma_jwt_secret_key_2024_secure
     healthCheckPath: /api/health
 
   # PostgreSQL Database
   - type: pserv
     name: trauma-db
     plan: free
-    databaseName: trauma_suite
-    user: trauma_user
+    databaseName: truma
+    user: truma_user
