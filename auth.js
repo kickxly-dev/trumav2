@@ -143,46 +143,30 @@ function setLoading(form, loading) {
         buttonText.innerHTML = '<span class="loading-spinner"></span>Processing...';
     } else {
         button.disabled = false;
-        buttonText.textContent = form === 'login' ? 'Access System' : 'Create Account';
+        buttonText.textContent = form === 'login' ? 'Access Admin Panel' : 'Create Account';
     }
 }
 
 async function handleLogin(event) {
     event.preventDefault();
     
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
     const adminCode = document.getElementById('adminCode').value;
     
     hideAllMessages();
     setLoading('login', true);
     
-    // Check admin code first
+    // Check admin code
     if (adminCode !== '4567') {
         setLoading('login', false);
         showMessage('login', 'error', 'Invalid admin access code');
         return;
     }
     
-    const auth = new AuthSystem();
-    const result = await auth.login(email, password);
-    
-    setLoading('login', false);
-    
-    if (result.success) {
-        // Check if user is admin
-        if (result.user.role !== 'admin') {
-            showMessage('login', 'error', 'Access denied. Admin privileges required.');
-            return;
-        }
-        
-        showMessage('login', 'success', 'Login successful! Redirecting...');
-        setTimeout(() => {
-            auth.redirectToAdmin();
-        }, 1500);
-    } else {
-        showMessage('login', 'error', result.error);
-    }
+    // Direct access with just the code
+    showMessage('login', 'success', 'Access granted! Redirecting...');
+    setTimeout(() => {
+        window.location.href = 'admin.html';
+    }, 1500);
 }
 
 async function handleSignup(event) {
