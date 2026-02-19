@@ -250,10 +250,32 @@ function checkPasswordStrength() {
     }
 }
 
+// Test server connection
+async function testServer() {
+    try {
+        const currentPort = window.location.port || '10000';
+        const apiUrl = `http://localhost:${currentPort}/api/health`;
+        
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage('login', 'success', `✅ Server is running! Status: ${data.status}`);
+        } else {
+            showMessage('login', 'error', '❌ Server not responding');
+        }
+    } catch (error) {
+        showMessage('login', 'error', '❌ Cannot connect to server');
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     // Check if user is already logged in
     const auth = new AuthSystem();
+    if (auth.token && auth.user) {
+        auth.redirectToAdmin();
+    }
     
     // Add enter key support for switching fields
     document.querySelectorAll('.form-input').forEach(input => {
@@ -261,7 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') {
                 const form = input.closest('form');
                 const submitBtn = form.querySelector('button[type="submit"]');
-                submitBtn.click();
+                if (submitBtn) {
+                    submitBtn.click();
+                }
             }
         });
     });
