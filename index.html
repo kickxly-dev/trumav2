@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAUMA - Advanced Network & System Utility Suite</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Terminal Background -->
+    <div class="terminal-bg">
+        <div class="terminal-lines"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">TRAUMA</span>
+            </div>
+            <div class="nav-links">
+                <a href="#network-tools" class="nav-link">Network Tools</a>
+                <a href="#system-tools" class="nav-link">System Tools</a>
+                <a href="#utilities" class="nav-link">Utilities</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="title-glitch">TRAUMA</span>
+            </h1>
+            <p class="hero-subtitle">Advanced Network & System Utility Suite</p>
+            <div class="hero-description">
+                Professional-grade network diagnostics and system monitoring tools for cybersecurity education and research.
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- IP & Network Tools -->
+        <section id="network-tools" class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">🌐 IP & Network Tools</h2>
+                <p class="section-subtitle">Network diagnostics and cybersecurity learning tools</p>
+            </div>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">IP Information Lookup</h3>
+                        <div class="card-icon">🔍</div>
+                    </div>
+                    <p class="card-description">Get comprehensive IP data including ISP, country, ASN information for network analysis and educational purposes.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Public IP Data</span>
+                        <span class="feature-tag">Geolocation</span>
+                        <span class="feature-tag">ISP Info</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('ip-lookup')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Ping / Latency Tester</h3>
+                        <div class="card-icon">📡</div>
+                    </div>
+                    <p class="card-description">Test network connectivity and measure latency to diagnose network performance issues.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">RTT Measurement</span>
+                        <span class="feature-tag">Packet Loss</span>
+                        <span class="feature-tag">Network Health</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('ping-tester')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">DNS Lookup Tool</h3>
+                        <div class="card-icon">🌐</div>
+                    </div>
+                    <p class="card-description">Resolve domain names to IP addresses and analyze DNS records for network troubleshooting.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">A/AAAA Records</span>
+                        <span class="feature-tag">MX Records</span>
+                        <span class="feature-tag">DNS Propagation</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('dns-lookup')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Local Network Scanner</h3>
+                        <div class="card-icon">🔎</div>
+                    </div>
+                    <p class="card-description">Discover devices on your local network for network inventory and security assessment.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Device Discovery</span>
+                        <span class="feature-tag">Network Mapping</span>
+                        <span class="feature-tag">Local Analysis</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('network-scanner')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Port Scanner</h3>
+                        <div class="card-icon">🚪</div>
+                    </div>
+                    <p class="card-description">Scan ports on localhost and user-owned devices for security auditing and service discovery.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Service Detection</span>
+                        <span class="feature-tag">Security Audit</span>
+                        <span class="feature-tag">Local Only</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('port-scanner')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">WHOIS Lookup</h3>
+                        <div class="card-icon">📋</div>
+                    </div>
+                    <p class="card-description">Query WHOIS databases to retrieve domain registration and ownership information.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Domain Info</span>
+                        <span class="feature-tag">Registrar Data</span>
+                        <span class="feature-tag">Ownership</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('whois-lookup')">Launch Tool</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Tools -->
+        <section id="system-tools" class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">🖥️ System Tools</h2>
+                <p class="section-subtitle">System monitoring and analysis utilities</p>
+            </div>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Active Connections Viewer</h3>
+                        <div class="card-icon">🔗</div>
+                    </div>
+                    <p class="card-description">Monitor active network connections and processes for system security analysis.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">TCP/UDP</span>
+                        <span class="feature-tag">Process Info</span>
+                        <span class="feature-tag">Real-time</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('connections')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Firewall Status Checker</h3>
+                        <div class="card-icon">🛡️</div>
+                    </div>
+                    <p class="card-description">Check firewall configuration and status for security assessment.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Status Check</span>
+                        <span class="feature-tag">Rules Review</span>
+                        <span class="feature-tag">Security Audit</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('firewall')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Info Viewer</h3>
+                        <div class="card-icon">💻</div>
+                    </div>
+                    <p class="card-description">Display comprehensive system information for diagnostics and inventory.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Hardware Info</span>
+                        <span class="feature-tag">OS Details</span>
+                        <span class="feature-tag">Performance</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('system-info')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Process Monitor</h3>
+                        <div class="card-icon">⚙️</div>
+                    </div>
+                    <p class="card-description">Monitor running processes and resource usage for system optimization.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">CPU Usage</span>
+                        <span class="feature-tag">Memory Monitor</span>
+                        <span class="feature-tag">Process Tree</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('process-monitor')">Launch Tool</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Utilities -->
+        <section id="utilities" class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">🧰 Utilities</h2>
+                <p class="section-subtitle">Essential development and security tools</p>
+            </div>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Base64 Encoder/Decoder</h3>
+                        <div class="card-icon">🔐</div>
+                    </div>
+                    <p class="card-description">Encode and decode Base64 strings for data transmission and storage.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Encode</span>
+                        <span class="feature-tag">Decode</span>
+                        <span class="feature-tag">Validation</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('base64')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Hash Generator</h3>
+                        <div class="card-icon">#️⃣</div>
+                    </div>
+                    <p class="card-description">Generate cryptographic hashes (MD5, SHA256) for data integrity verification.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">MD5</span>
+                        <span class="feature-tag">SHA256</span>
+                        <span class="feature-tag">Checksum</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('hash-generator')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">JSON Formatter</h3>
+                        <div class="card-icon">📝</div>
+                    </div>
+                    <p class="card-description">Format, validate, and minify JSON data for development and debugging.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Format</span>
+                        <span class="feature-tag">Validate</span>
+                        <span class="feature-tag">Minify</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('json-formatter')">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Password Strength Checker</h3>
+                        <div class="card-icon">🔑</div>
+                    </div>
+                    <p class="card-description">Analyze password strength and generate secure passwords for better security.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Strength Analysis</span>
+                        <span class="feature-tag">Password Generator</span>
+                        <span class="feature-tag">Security Tips</span>
+                    </div>
+                    <button class="card-button" onclick="openTool('password-checker')">Launch Tool</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3 class="footer-title">TRAUMA</h3>
+                <p class="footer-text">Professional network and system utilities for cybersecurity education and research.</p>
+            </div>
+            <div class="footer-section">
+                <h4 class="footer-subtitle">Educational Use Only</h4>
+                <p class="footer-text">All tools are intended for legitimate network diagnostics, cybersecurity learning, and authorized security testing.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 TRAUMA Suite. For educational and research purposes.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

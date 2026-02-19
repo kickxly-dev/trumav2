@@ -1,0 +1,21 @@
+services:
+  # Web Service
+  - type: web
+    name: trauma-suite
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+
+  # PostgreSQL Database
+  - type: pserv
+    name: trauma-db
+    plan: free
+    databaseName: trauma_suite
+    user: trauma_user

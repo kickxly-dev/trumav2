@@ -1,0 +1,39 @@
+{
+  "name": "trauma-suite",
+  "version": "1.0.0",
+  "description": "Advanced Network & System Utility Suite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required for static files'"
+  },
+  "keywords": [
+    "network",
+    "security",
+    "utilities",
+    "cybersecurity",
+    "tools"
+  ],
+  "author": "TRAUMA Suite",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2",
+    "ping": "^0.4.4",
+    "whois": "^2.13.5",
+    "dns": "^0.2.2",
+    "crypto": "^1.0.1",
+    "bcrypt": "^5.1.1",
+    "pg": "^8.11.3",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
