@@ -6,6 +6,10 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const crypto = require('crypto');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 require('dotenv').config();
 
 const execAsync = promisify(exec);
@@ -14,9 +18,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
+// JWT Secret
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // Database connection (PostgreSQL on Render)
 const { Pool } = require('pg');
@@ -28,10 +43,25 @@ const pool = new Pool({
 // Initialize database tables
 async function initDatabase() {
   try {
+    // Users table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user',
+        status VARCHAR(50) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tool_usage (
         id SERIAL PRIMARY KEY,
         tool_name VARCHAR(100) NOT NULL,
+        user_id INTEGER REFERENCES users(id),
         ip_address INET,
         user_agent TEXT,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -65,13 +95,262 @@ async function initDatabase() {
       );
     `);
 
+    // Create default admin user if not exists
+    const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@trauma-suite.com']);
+    if (adminExists.rows.length === 0) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await pool.query(
+        'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)',
+        ['Admin User', 'admin@trauma-suite.com', hashedPassword, 'admin']
+      );
+      console.log('Default admin user created: admin@trauma-suite.com / admin123');
+    }
+
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Database initialization error:', error);
   }
 }
 
-// Log tool usage
+// Middleware to verify JWT token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware to check admin role
+function requireAdmin(req, res, next) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+}
+
+// Authentication Routes
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    // Check if user already exists
+    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role, created_at',
+      [name, email, hashedPassword]
+    );
+
+    const user = result.rows[0];
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Find user
+    const result = await pool.query('SELECT id, name, email, password_hash, role, status FROM users WHERE email = $1', [email]);
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const user = result.rows[0];
+
+    if (user.status !== 'active') {
+      return res.status(401).json({ error: 'Account is inactive' });
+    }
+
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin Routes
+app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
+    const todayUsage = await pool.query('SELECT COUNT(*) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
+    const activeTools = await pool.query('SELECT COUNT(DISTINCT tool_name) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
+
+    res.json({
+      totalUsers: totalUsers.rows[0].count,
+      todayUsage: todayUsage.rows[0].count,
+      activeTools: activeTools.rows[0].count,
+      systemHealth: '98%'
+    });
+
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC');
+    
+    const users = result.rows.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      joined: user.created_at
+    }));
+
+    res.json(users);
+
+  } catch (error) {
+    console.error('Users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.get('/api/admin/recent-activity', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT tu.tool_name, u.name as user_name, tu.timestamp, 'active' as status
+      FROM tool_usage tu
+      LEFT JOIN users u ON tu.user_id = u.id
+      ORDER BY tu.timestamp DESC
+      LIMIT 10
+    `);
+
+    const activities = result.rows.map(activity => ({
+      user: activity.user_name || 'Anonymous',
+      tool: activity.tool_name,
+      timestamp: activity.timestamp,
+      status: activity.status
+    }));
+
+    res.json(activities);
+
+  } catch (error) {
+    console.error('Recent activity error:', error);
+    res.status(500).json({ error: 'Failed to fetch recent activity' });
+  }
+});
+
+app.get('/api/admin/tool-usage', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT tool_name, COUNT(*) as usage, MAX(timestamp) as last_used
+      FROM tool_usage
+      GROUP BY tool_name
+      ORDER BY usage DESC
+    `);
+
+    const tools = result.rows.map(tool => ({
+      name: tool.tool_name,
+      usage: tool.usage,
+      lastUsed: tool.last_used,
+      status: 'active',
+      performance: Math.floor(Math.random() * 500) + 'ms' // Mock performance data
+    }));
+
+    res.json(tools);
+
+  } catch (error) {
+    console.error('Tool usage error:', error);
+    res.status(500).json({ error: 'Failed to fetch tool usage' });
+  }
+});
+
+app.get('/api/admin/system-health', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const memUsage = process.memoryUsage();
+    const cpuUsage = Math.random() * 30; // Mock CPU usage
+    const diskUsage = 45; // Mock disk usage
+
+    res.json({
+      cpu: Math.floor(cpuUsage),
+      memory: (memUsage.heapUsed / 1024 / 1024).toFixed(1),
+      disk: diskUsage,
+      uptime: '99.9'
+    });
+
+  } catch (error) {
+    console.error('System health error:', error);
+    res.status(500).json({ error: 'Failed to fetch system health' });
+  }
+});
 async function logToolUsage(toolName, parameters = {}) {
   try {
     const clientIp = parameters.ip || 'unknown';
