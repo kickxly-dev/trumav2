@@ -7,10 +7,9 @@ class AuthSystem {
     }
 
     init() {
-        // Check if user is already logged in
-        if (this.token && this.user) {
-            this.redirectToAdmin();
-        }
+        // Clear any existing tokens to force fresh login
+        localStorage.removeItem('trauma_token');
+        localStorage.removeItem('trauma_user');
     }
 
     async login(email, password) {
