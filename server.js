@@ -638,15 +638,15 @@ async function resolveIpLookup(target) {
         provider: 'ip-api',
         data: {
           ip: data.query,
-          country: data.country,
-          region: data.regionName,
-          city: data.city,
-          isp: data.isp,
-          org: data.org,
-          as: data.as,
-          timezone: data.timezone,
-          latitude: data.lat,
-          longitude: data.lon
+          country: data.country || null,
+          region: data.regionName || null,
+          city: data.city || null,
+          isp: data.isp || null,
+          org: data.org || null,
+          as: data.as || null,
+          timezone: data.timezone || null,
+          latitude: data.lat || null,
+          longitude: data.lon || null
         }
       };
     }
@@ -748,15 +748,15 @@ async function resolveIpLookup(target) {
         provider: 'ip-api-cors',
         data: {
           ip: data.query,
-          country: data.country,
-          region: data.regionName,
-          city: data.city,
-          isp: data.isp,
-          org: data.org,
-          as: data.as,
-          timezone: data.timezone,
-          latitude: data.lat,
-          longitude: data.lon
+          country: data.country || null,
+          region: data.regionName || null,
+          city: data.city || null,
+          isp: data.isp || null,
+          org: data.org || null,
+          as: data.as || null,
+          timezone: data.timezone || null,
+          latitude: data.lat || null,
+          longitude: data.lon || null
         }
       };
     }
