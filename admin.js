@@ -454,9 +454,7 @@ class AdminDashboard {
     }
 
     async apiCall(endpoint, options = {}) {
-        const currentPort = window.location.port || '10000';
-        const apiUrl = `http://localhost:${currentPort}${endpoint}`;
-
+        const apiUrl = endpoint;
         const method = options.method || 'GET';
         const headers = {
             'Content-Type': 'application/json',

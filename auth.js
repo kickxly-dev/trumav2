@@ -156,10 +156,7 @@ async function handleLogin(event) {
     setLoading('login', true);
     
     try {
-        const currentPort = window.location.port || '10000';
-        const apiUrl = `http://localhost:${currentPort}/api/auth/code-login`;
-
-        const response = await fetch(apiUrl, {
+        const response = await fetch('/api/auth/code-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: adminCode })
