@@ -60,9 +60,19 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// Initialize database tables
+// Initialize database tables with better logging
 async function initDatabase() {
+  console.log('Initializing database...');
   try {
+    // Test connection first
+    try {
+      await pool.query('SELECT 1');
+      console.log('Database connection successful');
+    } catch (connErr) {
+      console.error('Database connection failed:', connErr.message);
+      throw connErr;
+    }
+
     // Users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -77,6 +87,7 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    console.log('Users table created/verified');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS settings (
@@ -85,6 +96,7 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    console.log('Settings table created/verified');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tool_usage (
@@ -97,6 +109,7 @@ async function initDatabase() {
         parameters JSONB
       );
     `);
+    console.log('Tool usage table created/verified');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ip_lookups (
@@ -110,6 +123,7 @@ async function initDatabase() {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    console.log('IP lookups table created/verified');
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS ping_results (
@@ -123,6 +137,7 @@ async function initDatabase() {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    console.log('Ping results table created/verified');
 
     // Create default admin user if not exists
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@trauma-suite.com']);
@@ -133,6 +148,8 @@ async function initDatabase() {
         ['Admin User', 'admin@trauma-suite.com', hashedPassword, 'admin']
       );
       console.log('Default admin user created: admin@trauma-suite.com / admin123');
+    } else {
+      console.log('Admin user already exists');
     }
 
     // Default settings
@@ -146,10 +163,12 @@ async function initDatabase() {
        ON CONFLICT (key) DO NOTHING;`,
       ['TRAUMA Suite', 'admin@trauma-suite.com', false, false]
     );
+    console.log('Default settings created/verified');
 
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Database initialization error:', error);
+    throw error; // Re-throw to stop server startup if DB fails
   }
 }
 
