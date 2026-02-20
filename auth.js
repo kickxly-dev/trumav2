@@ -162,11 +162,26 @@ async function handleLogin(event) {
             body: JSON.stringify({ code: adminCode })
         });
 
-        const data = await response.json();
+        const raw = await response.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : {};
+        } catch (_) {
+            data = null;
+        }
 
         if (!response.ok) {
             setLoading('login', false);
-            showMessage('login', 'error', data.error || 'Login failed');
+            const msg = (data && data.error)
+                ? data.error
+                : `Login failed (HTTP ${response.status})`;
+            showMessage('login', 'error', msg);
+            return;
+        }
+
+        if (!data || !data.token || !data.user) {
+            setLoading('login', false);
+            showMessage('login', 'error', 'Login failed (invalid server response)');
             return;
         }
 
@@ -252,10 +267,7 @@ function checkPasswordStrength() {
 // Test server connection
 async function testServer() {
     try {
-        const currentPort = window.location.port || '10000';
-        const apiUrl = `http://localhost:${currentPort}/api/health`;
-        
-        const response = await fetch(apiUrl);
+        const response = await fetch('/api/health');
         const data = await response.json();
         
         if (response.ok) {
