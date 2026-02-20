@@ -255,12 +255,12 @@ async function testServer() {
         const data = await response.json();
         
         if (response.ok) {
-            showMessage('login', 'success', `✅ Server is running! Status: ${data.status}`);
+            showMessage('login', 'success', `Server is running. Status: ${data.status}`);
         } else {
-            showMessage('login', 'error', '❌ Server not responding');
+            showMessage('login', 'error', 'Server not responding');
         }
     } catch (error) {
-        showMessage('login', 'error', '❌ Cannot connect to server');
+        showMessage('login', 'error', 'Cannot connect to server');
     }
 }
 

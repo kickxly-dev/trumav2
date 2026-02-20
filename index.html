@@ -48,7 +48,7 @@
         <!-- IP & Network Tools -->
         <section id="network-tools" class="tools-section">
             <div class="section-header">
-                <h2 class="section-title">🌐 IP & Network Tools</h2>
+                <h2 class="section-title">IP & Network Tools</h2>
                 <p class="section-subtitle">Network diagnostics and cybersecurity learning tools</p>
             </div>
             
@@ -56,7 +56,7 @@
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">IP Information Lookup</h3>
-                        <div class="card-icon">🔍</div>
+                        <div class="card-icon">IP</div>
                     </div>
                     <p class="card-description">Get comprehensive IP data including ISP, country, ASN information for network analysis and educational purposes.</p>
                     <div class="card-features">
@@ -64,13 +64,13 @@
                         <span class="feature-tag">Geolocation</span>
                         <span class="feature-tag">ISP Info</span>
                     </div>
-                    <button class="card-button" onclick="openTool('ip-lookup')">Launch Tool</button>
+                    <button class="card-button" data-tool="ip-lookup">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Ping / Latency Tester</h3>
-                        <div class="card-icon">📡</div>
+                        <div class="card-icon">Ping</div>
                     </div>
                     <p class="card-description">Test network connectivity and measure latency to diagnose network performance issues.</p>
                     <div class="card-features">
@@ -78,13 +78,13 @@
                         <span class="feature-tag">Packet Loss</span>
                         <span class="feature-tag">Network Health</span>
                     </div>
-                    <button class="card-button" onclick="openTool('ping-tester')">Launch Tool</button>
+                    <button class="card-button" data-tool="ping-tester">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">DNS Lookup Tool</h3>
-                        <div class="card-icon">🌐</div>
+                        <div class="card-icon">DNS</div>
                     </div>
                     <p class="card-description">Resolve domain names to IP addresses and analyze DNS records for network troubleshooting.</p>
                     <div class="card-features">
@@ -92,13 +92,13 @@
                         <span class="feature-tag">MX Records</span>
                         <span class="feature-tag">DNS Propagation</span>
                     </div>
-                    <button class="card-button" onclick="openTool('dns-lookup')">Launch Tool</button>
+                    <button class="card-button" data-tool="dns-lookup">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Local Network Scanner</h3>
-                        <div class="card-icon">🔎</div>
+                        <div class="card-icon">LAN</div>
                     </div>
                     <p class="card-description">Discover devices on your local network for network inventory and security assessment.</p>
                     <div class="card-features">
@@ -106,13 +106,13 @@
                         <span class="feature-tag">Network Mapping</span>
                         <span class="feature-tag">Local Analysis</span>
                     </div>
-                    <button class="card-button" onclick="openTool('network-scanner')">Launch Tool</button>
+                    <button class="card-button" data-tool="network-scanner">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Port Scanner</h3>
-                        <div class="card-icon">🚪</div>
+                        <div class="card-icon">Ports</div>
                     </div>
                     <p class="card-description">Scan ports on localhost and user-owned devices for security auditing and service discovery.</p>
                     <div class="card-features">
@@ -120,13 +120,13 @@
                         <span class="feature-tag">Security Audit</span>
                         <span class="feature-tag">Local Only</span>
                     </div>
-                    <button class="card-button" onclick="openTool('port-scanner')">Launch Tool</button>
+                    <button class="card-button" data-tool="port-scanner">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">WHOIS Lookup</h3>
-                        <div class="card-icon">📋</div>
+                        <div class="card-icon">WHOIS</div>
                     </div>
                     <p class="card-description">Query WHOIS databases to retrieve domain registration and ownership information.</p>
                     <div class="card-features">
@@ -134,7 +134,7 @@
                         <span class="feature-tag">Registrar Data</span>
                         <span class="feature-tag">Ownership</span>
                     </div>
-                    <button class="card-button" onclick="openTool('whois-lookup')">Launch Tool</button>
+                    <button class="card-button" data-tool="whois-lookup">Launch Tool</button>
                 </div>
             </div>
         </section>
@@ -142,7 +142,7 @@
         <!-- System Tools -->
         <section id="system-tools" class="tools-section">
             <div class="section-header">
-                <h2 class="section-title">🖥️ System Tools</h2>
+                <h2 class="section-title">System Tools</h2>
                 <p class="section-subtitle">System monitoring and analysis utilities</p>
             </div>
             
@@ -150,7 +150,7 @@
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Active Connections Viewer</h3>
-                        <div class="card-icon">🔗</div>
+                        <div class="card-icon">Net</div>
                     </div>
                     <p class="card-description">Monitor active network connections and processes for system security analysis.</p>
                     <div class="card-features">
@@ -158,13 +158,13 @@
                         <span class="feature-tag">Process Info</span>
                         <span class="feature-tag">Real-time</span>
                     </div>
-                    <button class="card-button" onclick="openTool('connections')">Launch Tool</button>
+                    <button class="card-button" data-tool="connections">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Firewall Status Checker</h3>
-                        <div class="card-icon">🛡️</div>
+                        <div class="card-icon">FW</div>
                     </div>
                     <p class="card-description">Check firewall configuration and status for security assessment.</p>
                     <div class="card-features">
@@ -172,13 +172,13 @@
                         <span class="feature-tag">Rules Review</span>
                         <span class="feature-tag">Security Audit</span>
                     </div>
-                    <button class="card-button" onclick="openTool('firewall')">Launch Tool</button>
+                    <button class="card-button" data-tool="firewall">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">System Info Viewer</h3>
-                        <div class="card-icon">💻</div>
+                        <div class="card-icon">Info</div>
                     </div>
                     <p class="card-description">Display comprehensive system information for diagnostics and inventory.</p>
                     <div class="card-features">
@@ -186,13 +186,13 @@
                         <span class="feature-tag">OS Details</span>
                         <span class="feature-tag">Performance</span>
                     </div>
-                    <button class="card-button" onclick="openTool('system-info')">Launch Tool</button>
+                    <button class="card-button" data-tool="system-info">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Process Monitor</h3>
-                        <div class="card-icon">⚙️</div>
+                        <div class="card-icon">Proc</div>
                     </div>
                     <p class="card-description">Monitor running processes and resource usage for system optimization.</p>
                     <div class="card-features">
@@ -200,7 +200,7 @@
                         <span class="feature-tag">Memory Monitor</span>
                         <span class="feature-tag">Process Tree</span>
                     </div>
-                    <button class="card-button" onclick="openTool('process-monitor')">Launch Tool</button>
+                    <button class="card-button" data-tool="process-monitor">Launch Tool</button>
                 </div>
             </div>
         </section>
@@ -208,7 +208,7 @@
         <!-- Utilities -->
         <section id="utilities" class="tools-section">
             <div class="section-header">
-                <h2 class="section-title">🧰 Utilities</h2>
+                <h2 class="section-title">Utilities</h2>
                 <p class="section-subtitle">Essential development and security tools</p>
             </div>
             
@@ -216,7 +216,7 @@
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Base64 Encoder/Decoder</h3>
-                        <div class="card-icon">🔐</div>
+                        <div class="card-icon">B64</div>
                     </div>
                     <p class="card-description">Encode and decode Base64 strings for data transmission and storage.</p>
                     <div class="card-features">
@@ -224,13 +224,13 @@
                         <span class="feature-tag">Decode</span>
                         <span class="feature-tag">Validation</span>
                     </div>
-                    <button class="card-button" onclick="openTool('base64')">Launch Tool</button>
+                    <button class="card-button" data-tool="base64">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Hash Generator</h3>
-                        <div class="card-icon">#️⃣</div>
+                        <div class="card-icon">Hash</div>
                     </div>
                     <p class="card-description">Generate cryptographic hashes (MD5, SHA256) for data integrity verification.</p>
                     <div class="card-features">
@@ -238,13 +238,13 @@
                         <span class="feature-tag">SHA256</span>
                         <span class="feature-tag">Checksum</span>
                     </div>
-                    <button class="card-button" onclick="openTool('hash-generator')">Launch Tool</button>
+                    <button class="card-button" data-tool="hash-generator">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">JSON Formatter</h3>
-                        <div class="card-icon">📝</div>
+                        <div class="card-icon">JSON</div>
                     </div>
                     <p class="card-description">Format, validate, and minify JSON data for development and debugging.</p>
                     <div class="card-features">
@@ -252,13 +252,13 @@
                         <span class="feature-tag">Validate</span>
                         <span class="feature-tag">Minify</span>
                     </div>
-                    <button class="card-button" onclick="openTool('json-formatter')">Launch Tool</button>
+                    <button class="card-button" data-tool="json-formatter">Launch Tool</button>
                 </div>
 
                 <div class="tool-card">
                     <div class="card-header">
                         <h3 class="card-title">Password Strength Checker</h3>
-                        <div class="card-icon">🔑</div>
+                        <div class="card-icon">PW</div>
                     </div>
                     <p class="card-description">Analyze password strength and generate secure passwords for better security.</p>
                     <div class="card-features">
@@ -266,7 +266,7 @@
                         <span class="feature-tag">Password Generator</span>
                         <span class="feature-tag">Security Tips</span>
                     </div>
-                    <button class="card-button" onclick="openTool('password-checker')">Launch Tool</button>
+                    <button class="card-button" data-tool="password-checker">Launch Tool</button>
                 </div>
             </div>
         </section>

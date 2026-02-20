@@ -222,6 +222,18 @@ class ToolCards {
     }
 }
 
+// Tool Launch Button Wiring (CSP-safe)
+function wireToolLaunchButtons() {
+    document.querySelectorAll('.card-button[data-tool]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const toolName = btn.getAttribute('data-tool');
+            if (toolName) {
+                openTool(toolName);
+            }
+        });
+    });
+}
+
 // Scroll Animations
 class ScrollAnimations {
     constructor() {
@@ -433,8 +445,6 @@ class ToolLauncher {
                 "></div>
             `,
             'default': `
-                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Tool Coming Soon</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">This tool is currently under development. Check back soon for updates!</p>
                 <div style="
                     background: var(--bg-secondary);
                     padding: 2rem;
@@ -442,8 +452,8 @@ class ToolLauncher {
                     border: 1px solid var(--border-color);
                     text-align: center;
                 ">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🚧</div>
-                    <p style="color: var(--text-dim);">Advanced functionality will be available in the next release.</p>
+                    <div style="font-size: 1.5rem; margin-bottom: 1rem;">Notice</div>
+                    <p style="color: var(--text-dim);">This tool interface will be available in a future update.</p>
                 </div>
             `
         };
@@ -478,7 +488,7 @@ async function lookupIP() {
         return;
     }
 
-    result.innerHTML = '<div style="color: var(--success-color);">🔍 Looking up information...</div>';
+    result.innerHTML = '<div style="color: var(--success-color);">Looking up information...</div>';
 
     try {
         const response = await fetch('/api/ip-lookup', {
@@ -493,7 +503,7 @@ async function lookupIP() {
 
         if (response.ok) {
             result.innerHTML = `
-                <div style="color: var(--success-color); margin-bottom: 1rem;">✅ Lookup Complete</div>
+                <div style="color: var(--success-color); margin-bottom: 1rem;">Lookup complete</div>
                 <div style="margin-top: 1rem;">
                     <div><strong>IP:</strong> ${data.ip}</div>
                     <div><strong>Country:</strong> ${data.country || 'Unknown'}</div>
@@ -506,10 +516,10 @@ async function lookupIP() {
                 </div>
             `;
         } else {
-            result.innerHTML = `<span style="color: var(--error-color);">❌ ${data.error}</span>`;
+            result.innerHTML = `<span style="color: var(--error-color);">${data.error}</span>`;
         }
     } catch (error) {
-        result.innerHTML = '<span style="color: var(--error-color);">❌ Failed to connect to server</span>';
+        result.innerHTML = '<span style="color: var(--error-color);">Failed to connect to server</span>';
     }
 }
 
@@ -517,7 +527,7 @@ async function startPing() {
     const target = document.getElementById('ping-target');
     const result = document.getElementById('ping-result');
     
-    result.innerHTML = '<div style="color: var(--success-color);">📡 Pinging target...</div>';
+    result.innerHTML = '<div style="color: var(--success-color);">Pinging target...</div>';
 
     try {
         const response = await fetch('/api/ping', {
@@ -532,7 +542,7 @@ async function startPing() {
 
         if (response.ok) {
             result.innerHTML = `
-                <div style="color: var(--success-color); margin-bottom: 1rem;">✅ Ping Complete</div>
+                <div style="color: var(--success-color); margin-bottom: 1rem;">Ping complete</div>
                 <div style="margin-top: 1rem; font-family: 'JetBrains Mono', monospace;">
                     <div><strong>Target:</strong> ${data.target}</div>
                     <div><strong>Packet Loss:</strong> ${data.packetLoss}%</div>
@@ -545,10 +555,10 @@ async function startPing() {
                 </div>
             `;
         } else {
-            result.innerHTML = `<span style="color: var(--error-color);">❌ ${data.error}</span>`;
+            result.innerHTML = `<span style="color: var(--error-color);">${data.error}</span>`;
         }
     } catch (error) {
-        result.innerHTML = '<span style="color: var(--error-color);">❌ Failed to connect to server</span>';
+        result.innerHTML = '<span style="color: var(--error-color);">Failed to connect to server</span>';
     }
 }
 
@@ -569,6 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     new TerminalBackground();
     new Navigation();
     new ToolCards();
+    wireToolLaunchButtons();
     new ScrollAnimations();
 });
 

@@ -4,7 +4,7 @@ A professional cybersecurity utility suite with a crimson and black theme, featu
 
 ## Features
 
-### 🌐 IP & Network Tools
+### IP & Network Tools
 - **IP Information Lookup** - Comprehensive IP data including ISP, country, ASN information
 - **Ping / Latency Tester** - Network connectivity and latency measurement
 - **DNS Lookup Tool** - Domain name resolution and DNS record analysis
@@ -12,13 +12,13 @@ A professional cybersecurity utility suite with a crimson and black theme, featu
 - **Port Scanner** - Security auditing for localhost and user-owned devices
 - **WHOIS Lookup** - Domain registration and ownership information
 
-### 🖥️ System Tools
+### System Tools
 - **Active Connections Viewer** - Monitor network connections and processes
 - **Firewall Status Checker** - Security configuration analysis
 - **System Info Viewer** - Comprehensive system diagnostics
 - **Process Monitor** - Resource usage and process monitoring
 
-### 🧰 Utilities
+### Utilities
 - **Base64 Encoder/Decoder** - Data encoding and decoding
 - **Hash Generator** - MD5, SHA256 cryptographic hashes
 - **JSON Formatter** - Format, validate, and minify JSON data
