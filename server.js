@@ -1143,6 +1143,136 @@ app.get('/api/user/tool-stats', authenticateToken, async (req, res) => {
   }
 });
 
+// API Key authentication middleware
+async function authenticateApiKey(req, res, next) {
+  try {
+    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+    
+    if (!apiKey) {
+      return next(); // Continue without API key auth (will check JWT later)
+    }
+    
+    const result = await pool.query(
+      `SELECT ak.*, u.id as user_id, u.name, u.email, u.role 
+       FROM api_keys ak
+       JOIN users u ON ak.user_id = u.id
+       WHERE ak.key_hash = $1 AND ak.is_active = TRUE
+       AND (ak.expires_at IS NULL OR ak.expires_at > NOW())`,
+      [apiKey]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid or expired API key' });
+    }
+    
+    const keyData = result.rows[0];
+    
+    // Update last used timestamp
+    await pool.query(
+      'UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP, usage_count = usage_count + 1 WHERE id = $1',
+      [keyData.id]
+    );
+    
+    // Attach user info to request
+    req.user = {
+      id: keyData.user_id,
+      name: keyData.name,
+      email: keyData.email,
+      role: keyData.role,
+      apiKeyId: keyData.id
+    };
+    req.isApiKeyAuth = true;
+    
+    next();
+  } catch (error) {
+    console.error('API key auth error:', error);
+    return res.status(500).json({ error: 'Authentication error' });
+  }
+}
+
+// Apply API key auth before JWT auth (API keys take precedence for programmatic access)
+app.use(authenticateApiKey);
+
+// API Key management endpoints
+app.post('/api/user/api-keys', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, expiresInDays = 365 } = req.body;
+    
+    // Generate random API key
+    const apiKey = 'tr_' + crypto.randomBytes(32).toString('hex');
+    const keyHash = apiKey; // Store as-is for now (in production, hash this)
+    
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    const result = await pool.query(
+      `INSERT INTO api_keys (user_id, key_hash, name, expires_at) 
+       VALUES ($1, $2, $3, $4) RETURNING id, name, created_at, expires_at`,
+      [userId, keyHash, name || 'API Key', expiresAt]
+    );
+    
+    res.json({
+      apiKey, // Only returned once!
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      createdAt: result.rows[0].created_at,
+      expiresAt: result.rows[0].expires_at,
+      message: 'Store this API key safely. It will not be shown again.'
+    });
+  } catch (error) {
+    console.error('Create API key error:', error);
+    res.status(500).json({ error: 'Failed to create API key' });
+  }
+});
+
+app.get('/api/user/api-keys', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const result = await pool.query(
+      `SELECT id, name, created_at, expires_at, last_used_at, usage_count, is_active
+       FROM api_keys 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    res.json({ 
+      keys: result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        createdAt: row.created_at,
+        expiresAt: row.expires_at,
+        lastUsedAt: row.last_used_at,
+        usageCount: row.usage_count,
+        isActive: row.is_active,
+        status: row.is_active ? (new Date(row.expires_at) > new Date() ? 'active' : 'expired') : 'revoked'
+      }))
+    });
+  } catch (error) {
+    console.error('List API keys error:', error);
+    res.status(500).json({ error: 'Failed to list API keys' });
+  }
+});
+
+app.delete('/api/user/api-keys/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const keyId = req.params.id;
+    
+    await pool.query(
+      'UPDATE api_keys SET is_active = FALSE WHERE id = $1 AND user_id = $2',
+      [keyId, userId]
+    );
+    
+    res.json({ message: 'API key revoked successfully' });
+  } catch (error) {
+    console.error('Revoke API key error:', error);
+    res.status(500).json({ error: 'Failed to revoke API key' });
+  }
+});
+
 async function logToolUsage(toolName, parameters = {}, reqUser = null) {
   try {
     const clientIp = parameters.ip || 'unknown';
