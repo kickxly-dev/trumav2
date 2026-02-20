@@ -25,18 +25,26 @@ class AdminDashboard {
     }
 
     setupEventListeners() {
-        // Mobile menu toggle
-        window.toggleSidebar = () => {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
-        };
+        // Backwards-compatible globals (admin.html still uses inline onclick)
+        window.toggleSidebar = () => this.toggleSidebar();
+        window.showSection = (section) => this.showSection(section);
+        window.logout = () => this.logout();
+
+        const menuToggle = document.querySelector('.mobile-menu-toggle');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleSidebar();
+            });
+        }
 
         // Section navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
-                const section = item.getAttribute('data-section');
-                this.showSection(section);
+                const href = item.getAttribute('href') || '';
+                const section = item.getAttribute('data-section') || href.replace('#', '');
+                if (section) this.showSection(section);
             });
         });
 
@@ -44,11 +52,23 @@ class AdminDashboard {
         document.getElementById('logoutBtn').addEventListener('click', () => {
             this.logout();
         });
+
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.addEventListener('click', async () => {
+                await this.saveSettings();
+            });
+        }
+    }
+
+    toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.toggle('open');
     }
 
     showSection(section) {
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(sec => {
+        // Hide all sections (admin.html uses .admin-content)
+        document.querySelectorAll('.admin-content').forEach(sec => {
             sec.classList.remove('active');
         });
 
@@ -57,9 +77,11 @@ class AdminDashboard {
             item.classList.remove('active');
         });
 
-        // Show selected section
-        document.getElementById(`${section}Section`).classList.add('active');
-        document.querySelector(`[data-section="${section}"]`).classList.add('active');
+        const sectionEl = document.getElementById(section);
+        if (sectionEl) sectionEl.classList.add('active');
+
+        const navEl = document.querySelector(`[data-section="${section}"]`) || document.querySelector(`a[href="#${section}"]`);
+        if (navEl) navEl.classList.add('active');
 
         this.currentSection = section;
         this.loadSectionData(section);
@@ -71,9 +93,14 @@ class AdminDashboard {
     }
 
     loadUserData() {
-        // Set default admin user data
-        document.getElementById('userName').textContent = 'Admin User';
-        document.getElementById('userAvatar').textContent = 'A';
+        const userNameEl = document.getElementById('userName');
+        const userAvatarEl = document.getElementById('userAvatar');
+
+        if (!userNameEl || !userAvatarEl) return;
+
+        const name = (this.user && this.user.name) ? this.user.name : 'Admin User';
+        userNameEl.textContent = name;
+        userAvatarEl.textContent = name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
     }
 
     async loadDashboardData() {
@@ -101,10 +128,15 @@ class AdminDashboard {
             const data = await response.json();
 
             if (response.ok) {
-                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                document.getElementById('activeUsers').textContent = data.activeUsers || 0;
-                document.getElementById('totalTools').textContent = data.totalTools || 0;
-                document.getElementById('systemUptime').textContent = data.systemUptime || '99.9%';
+                const totalUsersEl = document.getElementById('totalUsers');
+                const todayUsageEl = document.getElementById('todayUsage');
+                const activeToolsEl = document.getElementById('activeTools');
+                const systemHealthEl = document.getElementById('systemHealth');
+
+                if (totalUsersEl) totalUsersEl.textContent = data.totalUsers || 0;
+                if (todayUsageEl) todayUsageEl.textContent = data.todayUsage || 0;
+                if (activeToolsEl) activeToolsEl.textContent = data.totalTools || 0;
+                if (systemHealthEl) systemHealthEl.textContent = '98%';
             }
         } catch (error) {
             console.error('Failed to load statistics:', error);
@@ -117,19 +149,18 @@ class AdminDashboard {
             const response = await this.apiCall('/api/admin/recent-activity');
             const data = await response.json();
 
-            if (response.ok && data.activities) {
-                const tbody = document.querySelector('#recentActivityTable tbody');
-                if (tbody) {
-                    tbody.innerHTML = data.activities.map(activity => `
-                        <tr>
-                            <td>${activity.user}</td>
-                            <td>${activity.action}</td>
-                            <td>${activity.time}</td>
-                            <td><span class="status-badge status-${activity.status}">${activity.status}</span></td>
-                        </tr>
-                    `).join('');
-                }
-            }
+            const tbody = document.getElementById('recentActivity');
+            if (!tbody) return;
+
+            const activities = (response.ok && data.activities) ? data.activities : [];
+            tbody.innerHTML = activities.map(activity => `
+                <tr>
+                    <td>${activity.user}</td>
+                    <td>${activity.action}</td>
+                    <td>${activity.time}</td>
+                    <td><span class="status-badge status-${activity.status}">${activity.status}</span></td>
+                </tr>
+            `).join('');
         } catch (error) {
             console.error('Failed to load recent activity:', error);
             throw error;
@@ -231,14 +262,29 @@ class AdminDashboard {
                             <td>${user.id}</td>
                             <td>${user.name}</td>
                             <td>${user.email}</td>
+                            <td>${user.role}</td>
                             <td><span class="status-badge status-${user.status}">${user.status}</span></td>
-                            <td>${user.last_login || 'Never'}</td>
+                            <td>${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">Edit</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+                                <button class="btn btn-sm btn-primary" data-action="edit-user" data-user-id="${user.id}">Edit</button>
+                                <button class="btn btn-sm btn-danger" data-action="delete-user" data-user-id="${user.id}">Delete</button>
                             </td>
                         </tr>
                     `).join('');
+
+                    tbody.querySelectorAll('button[data-action="edit-user"]').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const id = btn.getAttribute('data-user-id');
+                            alert(`Edit user ${id} is not implemented yet.`);
+                        });
+                    });
+
+                    tbody.querySelectorAll('button[data-action="delete-user"]').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const id = btn.getAttribute('data-user-id');
+                            alert(`Delete user ${id} is not implemented yet.`);
+                        });
+                    });
                 }
             }
         } catch (error) {
@@ -291,10 +337,17 @@ class AdminDashboard {
                             <td>${tool.last_used || 'Never'}</td>
                             <td><span class="status-badge status-${tool.status || 'active'}">${tool.status || 'active'}</span></td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="configureTool('${tool.name}')">Configure</button>
+                                <button class="btn btn-sm btn-primary" data-action="configure-tool" data-tool-name="${tool.name}">Configure</button>
                             </td>
                         </tr>
                     `).join('');
+
+                    tbody.querySelectorAll('button[data-action="configure-tool"]').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const toolName = btn.getAttribute('data-tool-name');
+                            alert(`Configure ${toolName} is not implemented yet.`);
+                        });
+                    });
                 }
             }
         } catch (error) {
@@ -334,15 +387,19 @@ class AdminDashboard {
 
     async loadSettingsData() {
         try {
-            const response = await this.apiCall('/api/admin/settings');
+            const response = await this.apiCall('/api/admin/settings', { method: 'GET' });
             const data = await response.json();
 
             if (response.ok && data.settings) {
-                // Load settings into form
                 Object.keys(data.settings).forEach(key => {
                     const element = document.getElementById(key);
-                    if (element) {
-                        element.value = data.settings[key];
+                    if (!element) return;
+
+                    const value = data.settings[key];
+                    if (element.type === 'checkbox') {
+                        element.checked = Boolean(value);
+                    } else {
+                        element.value = value;
                     }
                 });
             }
@@ -350,6 +407,33 @@ class AdminDashboard {
             console.error('Failed to load settings:', error);
             // Fallback to default settings
             this.loadDefaultSettings();
+        }
+    }
+
+    async saveSettings() {
+        try {
+            const payload = {
+                siteName: document.getElementById('siteName')?.value || 'TRAUMA Suite',
+                adminEmail: document.getElementById('adminEmail')?.value || 'admin@trauma-suite.com',
+                enableRegistration: Boolean(document.getElementById('enableRegistration')?.checked),
+                maintenanceMode: Boolean(document.getElementById('maintenanceMode')?.checked)
+            };
+
+            const response = await this.apiCall('/api/admin/settings', {
+                method: 'PUT',
+                body: { settings: payload }
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || 'Failed to save settings');
+                return;
+            }
+
+            alert('Settings saved');
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+            alert('Failed to save settings');
         }
     }
 
@@ -369,17 +453,22 @@ class AdminDashboard {
         });
     }
 
-    async apiCall(endpoint) {
+    async apiCall(endpoint, options = {}) {
         const currentPort = window.location.port || '10000';
         const apiUrl = `http://localhost:${currentPort}${endpoint}`;
-        
-        const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-            }
-        });
+
+        const method = options.method || 'GET';
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+        };
+
+        const fetchOptions = { method, headers };
+        if (options.body) {
+            fetchOptions.body = JSON.stringify(options.body);
+        }
+
+        const response = await fetch(apiUrl, fetchOptions);
 
         return response;
     }

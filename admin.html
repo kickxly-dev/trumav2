@@ -404,7 +404,7 @@
 <body>
     <div class="admin-container">
         <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
+        <button class="mobile-menu-toggle" type="button">Menu</button>
 
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="sidebar">
@@ -414,27 +414,27 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#dashboard" class="nav-item active" onclick="showSection('dashboard')">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
                     <span class="nav-icon">📊</span>
                     Dashboard
                 </a>
-                <a href="#users" class="nav-item" onclick="showSection('users')">
+                <a href="#users" class="nav-item" data-section="users">
                     <span class="nav-icon">👥</span>
                     Users
                 </a>
-                <a href="#analytics" class="nav-item" onclick="showSection('analytics')">
+                <a href="#analytics" class="nav-item" data-section="analytics">
                     <span class="nav-icon">📈</span>
                     Analytics
                 </a>
-                <a href="#tools" class="nav-item" onclick="showSection('tools')">
+                <a href="#tools" class="nav-item" data-section="tools">
                     <span class="nav-icon">🔧</span>
                     Tool Usage
                 </a>
-                <a href="#system" class="nav-item" onclick="showSection('system')">
+                <a href="#system" class="nav-item" data-section="system">
                     <span class="nav-icon">⚙️</span>
                     System
                 </a>
-                <a href="#settings" class="nav-item" onclick="showSection('settings')">
+                <a href="#settings" class="nav-item" data-section="settings">
                     <span class="nav-icon">🔐</span>
                     Settings
                 </a>
@@ -448,7 +448,7 @@
                         <div class="user-role">Administrator</div>
                     </div>
                 </div>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+                <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
             </div>
         </aside>
 
@@ -543,62 +543,78 @@
             </section>
 
             <!-- Users Section -->
-            <section id="usersSection" class="content-section">
-                <div class="section-header">
-                    <h2>User Management</h2>
-                    <p>Manage system users and permissions</p>
-                </div>
-                
-                <div class="section-card">
+            <section id="users" class="admin-content">
+                <div class="data-table">
                     <div class="table-header">
-                        <h3>Registered Users</h3>
-                        <button class="btn btn-primary">Add New User</button>
+                        <h3 class="table-title">User Management</h3>
+                        <div class="table-actions">
+                            <button class="table-btn" type="button">Add User</button>
+                        </div>
                     </div>
-                    
-                    <table id="usersTable" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 2rem;">Loading user data...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-content">
+                        <table id="usersTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" style="text-align:center;padding:2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <!-- Analytics Section -->
-            <section id="analyticsSection" class="content-section">
-                <div class="section-header">
-                    <h2>Analytics</h2>
-                    <p>Tool usage statistics and performance metrics</p>
+            <section id="analytics" class="admin-content">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Tool Usage</h3>
+                        <p class="chart-subtitle">Summary</p>
+                    </div>
+                    <div class="chart-placeholder">Analytics view pending</div>
                 </div>
-                
-                <div class="analytics-grid">
-                    <div class="chart-card">
-                        <h3>Tool Usage</h3>
-                        <div class="chart-placeholder">
-                            <p>Usage analytics will appear here</p>
-                        </div>
+            </section>
+
+            <!-- Tools Section -->
+            <section id="tools" class="admin-content">
+                <div class="data-table">
+                    <div class="table-header">
+                        <h3 class="table-title">Tool Usage</h3>
                     </div>
-                    
-                    <div class="chart-card">
-                        <h3>User Activity</h3>
-                        <div class="chart-placeholder">
-                            <p>Activity trends will appear here</p>
-                        </div>
-                        <div class="stat-label">Total API Calls</div>
+                    <div class="table-content">
+                        <table id="toolsTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tool</th>
+                                    <th>Uses</th>
+                                    <th>Last Used</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- System Section -->
+            <section id="system" class="admin-content">
+                <div class="data-table">
+                    <div class="table-header">
+                        <h3 class="table-title">System</h3>
                     </div>
+                    <div style="padding:1.5rem;color:var(--text-secondary);">System metrics are shown on the dashboard.</div>
                 </div>
             </section>
 
@@ -606,43 +622,32 @@
             <section id="settings" class="admin-content">
                 <div class="data-table">
                     <div class="table-header">
-                        <h3 class="table-title">System Configuration</h3>
+                        <h3 class="table-title">Settings</h3>
                         <div class="table-actions">
-                            <button class="table-btn">Save Changes</button>
+                            <button class="table-btn" id="saveSettingsBtn" type="button">Save</button>
                         </div>
                     </div>
-                    <div style="padding: 2rem;">
-                        <div style="margin-bottom: 2rem;">
-                            <h4 style="color: var(--text-primary); margin-bottom: 1rem;">API Settings</h4>
-                            <div style="display: grid; gap: 1rem;">
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Rate Limit (requests/minute)</label>
-                                    <input type="number" value="100" style="width: 100%; padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
-                                </div>
-                                <div>
-                                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Session Timeout (minutes)</label>
-                                    <input type="number" value="30" style="width: 100%; padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
-                                </div>
-                            </div>
+
+                    <div style="padding: 1.5rem; display: grid; gap: 1.25rem;">
+                        <div>
+                            <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Site Name</label>
+                            <input id="siteName" type="text" style="width:100%; padding:0.75rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); font-family:'JetBrains Mono', monospace;" />
                         </div>
-                        
-                        <div style="margin-bottom: 2rem;">
-                            <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Security Settings</h4>
-                            <div style="display: grid; gap: 1rem;">
-                                <label style="display: flex; align-items: center; color: var(--text-secondary);">
-                                    <input type="checkbox" checked style="margin-right: 0.5rem;">
-                                    Enable two-factor authentication
-                                </label>
-                                <label style="display: flex; align-items: center; color: var(--text-secondary);">
-                                    <input type="checkbox" checked style="margin-right: 0.5rem;">
-                                    Log all API requests
-                                </label>
-                                <label style="display: flex; align-items: center; color: var(--text-secondary);">
-                                    <input type="checkbox" checked style="margin-right: 0.5rem;">
-                                    Enable IP whitelisting
-                                </label>
-                            </div>
+
+                        <div>
+                            <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Admin Email</label>
+                            <input id="adminEmail" type="email" style="width:100%; padding:0.75rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); font-family:'JetBrains Mono', monospace;" />
                         </div>
+
+                        <label style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
+                            <input id="enableRegistration" type="checkbox" />
+                            Enable user registration
+                        </label>
+
+                        <label style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
+                            <input id="maintenanceMode" type="checkbox" />
+                            Maintenance mode
+                        </label>
                     </div>
                 </div>
             </section>

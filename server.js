@@ -1,13 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const dns = require('dns').promises;
-const fetch = require('node-fetch');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const crypto = require('crypto');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const ping = require('ping');
+const whois = require('whois');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 require('dotenv').config();
@@ -16,6 +17,13 @@ const execAsync = promisify(exec);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const fetchFn = (...args) => {
+  if (typeof fetch !== 'undefined') {
+    return fetch(...args);
+  }
+  return import('node-fetch').then(({ default: f }) => f(...args));
+};
 
 // Middleware
 app.use(helmet());
@@ -36,6 +44,15 @@ app.use('/api/', limiter);
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+function isWindows() {
+  return process.platform === 'win32';
+}
+
+async function execSafe(command) {
+  const { stdout, stderr } = await execAsync(command, { windowsHide: true, maxBuffer: 1024 * 1024 });
+  return { stdout, stderr };
+}
+
 // Database connection (PostgreSQL on Render)
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -55,7 +72,16 @@ async function initDatabase() {
         password_hash VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'user',
         status VARCHAR(50) DEFAULT 'active',
+        last_login TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value JSONB NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -108,6 +134,18 @@ async function initDatabase() {
       );
       console.log('Default admin user created: admin@trauma-suite.com / admin123');
     }
+
+    // Default settings
+    await pool.query(
+      `INSERT INTO settings (key, value)
+       VALUES
+        ('siteName', to_jsonb($1::text)),
+        ('adminEmail', to_jsonb($2::text)),
+        ('enableRegistration', to_jsonb($3::boolean)),
+        ('maintenanceMode', to_jsonb($4::boolean))
+       ON CONFLICT (key) DO NOTHING;`,
+      ['TRAUMA Suite', 'admin@trauma-suite.com', false, false]
+    );
 
     console.log('Database tables initialized successfully');
   } catch (error) {
@@ -188,6 +226,161 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
+app.post('/api/auth/code-login', async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Access code is required' });
+    }
+
+    if (String(code) !== '4567') {
+      return res.status(401).json({ error: 'Invalid access code' });
+    }
+
+    const result = await pool.query(
+      "SELECT id, name, email, role, status FROM users WHERE email = $1",
+      ['admin@trauma-suite.com']
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(500).json({ error: 'Admin account is missing' });
+    }
+
+    const user = result.rows[0];
+
+    if (user.status !== 'active') {
+      return res.status(401).json({ error: 'Account is inactive' });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Code login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Active connections (best-effort; output depends on platform)
+app.get('/api/connections', async (req, res) => {
+  try {
+    await logToolUsage('connections', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const cmd = isWindows() ? 'netstat -ano' : 'netstat -tunlp || ss -tulpn';
+    const { stdout } = await execSafe(cmd);
+    res.json({ rawOutput: stdout, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Connections error:', error);
+    res.status(500).json({ error: 'Failed to fetch connections' });
+  }
+});
+
+// Firewall status (best-effort)
+app.get('/api/firewall', async (req, res) => {
+  try {
+    await logToolUsage('firewall', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const cmd = isWindows()
+      ? 'netsh advfirewall show allprofiles'
+      : 'ufw status || iptables -L -n';
+    const { stdout } = await execSafe(cmd);
+    res.json({ rawOutput: stdout, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Firewall error:', error);
+    res.status(500).json({ error: 'Failed to fetch firewall status' });
+  }
+});
+
+// Process monitor (best-effort)
+app.get('/api/processes', async (req, res) => {
+  try {
+    await logToolUsage('process-monitor', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const cmd = isWindows()
+      ? 'tasklist'
+      : 'ps aux --sort=-%mem | head -n 25';
+    const { stdout } = await execSafe(cmd);
+    res.json({ rawOutput: stdout, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Processes error:', error);
+    res.status(500).json({ error: 'Failed to fetch processes' });
+  }
+});
+
+// Port scanner (limited; TCP connect scan)
+app.post('/api/port-scan', async (req, res) => {
+  try {
+    const { host = '127.0.0.1', ports = [] } = req.body || {};
+    if (!Array.isArray(ports) || ports.length === 0) {
+      return res.status(400).json({ error: 'Ports array is required' });
+    }
+
+    await logToolUsage('port-scanner', { host, portsCount: ports.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const net = require('net');
+    const results = await Promise.all(ports.slice(0, 100).map((port) => new Promise((resolve) => {
+      const socket = new net.Socket();
+      const timeoutMs = 800;
+      let status = 'closed';
+
+      socket.setTimeout(timeoutMs);
+      socket.once('connect', () => {
+        status = 'open';
+        socket.destroy();
+      });
+      socket.once('timeout', () => {
+        status = 'filtered';
+        socket.destroy();
+      });
+      socket.once('error', () => {
+        socket.destroy();
+      });
+      socket.once('close', () => resolve({ port, status }));
+
+      socket.connect(Number(port), host);
+    })));
+
+    res.json({ host, results, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Port scan error:', error);
+    res.status(500).json({ error: 'Port scan failed' });
+  }
+});
+
+// Local network scan (best-effort)
+app.get('/api/network-scan', async (req, res) => {
+  try {
+    await logToolUsage('network-scanner', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const cmd = isWindows() ? 'arp -a' : 'ip neigh || arp -a';
+    const { stdout } = await execSafe(cmd);
+    res.json({ rawOutput: stdout, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('Network scan error:', error);
+    res.status(500).json({ error: 'Network scan failed' });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -228,6 +421,8 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
     res.json({
       message: 'Login successful',
       token,
@@ -251,12 +446,14 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
     const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
     const todayUsage = await pool.query('SELECT COUNT(*) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
     const activeTools = await pool.query('SELECT COUNT(DISTINCT tool_name) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
+    const activeUsers = await pool.query("SELECT COUNT(*) as count FROM users WHERE status = 'active'");
 
     res.json({
       totalUsers: totalUsers.rows[0].count,
-      todayUsage: todayUsage.rows[0].count,
-      activeTools: activeTools.rows[0].count,
-      systemHealth: '98%'
+      activeUsers: activeUsers.rows[0].count,
+      totalTools: activeTools.rows[0].count,
+      systemUptime: '99.9%',
+      todayUsage: todayUsage.rows[0].count
     });
 
   } catch (error) {
@@ -267,7 +464,7 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
 
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC');
+    const result = await pool.query('SELECT id, name, email, role, status, created_at, last_login FROM users ORDER BY created_at DESC');
     
     const users = result.rows.map(user => ({
       id: user.id,
@@ -275,10 +472,11 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
       email: user.email,
       role: user.role,
       status: user.status,
-      joined: user.created_at
+      joined: user.created_at,
+      last_login: user.last_login
     }));
 
-    res.json(users);
+    res.json({ users });
 
   } catch (error) {
     console.error('Users error:', error);
@@ -298,12 +496,12 @@ app.get('/api/admin/recent-activity', authenticateToken, requireAdmin, async (re
 
     const activities = result.rows.map(activity => ({
       user: activity.user_name || 'Anonymous',
-      tool: activity.tool_name,
-      timestamp: activity.timestamp,
+      action: `Used ${activity.tool_name}`,
+      time: new Date(activity.timestamp).toLocaleString(),
       status: activity.status
     }));
 
-    res.json(activities);
+    res.json({ activities });
 
   } catch (error) {
     console.error('Recent activity error:', error);
@@ -322,13 +520,12 @@ app.get('/api/admin/tool-usage', authenticateToken, requireAdmin, async (req, re
 
     const tools = result.rows.map(tool => ({
       name: tool.tool_name,
-      usage: tool.usage,
-      lastUsed: tool.last_used,
-      status: 'active',
-      performance: Math.floor(Math.random() * 500) + 'ms' // Mock performance data
+      uses: Number(tool.usage),
+      last_used: tool.last_used,
+      status: 'active'
     }));
 
-    res.json(tools);
+    res.json({ tools });
 
   } catch (error) {
     console.error('Tool usage error:', error);
@@ -343,10 +540,11 @@ app.get('/api/admin/system-health', authenticateToken, requireAdmin, async (req,
     const diskUsage = 45; // Mock disk usage
 
     res.json({
-      cpu: Math.floor(cpuUsage),
-      memory: (memUsage.heapUsed / 1024 / 1024).toFixed(1),
-      disk: diskUsage,
-      uptime: '99.9'
+      cpu: `${Math.floor(cpuUsage)}%`,
+      memory: `${(memUsage.heapUsed / 1024 / 1024).toFixed(1)}MB`,
+      disk: `${diskUsage}%`,
+      status: 'healthy',
+      uptime: '99.9%'
     });
 
   } catch (error) {
@@ -354,14 +552,50 @@ app.get('/api/admin/system-health', authenticateToken, requireAdmin, async (req,
     res.status(500).json({ error: 'Failed to fetch system health' });
   }
 });
-async function logToolUsage(toolName, parameters = {}) {
+
+app.get('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT key, value FROM settings');
+    const settings = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+    res.json({ settings });
+  } catch (error) {
+    console.error('Settings error:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.put('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const settings = req.body && req.body.settings ? req.body.settings : {};
+    const entries = Object.entries(settings);
+
+    for (const [key, value] of entries) {
+      await pool.query(
+        `INSERT INTO settings (key, value, updated_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
+        [key, JSON.stringify(value)]
+      );
+    }
+
+    res.json({ message: 'Settings updated' });
+  } catch (error) {
+    console.error('Settings update error:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+async function logToolUsage(toolName, parameters = {}, reqUser = null) {
   try {
     const clientIp = parameters.ip || 'unknown';
     const userAgent = parameters.userAgent || 'unknown';
     
     await pool.query(
-      'INSERT INTO tool_usage (tool_name, ip_address, user_agent, parameters) VALUES ($1, $2, $3, $4)',
-      [toolName, clientIp, userAgent, JSON.stringify(parameters)]
+      'INSERT INTO tool_usage (tool_name, user_id, ip_address, user_agent, parameters) VALUES ($1, $2, $3, $4, $5)',
+      [toolName, reqUser && reqUser.id ? reqUser.id : null, clientIp, userAgent, JSON.stringify(parameters)]
     );
   } catch (error) {
     console.error('Error logging tool usage:', error);
@@ -379,10 +613,10 @@ app.post('/api/ip-lookup', async (req, res) => {
       return res.status(400).json({ error: 'Target IP or domain is required' });
     }
 
-    await logToolUsage('ip-lookup', { target, ip: req.ip });
+    await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     // Use a free IP geolocation API
-    const response = await fetch(`http://ip-api.com/json/${target}`);
+    const response = await fetchFn(`http://ip-api.com/json/${target}`);
     const data = await response.json();
 
     if (data.status === 'fail') {
@@ -423,52 +657,31 @@ app.post('/api/ping', async (req, res) => {
       return res.status(400).json({ error: 'Target host is required' });
     }
 
-    await logToolUsage('ping', { target, ip: req.ip });
+    await logToolUsage('ping', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
-    // Use Node.js ping library or system ping command
-    try {
-      const { stdout } = await execAsync(`ping -c 4 ${target}`);
-      
-      // Parse ping output
-      const lines = stdout.split('\n');
-      const statsLine = lines.find(line => line.includes('packet loss'));
-      const rttLine = lines.find(line => line.includes('min/avg/max'));
-      
-      let packetLoss = 0;
-      let minLatency = 0, maxLatency = 0, avgLatency = 0;
+    const pingResult = await ping.promise.probe(target, {
+      timeout: 5,
+      extra: []
+    });
 
-      if (statsLine) {
-        const lossMatch = statsLine.match(/(\d+)% packet loss/);
-        if (lossMatch) packetLoss = parseInt(lossMatch[1]);
-      }
+    const packetLoss = pingResult.packetLoss !== undefined ? Number(pingResult.packetLoss) : null;
+    const avgLatency = pingResult.avg !== undefined ? Number(pingResult.avg) : null;
+    const minLatency = pingResult.min !== undefined ? Number(pingResult.min) : null;
+    const maxLatency = pingResult.max !== undefined ? Number(pingResult.max) : null;
 
-      if (rttLine) {
-        const rttMatch = rttLine.match(/= (\d+\.?\d*)\/(\d+\.?\d*)\/(\d+\.?\d*)/);
-        if (rttMatch) {
-          minLatency = parseFloat(rttMatch[1]);
-          avgLatency = parseFloat(rttMatch[2]);
-          maxLatency = parseFloat(rttMatch[3]);
-        }
-      }
+    await pool.query(
+      'INSERT INTO ping_results (target_host, packet_loss, min_latency, max_latency, avg_latency) VALUES ($1, $2, $3, $4, $5)',
+      [target, packetLoss, minLatency, maxLatency, avgLatency]
+    );
 
-      // Store results in database
-      await pool.query(
-        'INSERT INTO ping_results (target_host, packet_loss, min_latency, max_latency, avg_latency) VALUES ($1, $2, $3, $4, $5)',
-        [target, packetLoss, minLatency, maxLatency, avgLatency]
-      );
-
-      res.json({
-        target,
-        packetLoss,
-        minLatency,
-        maxLatency,
-        avgLatency,
-        rawOutput: stdout
-      });
-
-    } catch (pingError) {
-      res.status(500).json({ error: 'Ping command failed', details: pingError.message });
-    }
+    res.json({
+      target,
+      packetLoss,
+      minLatency,
+      maxLatency,
+      avgLatency,
+      rawOutput: pingResult.output
+    });
 
   } catch (error) {
     console.error('Ping error:', error);
@@ -485,7 +698,7 @@ app.post('/api/dns-lookup', async (req, res) => {
       return res.status(400).json({ error: 'Domain is required' });
     }
 
-    await logToolUsage('dns-lookup', { domain, recordType, ip: req.ip });
+    await logToolUsage('dns-lookup', { domain, recordType, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     let records = [];
     
@@ -531,28 +744,18 @@ app.post('/api/whois', async (req, res) => {
       return res.status(400).json({ error: 'Domain is required' });
     }
 
-    await logToolUsage('whois', { domain, ip: req.ip });
+    await logToolUsage('whois', { domain, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
-    const { stdout } = await execAsync(`whois ${domain}`);
-    
-    // Parse WHOIS output
-    const lines = stdout.split('\n');
-    const parsed = {};
-    
-    lines.forEach(line => {
-      if (line.includes(':')) {
-        const [key, ...valueParts] = line.split(':');
-        const value = valueParts.join(':').trim();
-        if (key && value) {
-          parsed[key.trim()] = value;
-        }
-      }
+    const rawOutput = await new Promise((resolve, reject) => {
+      whois.lookup(domain, { follow: 3, timeout: 10000 }, (err, data) => {
+        if (err) return reject(err);
+        resolve(data);
+      });
     });
 
     res.json({
       domain,
-      rawOutput: stdout,
-      parsed,
+      rawOutput,
       timestamp: new Date().toISOString()
     });
 
@@ -571,7 +774,7 @@ app.post('/api/hash', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    await logToolUsage('hash', { algorithm, textLength: text.length, ip: req.ip });
+    await logToolUsage('hash', { algorithm, textLength: text.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     const hash = crypto.createHash(algorithm).update(text).digest('hex');
     
@@ -597,7 +800,7 @@ app.post('/api/base64', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    await logToolUsage('base64', { action, textLength: text.length, ip: req.ip });
+    await logToolUsage('base64', { action, textLength: text.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     let result;
     if (action === 'encode') {
@@ -628,7 +831,7 @@ app.post('/api/json-format', async (req, res) => {
       return res.status(400).json({ error: 'JSON is required' });
     }
 
-    await logToolUsage('json-format', { action, jsonLength: json.length, ip: req.ip });
+    await logToolUsage('json-format', { action, jsonLength: json.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     let result;
     try {
@@ -668,7 +871,7 @@ app.post('/api/password-check', async (req, res) => {
       return res.status(400).json({ error: 'Password is required' });
     }
 
-    await logToolUsage('password-check', { passwordLength: password.length, ip: req.ip });
+    await logToolUsage('password-check', { passwordLength: password.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     // Password strength analysis
     let score = 0;
@@ -732,7 +935,7 @@ app.post('/api/password-check', async (req, res) => {
 // System Info (basic)
 app.get('/api/system-info', async (req, res) => {
   try {
-    await logToolUsage('system-info', { ip: req.ip });
+    await logToolUsage('system-info', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     const systemInfo = {
       platform: process.platform,

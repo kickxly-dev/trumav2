@@ -155,29 +155,36 @@ async function handleLogin(event) {
     hideAllMessages();
     setLoading('login', true);
     
-    // Check admin code
-    if (adminCode !== '4567') {
+    try {
+        const currentPort = window.location.port || '10000';
+        const apiUrl = `http://localhost:${currentPort}/api/auth/code-login`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: adminCode })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            setLoading('login', false);
+            showMessage('login', 'error', data.error || 'Login failed');
+            return;
+        }
+
+        localStorage.setItem('trauma_token', data.token);
+        localStorage.setItem('trauma_user', JSON.stringify(data.user));
+
         setLoading('login', false);
-        showMessage('login', 'error', 'Invalid admin access code');
-        return;
+        showMessage('login', 'success', 'Access granted. Redirecting...');
+        setTimeout(() => {
+            window.location.href = 'admin.html';
+        }, 800);
+    } catch (err) {
+        setLoading('login', false);
+        showMessage('login', 'error', 'Cannot connect to server');
     }
-    
-    // Create mock token for admin access
-    const mockToken = 'admin_token_' + Date.now();
-    const mockUser = {
-        id: 1,
-        name: 'Admin User',
-        email: 'admin@trauma-suite.com',
-        role: 'admin'
-    };
-    
-    localStorage.setItem('trauma_token', mockToken);
-    localStorage.setItem('trauma_user', JSON.stringify(mockUser));
-    
-    showMessage('login', 'success', 'Access granted! Redirecting...');
-    setTimeout(() => {
-        window.location.href = 'admin.html';
-    }, 1500);
 }
 
 async function handleSignup(event) {

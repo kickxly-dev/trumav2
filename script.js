@@ -389,7 +389,7 @@ class ToolLauncher {
                         font-family: 'JetBrains Mono', monospace;
                     ">
                 </div>
-                <button onclick="lookupIP()" style="
+                <button type="button" id="ip-lookup-btn" style="
                     background: var(--crimson-primary);
                     color: white;
                     border: none;
@@ -424,7 +424,7 @@ class ToolLauncher {
                         font-family: 'JetBrains Mono', monospace;
                     ">
                 </div>
-                <button onclick="startPing()" style="
+                <button type="button" id="ping-btn" style="
                     background: var(--crimson-primary);
                     color: white;
                     border: none;
@@ -444,6 +444,131 @@ class ToolLauncher {
                     min-height: 100px;
                 "></div>
             `,
+            'dns-lookup': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">DNS Lookup</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Resolve common DNS record types.</p>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Domain</label>
+                    <input type="text" id="dns-domain" placeholder="example.com" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Record Type</label>
+                    <select id="dns-type" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                        <option value="A">A</option>
+                        <option value="AAAA">AAAA</option>
+                        <option value="MX">MX</option>
+                        <option value="TXT">TXT</option>
+                        <option value="NS">NS</option>
+                    </select>
+                </div>
+                <button type="button" id="dns-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Lookup</button>
+                <div id="dns-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.9rem;min-height:100px;"></div>
+            `,
+            'whois-lookup': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">WHOIS Lookup</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Retrieve registration information for a domain.</p>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Domain</label>
+                    <input type="text" id="whois-domain" placeholder="example.com" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                </div>
+                <button type="button" id="whois-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Lookup</button>
+                <pre id="whois-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.8rem;min-height:160px;white-space:pre-wrap;"></pre>
+            `,
+            'base64': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Base64 Encoder/Decoder</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Action</label>
+                    <select id="b64-action" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                        <option value="encode">Encode</option>
+                        <option value="decode">Decode</option>
+                    </select>
+                </div>
+                <textarea id="b64-input" placeholder="Input" style="width:100%;min-height:120px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;"></textarea>
+                <button type="button" id="b64-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Run</button>
+                <textarea id="b64-output" readonly style="width:100%;min-height:120px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;"></textarea>
+            `,
+            'hash-generator': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Hash Generator</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Algorithm</label>
+                    <select id="hash-algo" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                        <option value="sha256">SHA-256</option>
+                        <option value="sha1">SHA-1</option>
+                        <option value="md5">MD5</option>
+                    </select>
+                </div>
+                <textarea id="hash-input" placeholder="Text" style="width:100%;min-height:120px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;"></textarea>
+                <button type="button" id="hash-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Generate</button>
+                <input id="hash-output" readonly style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;" />
+            `,
+            'json-formatter': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">JSON Formatter</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Action</label>
+                    <select id="json-action" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                        <option value="format">Format</option>
+                        <option value="minify">Minify</option>
+                    </select>
+                </div>
+                <textarea id="json-input" placeholder="JSON" style="width:100%;min-height:160px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;"></textarea>
+                <button type="button" id="json-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Run</button>
+                <textarea id="json-output" readonly style="width:100%;min-height:160px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;"></textarea>
+            `,
+            'password-checker': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Password Strength Checker</h2>
+                <input type="password" id="pw-input" placeholder="Password" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;" />
+                <button type="button" id="pw-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Check</button>
+                <div id="pw-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.9rem;min-height:100px;"></div>
+            `,
+
+            'network-scanner': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Local Network Scanner</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Lists discovered neighbors from the local ARP/neighbor table.</p>
+                <button type="button" id="net-scan-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Scan</button>
+                <pre id="net-scan-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.8rem;min-height:180px;white-space:pre-wrap;"></pre>
+            `,
+
+            'port-scanner': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Port Scanner</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">TCP connect scan (limited). Example ports: 22,80,443</p>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Host</label>
+                    <input type="text" id="ps-host" value="127.0.0.1" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Ports (comma-separated)</label>
+                    <input type="text" id="ps-ports" value="22,80,443" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                </div>
+                <button type="button" id="ps-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Scan</button>
+                <pre id="ps-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.8rem;min-height:180px;white-space:pre-wrap;"></pre>
+            `,
+
+            'connections': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Active Connections</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">Shows active connections (netstat/ss output).</p>
+                <button type="button" id="conn-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Refresh</button>
+                <pre id="conn-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.75rem;min-height:220px;white-space:pre-wrap;"></pre>
+            `,
+
+            'firewall': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Firewall Status</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">Shows firewall configuration (platform dependent).</p>
+                <button type="button" id="fw-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Refresh</button>
+                <pre id="fw-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.75rem;min-height:220px;white-space:pre-wrap;"></pre>
+            `,
+
+            'system-info': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">System Information</h2>
+                <button type="button" id="sys-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Refresh</button>
+                <pre id="sys-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.8rem;min-height:180px;white-space:pre-wrap;"></pre>
+            `,
+
+            'process-monitor': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Process Monitor</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">Shows running processes (platform dependent).</p>
+                <button type="button" id="proc-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.25rem;">Refresh</button>
+                <pre id="proc-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.75rem;min-height:220px;white-space:pre-wrap;"></pre>
+            `,
             'default': `
                 <div style="
                     background: var(--bg-secondary);
@@ -462,8 +587,184 @@ class ToolLauncher {
     }
 
     initializeTool(toolName) {
-        // Tool-specific initialization can be added here
-        console.log(`Initializing tool: ${toolName}`);
+        if (toolName === 'ip-lookup') {
+            const btn = document.getElementById('ip-lookup-btn');
+            if (btn) btn.addEventListener('click', lookupIP);
+        }
+
+        if (toolName === 'ping-tester') {
+            const btn = document.getElementById('ping-btn');
+            if (btn) btn.addEventListener('click', startPing);
+        }
+
+        if (toolName === 'dns-lookup') {
+            const btn = document.getElementById('dns-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const domain = document.getElementById('dns-domain').value;
+                const recordType = document.getElementById('dns-type').value;
+                const out = document.getElementById('dns-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/dns-lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain, recordType })
+                });
+                const data = await res.json();
+                out.textContent = res.ok ? JSON.stringify(data.records, null, 2) : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'whois-lookup') {
+            const btn = document.getElementById('whois-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const domain = document.getElementById('whois-domain').value;
+                const out = document.getElementById('whois-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/whois', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+                const data = await res.json();
+                out.textContent = res.ok ? data.rawOutput : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'base64') {
+            const btn = document.getElementById('b64-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const action = document.getElementById('b64-action').value;
+                const text = document.getElementById('b64-input').value;
+                const out = document.getElementById('b64-output');
+                const res = await fetch('/api/base64', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, text })
+                });
+                const data = await res.json();
+                out.value = res.ok ? data.output : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'hash-generator') {
+            const btn = document.getElementById('hash-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const algorithm = document.getElementById('hash-algo').value;
+                const text = document.getElementById('hash-input').value;
+                const out = document.getElementById('hash-output');
+                const res = await fetch('/api/hash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algorithm, text })
+                });
+                const data = await res.json();
+                out.value = res.ok ? data.hash : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'json-formatter') {
+            const btn = document.getElementById('json-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const action = document.getElementById('json-action').value;
+                const json = document.getElementById('json-input').value;
+                const out = document.getElementById('json-output');
+                const res = await fetch('/api/json-format', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, json })
+                });
+                const data = await res.json();
+                out.value = res.ok ? data.output : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'password-checker') {
+            const btn = document.getElementById('pw-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const password = document.getElementById('pw-input').value;
+                const out = document.getElementById('pw-result');
+                const res = await fetch('/api/password-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                out.textContent = res.ok ? `${data.strength} (${data.score}/${data.maxScore})\n${(data.feedback || []).join('\n')}` : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'network-scanner') {
+            const btn = document.getElementById('net-scan-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const out = document.getElementById('net-scan-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/network-scan');
+                const data = await res.json();
+                out.textContent = res.ok ? data.rawOutput : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'port-scanner') {
+            const btn = document.getElementById('ps-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const host = document.getElementById('ps-host').value || '127.0.0.1';
+                const portsRaw = document.getElementById('ps-ports').value || '';
+                const ports = portsRaw.split(',').map(p => p.trim()).filter(Boolean).map(p => Number(p)).filter(n => Number.isFinite(n));
+                const out = document.getElementById('ps-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/port-scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host, ports })
+                });
+                const data = await res.json();
+                out.textContent = res.ok ? JSON.stringify(data.results, null, 2) : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'connections') {
+            const btn = document.getElementById('conn-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const out = document.getElementById('conn-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/connections');
+                const data = await res.json();
+                out.textContent = res.ok ? data.rawOutput : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'firewall') {
+            const btn = document.getElementById('fw-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const out = document.getElementById('fw-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/firewall');
+                const data = await res.json();
+                out.textContent = res.ok ? data.rawOutput : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'system-info') {
+            const btn = document.getElementById('sys-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const out = document.getElementById('sys-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/system-info');
+                const data = await res.json();
+                out.textContent = res.ok ? JSON.stringify(data, null, 2) : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'process-monitor') {
+            const btn = document.getElementById('proc-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const out = document.getElementById('proc-result');
+                out.textContent = 'Working...';
+                const res = await fetch('/api/processes');
+                const data = await res.json();
+                out.textContent = res.ok ? data.rawOutput : (data.error || 'Request failed');
+            });
+        }
     }
 }
 
