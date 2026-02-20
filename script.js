@@ -1055,3 +1055,44 @@ class HeroTypingEffect {
 document.addEventListener('DOMContentLoaded', () => {
     new HeroTypingEffect();
 });
+
+// Dark Mode Toggle
+class DarkModeToggle {
+    constructor() {
+        this.toggleBtn = document.getElementById('theme-toggle');
+        this.currentTheme = localStorage.getItem('theme') || 'dark';
+        this.init();
+    }
+
+    init() {
+        // Apply saved theme
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        this.updateIcon();
+
+        // Add click listener
+        if (this.toggleBtn) {
+            this.toggleBtn.addEventListener('click', () => this.toggleTheme());
+        }
+    }
+
+    toggleTheme() {
+        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.currentTheme = newTheme;
+        this.updateIcon();
+    }
+
+    updateIcon() {
+        if (this.toggleBtn) {
+            this.toggleBtn.textContent = this.currentTheme === 'dark' ? '🌙' : '☀️';
+            this.toggleBtn.setAttribute('aria-label', 
+                this.currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+    }
+}
+
+// Initialize dark mode toggle
+document.addEventListener('DOMContentLoaded', () => {
+    new DarkModeToggle();
+});
