@@ -282,10 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginTab').addEventListener('click', () => switchTab('login'));
     document.getElementById('signupTab').addEventListener('click', () => switchTab('signup'));
     
-    // Check if user is already logged in
+    // Check if user is already logged in AND is an admin
     const auth = new AuthSystem();
-    if (auth.token && auth.user) {
+    if (auth.token && auth.user && auth.user.role === 'admin') {
         auth.redirectToAdmin();
+    } else if (auth.token && auth.user && auth.user.role !== 'admin') {
+        // Non-admin user trying to access admin - clear their session
+        auth.logout();
+        showMessage('login', 'error', 'Admin access required. Please login with admin code.');
     }
     
     // Add enter key support for switching fields
