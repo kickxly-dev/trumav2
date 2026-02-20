@@ -229,6 +229,7 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/code-login', async (req, res) => {
   try {
     const { code } = req.body;
+    console.log('Code login attempt, code provided:', !!code);
 
     if (!code) {
       return res.status(400).json({ error: 'Access code is required' });
@@ -240,20 +241,36 @@ app.post('/api/auth/code-login', async (req, res) => {
 
     let result;
     try {
+      console.log('Querying for admin user...');
       result = await pool.query(
         "SELECT id, name, email, role, status FROM users WHERE email = $1",
         ['admin@trauma-suite.com']
       );
+      console.log('Admin query result:', result.rows.length, 'rows found');
     } catch (dbErr) {
       console.error('Code login DB error:', dbErr);
-      return res.status(500).json({ error: 'Database connection failed' });
+      return res.status(500).json({ error: 'Database connection failed', details: dbErr.message });
     }
 
     if (result.rows.length === 0) {
-      return res.status(500).json({ error: 'Admin account is missing' });
+      console.log('Admin user not found, creating...');
+      // Try to create admin user
+      try {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const insertResult = await pool.query(
+          'INSERT INTO users (name, email, password_hash, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, status',
+          ['Admin User', 'admin@trauma-suite.com', hashedPassword, 'admin', 'active']
+        );
+        result = insertResult;
+        console.log('Admin user created successfully');
+      } catch (createErr) {
+        console.error('Failed to create admin:', createErr);
+        return res.status(500).json({ error: 'Admin account is missing and could not be created', details: createErr.message });
+      }
     }
 
     const user = result.rows[0];
+    console.log('Admin user found:', user.email, 'Role:', user.role, 'Status:', user.status);
 
     if (user.status !== 'active') {
       return res.status(401).json({ error: 'Account is inactive' });
@@ -269,8 +286,14 @@ app.post('/api/auth/code-login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+    try {
+      await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+    } catch (updateErr) {
+      console.error('Failed to update last_login:', updateErr);
+      // Continue anyway, don't fail login
+    }
 
+    console.log('Login successful for admin');
     res.json({
       message: 'Login successful',
       token,
@@ -283,7 +306,7 @@ app.post('/api/auth/code-login', async (req, res) => {
     });
   } catch (error) {
     console.error('Code login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
