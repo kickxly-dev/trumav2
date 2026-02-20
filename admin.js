@@ -1,28 +1,14 @@
 // Admin Dashboard System
 class AdminDashboard {
     constructor() {
-        this.token = localStorage.getItem('trauma_token');
-        this.user = JSON.parse(localStorage.getItem('trauma_user') || 'null');
         this.currentSection = 'dashboard';
         this.init();
     }
 
     init() {
-        // Check authentication
-        if (!this.isAuthenticated()) {
-            window.location.href = 'auth.html';
-            return;
-        }
-
-        // Initialize dashboard
         this.setupEventListeners();
         this.loadUserData();
         this.loadDashboardData();
-        this.startRealTimeUpdates();
-    }
-
-    isAuthenticated() {
-        return !!this.token && !!this.user;
     }
 
     setupEventListeners() {
@@ -33,20 +19,24 @@ class AdminDashboard {
         };
 
         // Section navigation
-        window.showSection = (section) => {
-            this.showSection(section);
-        };
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.getAttribute('data-section');
+                this.showSection(section);
+            });
+        });
 
         // Logout
-        window.logout = () => {
+        document.getElementById('logoutBtn').addEventListener('click', () => {
             this.logout();
-        };
+        });
     }
 
     showSection(section) {
         // Hide all sections
-        document.querySelectorAll('.admin-content').forEach(content => {
-            content.classList.remove('active');
+        document.querySelectorAll('.content-section').forEach(sec => {
+            sec.classList.remove('active');
         });
 
         // Remove active class from all nav items
@@ -55,14 +45,10 @@ class AdminDashboard {
         });
 
         // Show selected section
-        document.getElementById(section).classList.add('active');
-        
-        // Add active class to clicked nav item
-        event.target.closest('.nav-item').classList.add('active');
+        document.getElementById(`${section}Section`).classList.add('active');
+        document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
         this.currentSection = section;
-
-        // Load section-specific data
         this.loadSectionData(section);
 
         // Close mobile sidebar
@@ -72,235 +58,161 @@ class AdminDashboard {
     }
 
     loadUserData() {
-        if (this.user) {
-            document.getElementById('userName').textContent = this.user.name || 'Admin User';
-            
-            // Set avatar initials
-            const initials = this.user.name
-                ? this.user.name.split(' ').map(n => n[0]).join('').toUpperCase()
-                : 'A';
-            document.getElementById('userAvatar').textContent = initials;
-        }
+        // Set default admin user data
+        document.getElementById('userName').textContent = 'Admin User';
+        document.getElementById('userAvatar').textContent = 'A';
     }
 
     async loadDashboardData() {
         try {
-            // Load statistics
-            await this.loadStatistics();
+            // Load mock statistics
+            this.loadMockStatistics();
             
-            // Load recent activity
-            await this.loadRecentActivity();
+            // Load mock recent activity
+            this.loadMockRecentActivity();
             
-            // Load system health
-            await this.loadSystemHealth();
+            // Load mock system health
+            this.loadMockSystemHealth();
         } catch (error) {
-            console.error('Failed to load dashboard data:', error);
+            console.error('Error loading dashboard data:', error);
         }
     }
 
-    async loadStatistics() {
-        try {
-            const response = await this.apiCall('/api/admin/stats');
-            const data = await response.json();
-
-            if (response.ok) {
-                document.getElementById('totalUsers').textContent = data.totalUsers || 0;
-                document.getElementById('todayUsage').textContent = data.todayUsage || 0;
-                document.getElementById('activeTools').textContent = data.activeTools || 0;
-                document.getElementById('systemHealth').textContent = data.systemHealth || '98%';
-            }
-        } catch (error) {
-            // Fallback data
-            document.getElementById('totalUsers').textContent = '127';
-            document.getElementById('todayUsage').textContent = '1,842';
-            document.getElementById('activeTools').textContent = '12';
-            document.getElementById('systemHealth').textContent = '98%';
-        }
+    loadMockStatistics() {
+        const stats = {
+            totalUsers: 1,
+            activeUsers: 1,
+            totalTools: 8,
+            systemUptime: '99.9%'
+        };
+        
+        document.getElementById('totalUsers').textContent = stats.totalUsers;
+        document.getElementById('activeUsers').textContent = stats.activeUsers;
+        document.getElementById('totalTools').textContent = stats.totalTools;
+        document.getElementById('systemUptime').textContent = stats.systemUptime;
     }
 
-    async loadRecentActivity() {
-        try {
-            const response = await this.apiCall('/api/admin/recent-activity');
-            const activities = await response.json();
-
-            if (response.ok) {
-                this.renderRecentActivity(activities);
-            } else {
-                this.renderRecentActivity(this.getMockActivity());
-            }
-        } catch (error) {
-            this.renderRecentActivity(this.getMockActivity());
-        }
-    }
-
-    renderRecentActivity(activities) {
-        const tbody = document.getElementById('recentActivity');
-        tbody.innerHTML = '';
-
-        activities.forEach(activity => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${activity.user}</td>
-                <td>${activity.tool}</td>
-                <td>${new Date(activity.timestamp).toLocaleString()}</td>
-                <td><span class="status-badge status-${activity.status}">${activity.status}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    getMockActivity() {
-        return [
-            { user: 'John Doe', tool: 'IP Lookup', timestamp: new Date().toISOString(), status: 'active' },
-            { user: 'Jane Smith', tool: 'Ping Test', timestamp: new Date(Date.now() - 300000).toISOString(), status: 'active' },
-            { user: 'Bob Johnson', tool: 'DNS Lookup', timestamp: new Date(Date.now() - 600000).toISOString(), status: 'active' },
-            { user: 'Alice Brown', tool: 'WHOIS', timestamp: new Date(Date.now() - 900000).toISOString(), status: 'pending' },
-            { user: 'Charlie Wilson', tool: 'Hash Generator', timestamp: new Date(Date.now() - 1200000).toISOString(), status: 'active' }
+    loadMockRecentActivity() {
+        const activities = [
+            { user: 'Admin', action: 'Logged in', time: '2 minutes ago', status: 'success' },
+            { user: 'Admin', action: 'Viewed dashboard', time: '5 minutes ago', status: 'info' },
+            { user: 'Admin', action: 'Updated settings', time: '1 hour ago', status: 'warning' }
         ];
-    }
-
-    async loadSystemHealth() {
-        try {
-            const response = await this.apiCall('/api/admin/system-health');
-            const data = await response.json();
-
-            if (response.ok) {
-                document.getElementById('cpuUsage').textContent = data.cpu + '%';
-                document.getElementById('memoryUsage').textContent = data.memory + 'GB';
-                document.getElementById('diskUsage').textContent = data.disk + '%';
-                document.getElementById('uptime').textContent = data.uptime + '%';
-            }
-        } catch (error) {
-            // Fallback data
-            document.getElementById('cpuUsage').textContent = '15%';
-            document.getElementById('memoryUsage').textContent = '2.1GB';
-            document.getElementById('diskUsage').textContent = '45%';
-            document.getElementById('uptime').textContent = '99.9%';
+        
+        const tbody = document.querySelector('#recentActivityTable tbody');
+        if (tbody) {
+            tbody.innerHTML = activities.map(activity => `
+                <tr>
+                    <td>${activity.user}</td>
+                    <td>${activity.action}</td>
+                    <td>${activity.time}</td>
+                    <td><span class="status-badge status-${activity.status}">${activity.status}</span></td>
+                </tr>
+            `).join('');
         }
     }
 
-    async loadSectionData(section) {
-        switch (section) {
+    loadMockSystemHealth() {
+        const health = {
+            cpu: '45%',
+            memory: '62%',
+            disk: '38%',
+            status: 'healthy'
+        };
+        
+        const cpuEl = document.getElementById('cpuUsage');
+        const memoryEl = document.getElementById('memoryUsage');
+        const diskEl = document.getElementById('diskUsage');
+        const statusEl = document.getElementById('systemStatus');
+        
+        if (cpuEl) cpuEl.textContent = health.cpu;
+        if (memoryEl) memoryEl.textContent = health.memory;
+        if (diskEl) diskEl.textContent = health.disk;
+        if (statusEl) statusEl.textContent = health.status;
+    }
+
+    loadSectionData(section) {
+        // Load section-specific data
+        switch(section) {
             case 'users':
-                await this.loadUsers();
+                this.loadUsersData();
                 break;
             case 'analytics':
-                await this.loadAnalytics();
+                this.loadAnalyticsData();
                 break;
             case 'tools':
-                await this.loadToolUsage();
+                this.loadToolsData();
                 break;
             case 'system':
-                await this.loadSystemHealth();
+                this.loadSystemData();
+                break;
+            case 'settings':
+                this.loadSettingsData();
                 break;
         }
     }
 
-    async loadUsers() {
-        try {
-            const response = await this.apiCall('/api/admin/users');
-            const users = await response.json();
-
-            if (response.ok) {
-                this.renderUsers(users);
-            } else {
-                this.renderUsers(this.getMockUsers());
-            }
-        } catch (error) {
-            this.renderUsers(this.getMockUsers());
+    loadUsersData() {
+        // Mock users data
+        const users = [
+            { id: 1, name: 'Admin User', email: 'admin@trauma-suite.com', role: 'admin', status: 'active', lastLogin: '2 minutes ago' }
+        ];
+        
+        const tbody = document.querySelector('#usersTable tbody');
+        if (tbody) {
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+                    <td>${user.lastLogin}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary">Edit</button>
+                        <button class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
         }
     }
 
-    renderUsers(users) {
-        const tbody = document.getElementById('usersTable');
-        tbody.innerHTML = '';
-
-        users.forEach(user => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.name}</td>
-                <td>${user.email}</td>
-                <td>${user.role}</td>
-                <td><span class="status-badge status-${user.status}">${user.status}</span></td>
-                <td>${new Date(user.joined).toLocaleDateString()}</td>
-                <td>
-                    <button class="table-btn" onclick="editUser(${user.id})">Edit</button>
-                    <button class="table-btn" onclick="deleteUser(${user.id})">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    getMockUsers() {
-        return [
-            { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'active', joined: '2024-01-15' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User', status: 'active', joined: '2024-01-20' },
-            { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'User', status: 'inactive', joined: '2024-02-01' },
-            { id: 4, name: 'Alice Brown', email: 'alice@example.com', role: 'User', status: 'active', joined: '2024-02-10' }
-        ];
-    }
-
-    async loadAnalytics() {
-        // Analytics data loading would go here
+    loadAnalyticsData() {
+        // Mock analytics data
         console.log('Loading analytics data...');
     }
 
-    async loadToolUsage() {
-        try {
-            const response = await this.apiCall('/api/admin/tool-usage');
-            const tools = await response.json();
-
-            if (response.ok) {
-                this.renderToolUsage(tools);
-            } else {
-                this.renderToolUsage(this.getMockToolUsage());
-            }
-        } catch (error) {
-            this.renderToolUsage(this.getMockToolUsage());
+    loadToolsData() {
+        // Mock tools data
+        const tools = [
+            { name: 'IP Lookup', uses: 245, lastUsed: '5 minutes ago', status: 'active' },
+            { name: 'Ping Tool', uses: 189, lastUsed: '12 minutes ago', status: 'active' },
+            { name: 'DNS Lookup', uses: 156, lastUsed: '1 hour ago', status: 'active' }
+        ];
+        
+        const tbody = document.querySelector('#toolsTable tbody');
+        if (tbody) {
+            tbody.innerHTML = tools.map(tool => `
+                <tr>
+                    <td>${tool.name}</td>
+                    <td>${tool.uses}</td>
+                    <td>${tool.lastUsed}</td>
+                    <td><span class="status-badge status-${tool.status}">${tool.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary">Configure</button>
+                    </td>
+                </tr>
+            `).join('');
         }
     }
 
-    renderToolUsage(tools) {
-        const tbody = document.getElementById('toolsTable');
-        tbody.innerHTML = '';
-
-        tools.forEach(tool => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${tool.name}</td>
-                <td>${tool.usage}</td>
-                <td>${new Date(tool.lastUsed).toLocaleString()}</td>
-                <td><span class="status-badge status-${tool.status}">${tool.status}</span></td>
-                <td>${tool.performance}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+    loadSystemData() {
+        // System data already loaded in loadMockSystemHealth()
+        console.log('System data loaded');
     }
 
-    getMockToolUsage() {
-        return [
-            { name: 'IP Lookup', usage: '1,234', lastUsed: new Date().toISOString(), status: 'active', performance: '142ms' },
-            { name: 'Ping Test', usage: '987', lastUsed: new Date(Date.now() - 300000).toISOString(), status: 'active', performance: '89ms' },
-            { name: 'DNS Lookup', usage: '756', lastUsed: new Date(Date.now() - 600000).toISOString(), status: 'active', performance: '234ms' },
-            { name: 'WHOIS', usage: '432', lastUsed: new Date(Date.now() - 900000).toISOString(), status: 'active', performance: '567ms' },
-            { name: 'Hash Generator', usage: '321', lastUsed: new Date(Date.now() - 1200000).toISOString(), status: 'active', performance: '12ms' }
-        ];
-    }
-
-    async apiCall(endpoint, options = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${endpoint}`;
-        
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-            }
-        };
-
-        const response = await fetch(url, { ...defaultOptions, ...options });
-        return response;
+    loadSettingsData() {
+        // Mock settings data
+        console.log('Loading settings data...');
     }
 
     logout() {
@@ -308,45 +220,9 @@ class AdminDashboard {
         localStorage.removeItem('trauma_user');
         window.location.href = 'auth.html';
     }
-
-    startRealTimeUpdates() {
-        // Update dashboard data every 30 seconds
-        setInterval(() => {
-            if (this.currentSection === 'dashboard') {
-                this.loadDashboardData();
-            }
-        }, 30000);
-
-        // Update system health every 10 seconds
-        setInterval(() => {
-            if (this.currentSection === 'system') {
-                this.loadSystemHealth();
-            }
-        }, 10000);
-    }
 }
 
-// User management functions
-window.editUser = (userId) => {
-    console.log('Edit user:', userId);
-    // Implement user editing modal
-};
-
-window.deleteUser = (userId) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-        console.log('Delete user:', userId);
-        // Implement user deletion
-    }
-};
-
-// Initialize dashboard when DOM is loaded
+// Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
     new AdminDashboard();
-});
-
-// Handle window resize
-window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-        document.getElementById('sidebar').classList.remove('open');
-    }
 });
