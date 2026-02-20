@@ -238,10 +238,16 @@ app.post('/api/auth/code-login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid access code' });
     }
 
-    const result = await pool.query(
-      "SELECT id, name, email, role, status FROM users WHERE email = $1",
-      ['admin@trauma-suite.com']
-    );
+    let result;
+    try {
+      result = await pool.query(
+        "SELECT id, name, email, role, status FROM users WHERE email = $1",
+        ['admin@trauma-suite.com']
+      );
+    } catch (dbErr) {
+      console.error('Code login DB error:', dbErr);
+      return res.status(500).json({ error: 'Database connection failed' });
+    }
 
     if (result.rows.length === 0) {
       return res.status(500).json({ error: 'Admin account is missing' });
@@ -616,7 +622,7 @@ app.post('/api/ip-lookup', async (req, res) => {
     await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     // Use a free IP geolocation API
-    const response = await fetchFn(`http://ip-api.com/json/${target}`);
+    const response = await fetchFn(`https://ip-api.com/json/${target}`);
     const data = await response.json();
 
     if (data.status === 'fail') {
@@ -954,11 +960,29 @@ app.get('/api/system-info', async (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'unknown';
+  let dbError = null;
+
+  if (!process.env.DATABASE_URL) {
+    dbStatus = 'missing_env';
+    dbError = 'DATABASE_URL is not set';
+  } else {
+    try {
+      await pool.query('SELECT 1');
+      dbStatus = 'ok';
+    } catch (e) {
+      dbStatus = 'error';
+      dbError = e && e.message ? e.message : 'db_error';
+    }
+  }
+
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    dbStatus,
+    dbError
   });
 });
 
