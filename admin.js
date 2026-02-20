@@ -246,6 +246,9 @@ class AdminDashboard {
             case 'settings':
                 this.loadSettingsData();
                 break;
+            case 'security':
+                this.setupSecuritySection();
+                break;
         }
     }
 
@@ -434,6 +437,87 @@ class AdminDashboard {
         } catch (error) {
             console.error('Failed to save settings:', error);
             alert('Failed to save settings');
+        }
+    }
+
+    setupSecuritySection() {
+        const viewLogsBtn = document.getElementById('viewLogsBtn');
+        const showThreatsOnlyBtn = document.getElementById('showThreatsOnlyBtn');
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+
+        if (viewLogsBtn) {
+            viewLogsBtn.addEventListener('click', () => this.loadSecurityLogs(false));
+        }
+        if (showThreatsOnlyBtn) {
+            showThreatsOnlyBtn.addEventListener('click', () => this.loadSecurityLogs(true));
+        }
+        if (refreshLogsBtn) {
+            refreshLogsBtn.addEventListener('click', () => this.loadSecurityLogs(false));
+        }
+
+        // Load security stats
+        this.loadSecurityStats();
+    }
+
+    async loadSecurityStats() {
+        const code = document.getElementById('securityCode')?.value || 'TRUMA-SEC-2025';
+        try {
+            const response = await fetch('/api/admin/security-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.stats) {
+                document.getElementById('totalVisitors').textContent = data.stats.totalVisitors || 0;
+                document.getElementById('totalThreats').textContent = data.stats.totalThreats || 0;
+                document.getElementById('uniqueIPs').textContent = data.stats.uniqueIPs || 0;
+                document.getElementById('todayVisitorsSec').textContent = data.stats.todayVisitors || 0;
+            }
+        } catch (error) {
+            console.error('Failed to load security stats:', error);
+        }
+    }
+
+    async loadSecurityLogs(showThreatsOnly = false) {
+        const code = document.getElementById('securityCode')?.value;
+        if (!code) {
+            alert('Please enter the security access code');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/visitor-logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, limit: 100, showThreatsOnly })
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.logs) {
+                const tbody = document.getElementById('visitorLogsBody');
+                const table = document.getElementById('visitorLogsTable');
+                
+                if (tbody && table) {
+                    table.style.display = 'block';
+                    tbody.innerHTML = data.logs.map(log => `
+                        <tr>
+                            <td>${log.ip_address}</td>
+                            <td>${log.country || 'Unknown'}${log.city ? `, ${log.city}` : ''}</td>
+                            <td>${log.path}</td>
+                            <td>${log.method}</td>
+                            <td>${new Date(log.timestamp).toLocaleString()}</td>
+                            <td>${log.is_threat ? `<span class="status-badge" style="background:rgba(255,68,68,0.2);color:#ff4444;">${log.threat_type || 'THREAT'}</span>` : '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } else {
+                alert(data.error || 'Failed to load logs');
+            }
+        } catch (error) {
+            console.error('Failed to load visitor logs:', error);
+            alert('Failed to load visitor logs');
         }
     }
 

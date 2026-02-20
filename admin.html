@@ -435,8 +435,12 @@
                     System
                 </a>
                 <a href="#settings" class="nav-item" data-section="settings">
-                    <span class="nav-icon">🔐</span>
+                    <span class="nav-icon">⚙️</span>
                     Settings
+                </a>
+                <a href="#security" class="nav-item" data-section="security">
+                    <span class="nav-icon">🛡️</span>
+                    Security (Truma Net)
                 </a>
             </nav>
 
@@ -648,6 +652,71 @@
                             <input id="maintenanceMode" type="checkbox" />
                             Maintenance mode
                         </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Section (Truma Net V1) -->
+            <section id="security" class="admin-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVisitors">0</div>
+                        <div class="stat-label">Total Visitors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalThreats">0</div>
+                        <div class="stat-label">Threats Blocked</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uniqueIPs">0</div>
+                        <div class="stat-label">Unique IPs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayVisitorsSec">0</div>
+                        <div class="stat-label">Today's Visitors</div>
+                    </div>
+                </div>
+
+                <div class="data-table">
+                    <div class="table-header">
+                        <h3 class="table-title">Truma Net V1 Security Center</h3>
+                        <div class="table-actions">
+                            <button class="table-btn" id="viewLogsBtn" type="button">View Logs</button>
+                            <button class="table-btn" id="showThreatsOnlyBtn" type="button">Show Threats Only</button>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem; display: grid; gap: 1.25rem;">
+                        <div>
+                            <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Security Access Code</label>
+                            <input id="securityCode" type="password" placeholder="Enter TRUMA-SEC-XXXX" style="width:100%; padding:0.75rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); font-family:'JetBrains Mono', monospace;" />
+                            <small style="color:var(--text-dim); display:block; margin-top:0.5rem;">Default: TRUMA-SEC-2025</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table" id="visitorLogsTable" style="display:none; margin-top:2rem;">
+                    <div class="table-header">
+                        <h3 class="table-title">Visitor Logs</h3>
+                        <div class="table-actions">
+                            <button class="table-btn" id="refreshLogsBtn" type="button">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Country</th>
+                                    <th>Path</th>
+                                    <th>Method</th>
+                                    <th>Timestamp</th>
+                                    <th>Threat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitorLogsBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
