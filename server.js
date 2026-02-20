@@ -629,11 +629,15 @@ app.post('/api/ip-lookup', async (req, res) => {
       return res.status(404).json({ error: 'IP or domain not found' });
     }
 
-    // Cache result in database
-    await pool.query(
-      'INSERT INTO ip_lookups (ip_address, country, city, isp, asn, organization) VALUES ($1, $2, $3, $4, $5, $6)',
-      [data.query, data.country, data.city, data.isp, data.as, data.org]
-    );
+    // Cache result in database (best-effort)
+    try {
+      await pool.query(
+        'INSERT INTO ip_lookups (ip_address, country, city, isp, asn, organization) VALUES ($1, $2, $3, $4, $5, $6)',
+        [data.query, data.country, data.city, data.isp, data.as, data.org]
+      );
+    } catch (dbErr) {
+      console.error('IP lookup cache DB error:', dbErr);
+    }
 
     res.json({
       ip: data.query,
@@ -675,10 +679,15 @@ app.post('/api/ping', async (req, res) => {
     const minLatency = pingResult.min !== undefined ? Number(pingResult.min) : null;
     const maxLatency = pingResult.max !== undefined ? Number(pingResult.max) : null;
 
-    await pool.query(
-      'INSERT INTO ping_results (target_host, packet_loss, min_latency, max_latency, avg_latency) VALUES ($1, $2, $3, $4, $5)',
-      [target, packetLoss, minLatency, maxLatency, avgLatency]
-    );
+    // Persist ping result (best-effort)
+    try {
+      await pool.query(
+        'INSERT INTO ping_results (target_host, packet_loss, min_latency, max_latency, avg_latency) VALUES ($1, $2, $3, $4, $5)',
+        [target, packetLoss, minLatency, maxLatency, avgLatency]
+      );
+    } catch (dbErr) {
+      console.error('Ping result DB error:', dbErr);
+    }
 
     res.json({
       target,
