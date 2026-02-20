@@ -1553,6 +1553,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Protected admin panel route - requires authentication
+app.get('/admin.html', authenticateToken, requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 // Initialize database and start server
 initDatabase().then(() => {
   app.listen(PORT, () => {
