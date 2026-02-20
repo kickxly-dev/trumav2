@@ -226,6 +226,49 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
+app.get('/api/ip-lookup', async (req, res) => {
+  try {
+    const target = req.query && req.query.target ? String(req.query.target) : '';
+    if (!target) {
+      return res.status(400).json({ error: 'Target IP or domain is required' });
+    }
+
+    await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const response = await fetchFn(`https://ip-api.com/json/${target}`);
+    const data = await response.json();
+
+    if (data.status === 'fail') {
+      return res.status(404).json({ error: 'IP or domain not found' });
+    }
+
+    try {
+      await pool.query(
+        'INSERT INTO ip_lookups (ip_address, country, city, isp, asn, organization) VALUES ($1, $2, $3, $4, $5, $6)',
+        [data.query, data.country, data.city, data.isp, data.as, data.org]
+      );
+    } catch (dbErr) {
+      console.error('IP lookup cache DB error:', dbErr);
+    }
+
+    res.json({
+      ip: data.query,
+      country: data.country,
+      region: data.regionName,
+      city: data.city,
+      isp: data.isp,
+      org: data.org,
+      as: data.as,
+      timezone: data.timezone,
+      latitude: data.lat,
+      longitude: data.lon
+    });
+  } catch (error) {
+    console.error('IP lookup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/auth/code-login', async (req, res) => {
   try {
     const { code } = req.body;
@@ -803,6 +846,66 @@ app.post('/api/hash', async (req, res) => {
   } catch (error) {
     console.error('Hash generation error:', error);
     res.status(500).json({ error: 'Hash generation failed' });
+  }
+});
+
+app.get('/api/hash', async (req, res) => {
+  try {
+    const text = req.query && req.query.text ? String(req.query.text) : '';
+    const algorithm = req.query && req.query.algorithm ? String(req.query.algorithm) : 'sha256';
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    await logToolUsage('hash', { algorithm, textLength: text.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const hash = crypto.createHash(algorithm).update(text).digest('hex');
+    res.json({
+      originalText: text,
+      algorithm,
+      hash,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Hash error:', error);
+    res.status(500).json({ error: 'Hash generation failed' });
+  }
+});
+
+// DB check endpoint (diagnostics)
+app.get('/api/debug/db-check', async (req, res) => {
+  try {
+    const result = {
+      databaseUrlSet: Boolean(process.env.DATABASE_URL),
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      await pool.query('SELECT 1');
+      result.select1 = 'ok';
+    } catch (e) {
+      result.select1 = 'error';
+      result.select1Error = e && e.message ? e.message : String(e);
+      return res.status(500).json(result);
+    }
+
+    try {
+      await pool.query(
+        'INSERT INTO tool_usage (tool_name, user_id, ip_address, user_agent, parameters) VALUES ($1, $2, $3, $4, $5)',
+        ['db-check', null, req.ip || null, req.get('user-agent') || null, JSON.stringify({})]
+      );
+      result.insertToolUsage = 'ok';
+    } catch (e) {
+      result.insertToolUsage = 'error';
+      result.insertToolUsageError = e && e.message ? e.message : String(e);
+      return res.status(500).json(result);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('DB check error:', error);
+    res.status(500).json({ error: 'DB check failed' });
   }
 });
 
