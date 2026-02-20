@@ -226,49 +226,6 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-app.get('/api/ip-lookup', async (req, res) => {
-  try {
-    const target = req.query && req.query.target ? String(req.query.target) : '';
-    if (!target) {
-      return res.status(400).json({ error: 'Target IP or domain is required' });
-    }
-
-    await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
-
-    const response = await fetchFn(`https://ip-api.com/json/${target}`);
-    const data = await response.json();
-
-    if (data.status === 'fail') {
-      return res.status(404).json({ error: 'IP or domain not found' });
-    }
-
-    try {
-      await pool.query(
-        'INSERT INTO ip_lookups (ip_address, country, city, isp, asn, organization) VALUES ($1, $2, $3, $4, $5, $6)',
-        [data.query, data.country, data.city, data.isp, data.as, data.org]
-      );
-    } catch (dbErr) {
-      console.error('IP lookup cache DB error:', dbErr);
-    }
-
-    res.json({
-      ip: data.query,
-      country: data.country,
-      region: data.regionName,
-      city: data.city,
-      isp: data.isp,
-      org: data.org,
-      as: data.as,
-      timezone: data.timezone,
-      latitude: data.lat,
-      longitude: data.lon
-    });
-  } catch (error) {
-    console.error('IP lookup error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 app.post('/api/auth/code-login', async (req, res) => {
   try {
     const { code } = req.body;
