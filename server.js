@@ -768,11 +768,23 @@ app.post('/api/ip-lookup', async (req, res) => {
 
     const resolved = await resolveIpLookup(target);
     if (!resolved.ok) {
-      return res.status(502).json({
-        error: 'IP lookup failed',
-        details: resolved.error,
-        provider: resolved.provider,
-        meta: resolved.meta || null
+      return res.json({
+        ip: target,
+        country: null,
+        region: null,
+        city: null,
+        isp: null,
+        org: null,
+        as: null,
+        timezone: null,
+        latitude: null,
+        longitude: null,
+        note: 'Lookup unavailable (upstream provider blocked or rate-limited)',
+        providerError: {
+          provider: resolved.provider,
+          details: resolved.error,
+          meta: resolved.meta || null
+        }
       });
     }
 
@@ -808,11 +820,23 @@ app.get('/api/ip-lookup', async (req, res) => {
 
     const resolved = await resolveIpLookup(target);
     if (!resolved.ok) {
-      return res.status(502).json({
-        error: 'IP lookup failed',
-        details: resolved.error,
-        provider: resolved.provider,
-        meta: resolved.meta || null
+      return res.json({
+        ip: target,
+        country: null,
+        region: null,
+        city: null,
+        isp: null,
+        org: null,
+        as: null,
+        timezone: null,
+        latitude: null,
+        longitude: null,
+        note: 'Lookup unavailable (upstream provider blocked or rate-limited)',
+        providerError: {
+          provider: resolved.provider,
+          details: resolved.error,
+          meta: resolved.meta || null
+        }
       });
     }
 
