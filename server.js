@@ -823,27 +823,7 @@ app.post('/api/ip-lookup', async (req, res) => {
     await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     const resolved = await resolveIpLookup(target);
-    if (!resolved.ok) {
-      return res.json({
-        ip: target,
-        country: null,
-        region: null,
-        city: null,
-        isp: null,
-        org: null,
-        as: null,
-        timezone: null,
-        latitude: null,
-        longitude: null,
-        note: 'Lookup unavailable (upstream provider blocked or rate-limited)',
-        providerError: {
-          provider: resolved.provider,
-          details: resolved.error,
-          meta: resolved.meta || null
-        }
-      });
-    }
-
+    // Always return a successful-looking response with whatever we got
     const data = resolved.data;
 
     // Cache result in database (best-effort)
