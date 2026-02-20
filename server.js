@@ -651,6 +651,108 @@ async function logToolUsage(toolName, parameters = {}, reqUser = null) {
   }
 }
 
+async function resolveIpLookup(target) {
+  let ipApiFail = null;
+  try {
+    let data;
+    try {
+      const response = await fetchFn(`https://ip-api.com/json/${encodeURIComponent(target)}`);
+      data = await response.json();
+    } catch (e) {
+      const response = await fetchFn(`http://ip-api.com/json/${encodeURIComponent(target)}`);
+      data = await response.json();
+    }
+
+    if (data && data.status === 'success') {
+      return {
+        ok: true,
+        provider: 'ip-api',
+        data: {
+          ip: data.query,
+          country: data.country,
+          region: data.regionName,
+          city: data.city,
+          isp: data.isp,
+          org: data.org,
+          as: data.as,
+          timezone: data.timezone,
+          latitude: data.lat,
+          longitude: data.lon
+        }
+      };
+    }
+
+    if (data && data.status === 'fail') {
+      const message = String(data.message || '').toLowerCase();
+      if (message.includes('private range') || message.includes('reserved range')) {
+        return {
+          ok: true,
+          provider: 'ip-api',
+          data: {
+            ip: target,
+            country: null,
+            region: null,
+            city: null,
+            isp: null,
+            org: null,
+            as: null,
+            timezone: null,
+            latitude: null,
+            longitude: null,
+            note: 'Private or reserved IP range'
+          }
+        };
+      }
+
+      ipApiFail = data.message || 'lookup_failed';
+    } else {
+      ipApiFail = 'invalid_response';
+    }
+  } catch (e) {
+    ipApiFail = e && e.message ? e.message : String(e);
+  }
+
+  try {
+    const response = await fetchFn(`https://ipwho.is/${encodeURIComponent(target)}`);
+    const data = await response.json();
+
+    if (data && data.success === true) {
+      const conn = data.connection || {};
+      return {
+        ok: true,
+        provider: 'ipwho.is',
+        data: {
+          ip: data.ip || target,
+          country: data.country || null,
+          region: data.region || null,
+          city: data.city || null,
+          isp: conn.isp || null,
+          org: conn.org || null,
+          as: data.asn || null,
+          timezone: (data.timezone && data.timezone.id) ? data.timezone.id : null,
+          latitude: data.latitude !== undefined ? data.latitude : null,
+          longitude: data.longitude !== undefined ? data.longitude : null
+        }
+      };
+    }
+
+    const msg = data && (data.message || data.reason) ? String(data.message || data.reason) : 'lookup_failed';
+    return {
+      ok: false,
+      provider: 'ipwho.is',
+      error: msg,
+      meta: { ipApiFail }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      provider: 'ipwho.is',
+      error: e && e.message ? e.message : String(e),
+      meta: { ipApiFail }
+    };
+  }
+}
+
 // API Routes
 
 // IP Information Lookup
@@ -664,61 +766,59 @@ app.post('/api/ip-lookup', async (req, res) => {
 
     await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
-    // Use a free IP geolocation API (Render sometimes fails TLS to ip-api; fallback to http)
-    let data;
-    try {
-      const response = await fetchFn(`https://ip-api.com/json/${encodeURIComponent(target)}`);
-      data = await response.json();
-    } catch (e) {
-      const response = await fetchFn(`http://ip-api.com/json/${encodeURIComponent(target)}`);
-      data = await response.json();
+    const resolved = await resolveIpLookup(target);
+    if (!resolved.ok) {
+      return res.status(502).json({
+        error: 'IP lookup failed',
+        details: resolved.error,
+        provider: resolved.provider,
+        meta: resolved.meta || null
+      });
     }
 
-    if (data.status === 'fail') {
-      const message = String(data.message || '').toLowerCase();
-      if (message.includes('private range') || message.includes('reserved range')) {
-        return res.json({
-          ip: target,
-          country: null,
-          region: null,
-          city: null,
-          isp: null,
-          org: null,
-          as: null,
-          timezone: null,
-          latitude: null,
-          longitude: null,
-          note: 'Private or reserved IP range'
-        });
-      }
-      return res.status(404).json({ error: 'IP or domain not found' });
-    }
+    const data = resolved.data;
 
     // Cache result in database (best-effort)
     try {
       await pool.query(
         'INSERT INTO ip_lookups (ip_address, country, city, isp, asn, organization) VALUES ($1, $2, $3, $4, $5, $6)',
-        [data.query, data.country, data.city, data.isp, data.as, data.org]
+        [data.ip, data.country, data.city, data.isp, data.as, data.org]
       );
     } catch (dbErr) {
       console.error('IP lookup cache DB error:', dbErr);
     }
 
-    res.json({
-      ip: data.query,
-      country: data.country,
-      region: data.regionName,
-      city: data.city,
-      isp: data.isp,
-      org: data.org,
-      as: data.as,
-      timezone: data.timezone,
-      latitude: data.lat,
-      longitude: data.lon
-    });
+    res.json(data);
 
   } catch (error) {
     console.error('IP lookup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/ip-lookup', async (req, res) => {
+  try {
+    const target = req.query && req.query.target ? String(req.query.target) : '';
+
+    if (!target) {
+      return res.status(400).json({ error: 'Target IP or domain is required' });
+    }
+
+    await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const resolved = await resolveIpLookup(target);
+    if (!resolved.ok) {
+      return res.status(502).json({
+        error: 'IP lookup failed',
+        details: resolved.error,
+        provider: resolved.provider,
+        meta: resolved.meta || null
+      });
+    }
+
+    res.json(resolved.data);
+  } catch (error) {
+    console.error('IP lookup GET error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
