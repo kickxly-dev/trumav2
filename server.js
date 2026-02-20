@@ -664,11 +664,33 @@ app.post('/api/ip-lookup', async (req, res) => {
 
     await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
-    // Use a free IP geolocation API
-    const response = await fetchFn(`https://ip-api.com/json/${target}`);
-    const data = await response.json();
+    // Use a free IP geolocation API (Render sometimes fails TLS to ip-api; fallback to http)
+    let data;
+    try {
+      const response = await fetchFn(`https://ip-api.com/json/${encodeURIComponent(target)}`);
+      data = await response.json();
+    } catch (e) {
+      const response = await fetchFn(`http://ip-api.com/json/${encodeURIComponent(target)}`);
+      data = await response.json();
+    }
 
     if (data.status === 'fail') {
+      const message = String(data.message || '').toLowerCase();
+      if (message.includes('private range') || message.includes('reserved range')) {
+        return res.json({
+          ip: target,
+          country: null,
+          region: null,
+          city: null,
+          isp: null,
+          org: null,
+          as: null,
+          timezone: null,
+          latitude: null,
+          longitude: null,
+          note: 'Private or reserved IP range'
+        });
+      }
       return res.status(404).json({ error: 'IP or domain not found' });
     }
 
