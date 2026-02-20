@@ -822,6 +822,7 @@ app.post('/api/ip-lookup', async (req, res) => {
     const resolved = await resolveIpLookup(target);
     // Always return a successful-looking response with whatever we got
     const data = resolved.data;
+    console.log('IP lookup result for', target, ':', resolved); // Debug log
 
     // Cache result in database (best-effort)
     try {
@@ -852,6 +853,7 @@ app.get('/api/ip-lookup', async (req, res) => {
     await logToolUsage('ip-lookup', { target, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     const resolved = await resolveIpLookup(target);
+    console.log('IP lookup GET result for', target, ':', resolved); // Debug log
     if (!resolved.ok) {
       return res.json({
         ip: target,
