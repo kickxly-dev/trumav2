@@ -139,6 +139,24 @@ async function initDatabase() {
     `);
     console.log('Ping results table created/verified');
 
+    // Visitor logs table for Truma Net V1 Security
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS visitor_logs (
+        id SERIAL PRIMARY KEY,
+        ip_address INET NOT NULL,
+        user_agent TEXT,
+        referer TEXT,
+        path TEXT,
+        method VARCHAR(10),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        country VARCHAR(100),
+        city VARCHAR(100),
+        is_threat BOOLEAN DEFAULT FALSE,
+        threat_type VARCHAR(50)
+      );
+    `);
+    console.log('Visitor logs table created/verified');
+
     // Create default admin user if not exists
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@trauma-suite.com']);
     if (adminExists.rows.length === 0) {
@@ -488,7 +506,128 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Admin Routes - with enhanced error handling
+// Truma Net V1 Security - Visitor Logger Middleware
+const TRUMANET_VIEW_CODE = process.env.TRUMANET_VIEW_CODE || 'TRUMA-SEC-2025';
+
+async function logVisitor(req, res, next) {
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+    const userAgent = req.get('user-agent') || 'unknown';
+    const referer = req.get('referer') || 'direct';
+    const path = req.path || req.originalUrl || '/';
+    const method = req.method || 'GET';
+    
+    // Basic threat detection
+    let isThreat = false;
+    let threatType = null;
+    
+    const suspiciousPaths = ['/admin', '/wp-admin', '/administrator', '/phpmyadmin', '/wp-login', '/xmlrpc.php', '/.env', '/config.php'];
+    const suspiciousUserAgents = ['sqlmap', 'nikto', 'nmap', 'masscan', 'zgrab', 'gobuster', 'dirb'];
+    
+    if (suspiciousPaths.some(p => path.toLowerCase().includes(p))) {
+      isThreat = true;
+      threatType = 'suspicious_path';
+    } else if (suspiciousUserAgents.some(ua => userAgent.toLowerCase().includes(ua))) {
+      isThreat = true;
+      threatType = 'suspicious_user_agent';
+    }
+    
+    // Get geo info for the IP
+    let country = null;
+    let city = null;
+    try {
+      const response = await fetchFn(`https://ipinfo.io/${ip}/json`);
+      const data = await response.json();
+      country = data.country || null;
+      city = data.city || null;
+    } catch {
+      // Geo lookup failed, continue without it
+    }
+    
+    await pool.query(
+      'INSERT INTO visitor_logs (ip_address, user_agent, referer, path, method, country, city, is_threat, threat_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+      [ip, userAgent, referer, path, method, country, city, isThreat, threatType]
+    );
+  } catch (error) {
+    console.error('Visitor logging error:', error);
+  }
+  next();
+}
+
+// Apply visitor logging to all routes
+app.use(logVisitor);
+
+// Truma Net V1 Security - View visitor logs endpoint
+app.post('/api/admin/visitor-logs', async (req, res) => {
+  try {
+    const { code, limit = 100, showThreatsOnly = false } = req.body;
+    
+    if (!code || code !== TRUMANET_VIEW_CODE) {
+      return res.status(401).json({ error: 'Invalid or missing security code' });
+    }
+    
+    let query = 'SELECT * FROM visitor_logs';
+    const params = [];
+    
+    if (showThreatsOnly) {
+      query += ' WHERE is_threat = true';
+    }
+    
+    query += ' ORDER BY timestamp DESC LIMIT $1';
+    params.push(parseInt(limit) || 100);
+    
+    const result = await pool.query(query, params);
+    
+    res.json({
+      logs: result.rows,
+      count: result.rows.length,
+      security_system: 'Truma Net V1',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Visitor logs error:', error);
+    res.status(500).json({ error: 'Failed to fetch visitor logs' });
+  }
+});
+
+// Truma Net V1 Security - Get security stats
+app.post('/api/admin/security-stats', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code || code !== TRUMANET_VIEW_CODE) {
+      return res.status(401).json({ error: 'Invalid or missing security code' });
+    }
+    
+    const totalVisitors = await pool.query('SELECT COUNT(*) as count FROM visitor_logs');
+    const totalThreats = await pool.query('SELECT COUNT(*) as count FROM visitor_logs WHERE is_threat = true');
+    const uniqueIPs = await pool.query('SELECT COUNT(DISTINCT ip_address) as count FROM visitor_logs');
+    const todayVisitors = await pool.query('SELECT COUNT(*) as count FROM visitor_logs WHERE DATE(timestamp) = CURRENT_DATE');
+    const topCountries = await pool.query(`
+      SELECT country, COUNT(*) as count 
+      FROM visitor_logs 
+      WHERE country IS NOT NULL 
+      GROUP BY country 
+      ORDER BY count DESC 
+      LIMIT 10
+    `);
+    
+    res.json({
+      security_system: 'Truma Net V1',
+      stats: {
+        totalVisitors: parseInt(totalVisitors.rows[0].count),
+        totalThreats: parseInt(totalThreats.rows[0].count),
+        uniqueIPs: parseInt(uniqueIPs.rows[0].count),
+        todayVisitors: parseInt(todayVisitors.rows[0].count),
+        topCountries: topCountries.rows
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Security stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch security stats' });
+  }
+});
 app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
   try {
     console.log('Fetching admin stats...');
