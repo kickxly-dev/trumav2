@@ -157,6 +157,32 @@ async function initDatabase() {
     `);
     console.log('Visitor logs table created/verified');
 
+    // IP Blocklist table for Automated Threat Response
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ip_blocklist (
+        id SERIAL PRIMARY KEY,
+        ip_address INET NOT NULL UNIQUE,
+        reason VARCHAR(255) NOT NULL,
+        blocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        is_active BOOLEAN DEFAULT TRUE,
+        threat_count INTEGER DEFAULT 1,
+        last_threat_type VARCHAR(50)
+      );
+    `);
+    console.log('IP blocklist table created/verified');
+
+    // Failed login attempts table for brute force detection
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS failed_logins (
+        id SERIAL PRIMARY KEY,
+        ip_address INET NOT NULL,
+        email_attempted VARCHAR(255),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('Failed logins table created/verified');
+
     // Create default admin user if not exists
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@trauma-suite.com']);
     if (adminExists.rows.length === 0) {
@@ -450,6 +476,7 @@ app.get('/api/network-scan', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -459,6 +486,15 @@ app.post('/api/auth/login', async (req, res) => {
     const result = await pool.query('SELECT id, name, email, password_hash, role, status FROM users WHERE email = $1', [email]);
     
     if (result.rows.length === 0) {
+      // Log failed login attempt
+      try {
+        await pool.query(
+          'INSERT INTO failed_logins (ip_address, email_attempted) VALUES ($1, $2)',
+          [ip, email]
+        );
+      } catch (logErr) {
+        console.error('Failed to log failed login:', logErr);
+      }
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -472,6 +508,15 @@ app.post('/api/auth/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password_hash);
     
     if (!validPassword) {
+      // Log failed login attempt
+      try {
+        await pool.query(
+          'INSERT INTO failed_logins (ip_address, email_attempted) VALUES ($1, $2)',
+          [ip, email]
+        );
+      } catch (logErr) {
+        console.error('Failed to log failed login:', logErr);
+      }
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -506,7 +551,124 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Truma Net V1 Security - Visitor Logger Middleware
+// Truma Net V1 - Automated Threat Response System
+const THREAT_RULES = {
+  // Block IPs with 5+ failed login attempts in 10 minutes
+  BRUTE_FORCE: { maxAttempts: 5, windowMinutes: 10 },
+  // Block IPs accessing 3+ suspicious paths
+  SUSPICIOUS_PATHS: { maxPaths: 3, windowMinutes: 5 },
+  // Block IPs with 20+ requests in 1 minute (rate limiting)
+  RATE_LIMIT: { maxRequests: 20, windowMinutes: 1 },
+  // Block IPs with suspicious user agents immediately
+  MALICIOUS_UA: { immediate: true }
+};
+
+// Check if IP is blocked
+async function isIPBlocked(ip) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM ip_blocklist WHERE ip_address = $1 AND is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW())',
+      [ip]
+    );
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    console.error('Error checking IP blocklist:', error);
+    return null;
+  }
+}
+
+// Block an IP address
+async function blockIP(ip, reason, threatType = null, durationMinutes = null) {
+  try {
+    const expiresAt = durationMinutes ? new Date(Date.now() + durationMinutes * 60000) : null;
+    
+    await pool.query(
+      `INSERT INTO ip_blocklist (ip_address, reason, expires_at, last_threat_type) 
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (ip_address) 
+       DO UPDATE SET 
+         is_active = TRUE, 
+         blocked_at = CURRENT_TIMESTAMP,
+         expires_at = EXCLUDED.expires_at,
+         threat_count = ip_blocklist.threat_count + 1,
+         last_threat_type = $4`,
+      [ip, reason, expiresAt, threatType]
+    );
+    
+    console.log(`🚨 IP BLOCKED: ${ip} - Reason: ${reason}`);
+    return true;
+  } catch (error) {
+    console.error('Error blocking IP:', error);
+    return false;
+  }
+}
+
+// Analyze threats and auto-block
+async function analyzeAndBlockThreats(ip) {
+  try {
+    // Check for brute force attempts
+    const failedAttempts = await pool.query(
+      'SELECT COUNT(*) as count FROM failed_logins WHERE ip_address = $1 AND timestamp > NOW() - INTERVAL \'$2 minutes\'',
+      [ip, THREAT_RULES.BRUTE_FORCE.windowMinutes]
+    );
+    
+    if (parseInt(failedAttempts.rows[0].count) >= THREAT_RULES.BRUTE_FORCE.maxAttempts) {
+      await blockIP(ip, `Brute force: ${failedAttempts.rows[0].count} failed login attempts`, 'brute_force', 60);
+      return true;
+    }
+    
+    // Check for suspicious path scanning
+    const suspiciousPaths = await pool.query(
+      `SELECT COUNT(DISTINCT path) as count 
+       FROM visitor_logs 
+       WHERE ip_address = $1 
+       AND is_threat = TRUE 
+       AND timestamp > NOW() - INTERVAL '$2 minutes'`,
+      [ip, THREAT_RULES.SUSPICIOUS_PATHS.windowMinutes]
+    );
+    
+    if (parseInt(suspiciousPaths.rows[0].count) >= THREAT_RULES.SUSPICIOUS_PATHS.maxPaths) {
+      await blockIP(ip, `Path scanning: ${suspiciousPaths.rows[0].count} suspicious paths accessed`, 'path_scanning', 30);
+      return true;
+    }
+    
+    // Check for rate limiting
+    const requestCount = await pool.query(
+      'SELECT COUNT(*) as count FROM visitor_logs WHERE ip_address = $1 AND timestamp > NOW() - INTERVAL \'$2 minutes\'',
+      [ip, THREAT_RULES.RATE_LIMIT.windowMinutes]
+    );
+    
+    if (parseInt(requestCount.rows[0].count) >= THREAT_RULES.RATE_LIMIT.maxRequests) {
+      await blockIP(ip, `Rate limit exceeded: ${requestCount.rows[0].count} requests/min`, 'rate_limit', 15);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error analyzing threats:', error);
+    return false;
+  }
+}
+
+// IP Blocker Middleware - runs before visitor logging
+async function ipBlockerMiddleware(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+  
+  // Check if IP is blocked
+  const blocked = await isIPBlocked(ip);
+  if (blocked) {
+    console.log(`🚫 BLOCKED IP ATTEMPT: ${ip} - ${blocked.reason}`);
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'Your IP address has been blocked due to suspicious activity',
+      blocked_at: blocked.blocked_at,
+      reason: blocked.reason,
+      security_system: 'Truma Net V1 - Automated Threat Response'
+    });
+  }
+  next();
+}
+
 const TRUMANET_VIEW_CODE = process.env.TRUMANET_VIEW_CODE || 'TRUMA-SEC-2025';
 
 async function logVisitor(req, res, next) {
@@ -626,6 +788,95 @@ app.post('/api/admin/security-stats', async (req, res) => {
   } catch (error) {
     console.error('Security stats error:', error);
     res.status(500).json({ error: 'Failed to fetch security stats' });
+  }
+});
+
+// Truma Net V1 - Get blocked IPs list
+app.post('/api/admin/blocked-ips', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code || code !== TRUMANET_VIEW_CODE) {
+      return res.status(401).json({ error: 'Invalid or missing security code' });
+    }
+    
+    const blockedIPs = await pool.query(`
+      SELECT * FROM ip_blocklist 
+      WHERE is_active = TRUE 
+      AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY blocked_at DESC
+    `);
+    
+    res.json({
+      blocked_ips: blockedIPs.rows,
+      count: blockedIPs.rows.length,
+      security_system: 'Truma Net V1 - Automated Threat Response',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Blocked IPs error:', error);
+    res.status(500).json({ error: 'Failed to fetch blocked IPs' });
+  }
+});
+
+// Truma Net V1 - Unblock an IP
+app.post('/api/admin/unblock-ip', async (req, res) => {
+  try {
+    const { code, ip } = req.body;
+    
+    if (!code || code !== TRUMANET_VIEW_CODE) {
+      return res.status(401).json({ error: 'Invalid or missing security code' });
+    }
+    
+    if (!ip) {
+      return res.status(400).json({ error: 'IP address is required' });
+    }
+    
+    await pool.query(
+      'UPDATE ip_blocklist SET is_active = FALSE WHERE ip_address = $1',
+      [ip]
+    );
+    
+    console.log(`🔓 IP UNBLOCKED: ${ip}`);
+    res.json({
+      message: `IP ${ip} has been unblocked`,
+      security_system: 'Truma Net V1',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Unblock IP error:', error);
+    res.status(500).json({ error: 'Failed to unblock IP' });
+  }
+});
+
+// Truma Net V1 - Manually block an IP
+app.post('/api/admin/block-ip', async (req, res) => {
+  try {
+    const { code, ip, reason, durationMinutes } = req.body;
+    
+    if (!code || code !== TRUMANET_VIEW_CODE) {
+      return res.status(401).json({ error: 'Invalid or missing security code' });
+    }
+    
+    if (!ip || !reason) {
+      return res.status(400).json({ error: 'IP address and reason are required' });
+    }
+    
+    const success = await blockIP(ip, reason, 'manual_block', durationMinutes || 60);
+    
+    if (success) {
+      res.json({
+        message: `IP ${ip} has been blocked`,
+        reason,
+        security_system: 'Truma Net V1',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to block IP' });
+    }
+  } catch (error) {
+    console.error('Block IP error:', error);
+    res.status(500).json({ error: 'Failed to block IP' });
   }
 });
 app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {

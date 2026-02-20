@@ -682,6 +682,7 @@
                         <h3 class="table-title">Truma Net V1 Security Center</h3>
                         <div class="table-actions">
                             <button class="table-btn" id="viewLogsBtn" type="button">View Logs</button>
+                            <button class="table-btn" id="viewBlockedBtn" type="button">View Blocked IPs</button>
                             <button class="table-btn" id="showThreatsOnlyBtn" type="button">Show Threats Only</button>
                         </div>
                     </div>
@@ -713,6 +714,31 @@
                                 </tr>
                             </thead>
                             <tbody id="visitorLogsBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="data-table" id="blockedIPsTable" style="display:none; margin-top:2rem;">
+                    <div class="table-header">
+                        <h3 class="table-title">Blocked IPs (Automated Threat Response)</h3>
+                        <div class="table-actions">
+                            <button class="table-btn" id="refreshBlockedBtn" type="button">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Reason</th>
+                                    <th>Blocked At</th>
+                                    <th>Expires</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blockedIPsBody">
                                 <!-- Dynamic content -->
                             </tbody>
                         </table>

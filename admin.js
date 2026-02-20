@@ -444,6 +444,7 @@ class AdminDashboard {
         const viewLogsBtn = document.getElementById('viewLogsBtn');
         const showThreatsOnlyBtn = document.getElementById('showThreatsOnlyBtn');
         const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        const viewBlockedBtn = document.getElementById('viewBlockedBtn');
 
         if (viewLogsBtn) {
             viewLogsBtn.addEventListener('click', () => this.loadSecurityLogs(false));
@@ -454,9 +455,81 @@ class AdminDashboard {
         if (refreshLogsBtn) {
             refreshLogsBtn.addEventListener('click', () => this.loadSecurityLogs(false));
         }
+        if (viewBlockedBtn) {
+            viewBlockedBtn.addEventListener('click', () => this.loadBlockedIPs());
+        }
 
         // Load security stats
         this.loadSecurityStats();
+    }
+
+    async loadBlockedIPs() {
+        const code = document.getElementById('securityCode')?.value;
+        if (!code) {
+            alert('Please enter the security access code');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/blocked-ips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.blocked_ips) {
+                const tbody = document.getElementById('blockedIPsBody');
+                const table = document.getElementById('blockedIPsTable');
+                
+                if (tbody && table) {
+                    table.style.display = 'block';
+                    tbody.innerHTML = data.blocked_ips.map(ip => `
+                        <tr>
+                            <td>${ip.ip_address}</td>
+                            <td>${ip.reason}</td>
+                            <td>${new Date(ip.blocked_at).toLocaleString()}</td>
+                            <td>${ip.expires_at ? new Date(ip.expires_at).toLocaleString() : 'Permanent'}</td>
+                            <td>
+                                <button class="table-btn" onclick="unblockIP('${ip.ip_address}')">Unblock</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } else {
+                alert(data.error || 'Failed to load blocked IPs');
+            }
+        } catch (error) {
+            console.error('Failed to load blocked IPs:', error);
+            alert('Failed to load blocked IPs');
+        }
+    }
+
+    async unblockIP(ip) {
+        const code = document.getElementById('securityCode')?.value;
+        if (!code) {
+            alert('Please enter the security access code');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/unblock-ip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, ip })
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert(data.message);
+                this.loadBlockedIPs();
+            } else {
+                alert(data.error || 'Failed to unblock IP');
+            }
+        } catch (error) {
+            console.error('Failed to unblock IP:', error);
+            alert('Failed to unblock IP');
+        }
     }
 
     async loadSecurityStats() {
