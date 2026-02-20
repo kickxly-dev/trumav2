@@ -708,85 +708,68 @@ async function resolveIpLookup(target) {
     }
 
     const msg = data && (data.message || data.reason) ? String(data.message || data.reason) : 'lookup_failed';
-    // Fallback: reverse DNS lookup if both providers fail
-    const hostname = await tryReverseDns(target);
-    if (hostname) {
+  } catch (e) {
+    // Continue to next fallback
+  }
+
+  // Try ipgeolocation.io as third provider (free tier)
+  try {
+    const response = await fetchFn(`https://api.ipgeolocation.io/ipgeo?apiKey=free&ip=${encodeURIComponent(target)}`);
+    const data = await response.json();
+    if (data && data.ip) {
       return {
         ok: true,
-        provider: 'reverse-dns',
+        provider: 'ipgeolocation.io',
         data: {
-          ip: target,
-          country: null,
-          region: null,
-          city: null,
-          isp: null,
-          org: null,
+          ip: data.ip,
+          country: data.country_name || null,
+          region: data.state_prov || null,
+          city: data.city || null,
+          isp: data.isp || null,
+          org: data.organization || null,
           as: null,
-          timezone: null,
-          latitude: null,
-          longitude: null,
-          note: `Limited info: reverse DNS: ${hostname}`,
-          providerError: {
-            provider: 'ipwho.is',
-            details: msg,
-            meta: { ipApiFail }
-          }
-        }
-      };
-    } else {
-      return {
-        ok: true,
-        provider: 'none',
-        data: {
-          ip: target,
-          country: null,
-          region: null,
-          city: null,
-          isp: null,
-          org: null,
-          as: null,
-          timezone: null,
-          latitude: null,
-          longitude: null,
-          note: 'No geo-location info available; all providers blocked',
-          providerError: {
-            provider: 'ipwho.is',
-            details: msg,
-            meta: { ipApiFail, reverseDnsError: 'No reverse DNS record' }
-          }
+          timezone: data.time_zone && data.time_zone.name ? data.time_zone.name : null,
+          latitude: data.latitude !== undefined ? data.latitude : null,
+          longitude: data.longitude !== undefined ? data.longitude : null
         }
       };
     }
   } catch (e) {
-    // Final fallback: try reverse DNS even on network error
-    const hostname = await tryReverseDns(target);
-    if (hostname) {
+    // Continue to next fallback
+  }
+
+  // Try ip-api.com via CORS proxy as fourth provider (free)
+  try {
+    const response = await fetchFn(`https://cors-anywhere.herokuapp.com/http://ip-api.com/json/${encodeURIComponent(target)}`);
+    const data = await response.json();
+    if (data && data.status === 'success') {
       return {
         ok: true,
-        provider: 'reverse-dns',
+        provider: 'ip-api-cors',
         data: {
-          ip: target,
-          country: null,
-          region: null,
-          city: null,
-          isp: null,
-          org: null,
-          as: null,
-          timezone: null,
-          latitude: null,
-          longitude: null,
-          note: `Limited info: reverse DNS: ${hostname}`,
-          providerError: {
-            provider: 'ipwho.is',
-            details: e && e.message ? e.message : String(e),
-            meta: { ipApiFail }
-          }
+          ip: data.query,
+          country: data.country,
+          region: data.regionName,
+          city: data.city,
+          isp: data.isp,
+          org: data.org,
+          as: data.as,
+          timezone: data.timezone,
+          latitude: data.lat,
+          longitude: data.lon
         }
       };
     }
+  } catch (e) {
+    // Continue to next fallback
+  }
+
+  // Final fallback: reverse DNS
+  const hostname = await tryReverseDns(target);
+  if (hostname) {
     return {
       ok: true,
-      provider: 'none',
+      provider: 'reverse-dns',
       data: {
         ip: target,
         country: null,
@@ -798,15 +781,29 @@ async function resolveIpLookup(target) {
         timezone: null,
         latitude: null,
         longitude: null,
-        note: 'No geo-location info available; all providers blocked',
-        providerError: {
-          provider: 'ipwho.is',
-          details: e && e.message ? e.message : String(e),
-          meta: { ipApiFail, reverseDnsError: 'No reverse DNS record' }
-        }
+        note: `Limited info: reverse DNS: ${hostname}`
       }
     };
   }
+
+  // Ultimate fallback: at least return the IP with a note
+  return {
+    ok: true,
+    provider: 'none',
+    data: {
+      ip: target,
+      country: null,
+      region: null,
+      city: null,
+      isp: null,
+      org: null,
+      as: null,
+      timezone: null,
+      latitude: null,
+      longitude: null,
+      note: 'No geo-location info available; all providers blocked'
+    }
+  };
 }
 
 // API Routes
