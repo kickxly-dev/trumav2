@@ -414,27 +414,27 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                <a href="#dashboard" class="nav-item active" onclick="showSection('dashboard')">
                     <span class="nav-icon">📊</span>
                     Dashboard
                 </a>
-                <a href="#" class="nav-item" onclick="showSection('users')">
+                <a href="#users" class="nav-item" onclick="showSection('users')">
                     <span class="nav-icon">👥</span>
                     Users
                 </a>
-                <a href="#" class="nav-item" onclick="showSection('analytics')">
+                <a href="#analytics" class="nav-item" onclick="showSection('analytics')">
                     <span class="nav-icon">📈</span>
                     Analytics
                 </a>
-                <a href="#" class="nav-item" onclick="showSection('tools')">
+                <a href="#tools" class="nav-item" onclick="showSection('tools')">
                     <span class="nav-icon">🔧</span>
                     Tool Usage
                 </a>
-                <a href="#" class="nav-item" onclick="showSection('system')">
+                <a href="#system" class="nav-item" onclick="showSection('system')">
                     <span class="nav-icon">⚙️</span>
                     System
                 </a>
-                <a href="#" class="nav-item" onclick="showSection('settings')">
+                <a href="#settings" class="nav-item" onclick="showSection('settings')">
                     <span class="nav-icon">🔐</span>
                     Settings
                 </a>
@@ -517,125 +517,87 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <div class="section-card">
+                        <h3>System Health</h3>
+                        <div class="health-metrics">
+                            <div class="health-item">
+                                <span class="health-label">CPU Usage</span>
+                                <span id="cpuUsage" class="health-value">--%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-label">Memory Usage</span>
+                                <span id="memoryUsage" class="health-value">--%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-label">Disk Usage</span>
+                                <span id="diskUsage" class="health-value">--%</span>
+                            </div>
+                            <div class="health-item">
+                                <span class="health-label">System Status</span>
+                                <span id="systemStatus" class="health-value status-healthy">--</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Users Section -->
-            <section id="users" class="admin-content">
-                <div class="data-table">
+            <section id="usersSection" class="content-section">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <p>Manage system users and permissions</p>
+                </div>
+                
+                <div class="section-card">
                     <div class="table-header">
-                        <h3 class="table-title">User Management</h3>
-                        <div class="table-actions">
-                            <button class="table-btn">Add User</button>
-                            <button class="table-btn">Export</button>
-                        </div>
+                        <h3>Registered Users</h3>
+                        <button class="btn btn-primary">Add New User</button>
                     </div>
-                    <div class="table-content">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Joined</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTable">
-                                <!-- Dynamic content -->
-                            </tbody>
-                        </table>
-                    </div>
+                    
+                    <table id="usersTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem;">Loading user data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
             <!-- Analytics Section -->
-            <section id="analytics" class="admin-content">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Tool Usage Analytics</h3>
-                        <p class="chart-subtitle">Most used tools this month</p>
-                    </div>
-                    <div class="chart-placeholder">
-                        📈 Analytics charts will be implemented here
-                    </div>
+            <section id="analyticsSection" class="content-section">
+                <div class="section-header">
+                    <h2>Analytics</h2>
+                    <p>Tool usage statistics and performance metrics</p>
                 </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">IP Lookup</div>
-                        <div class="stat-label">Most Popular Tool</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">2,847</div>
-                        <div class="stat-label">Total API Calls</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">142ms</div>
-                        <div class="stat-label">Avg Response Time</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tools Section -->
-            <section id="tools" class="admin-content">
-                <div class="data-table">
-                    <div class="table-header">
-                        <h3 class="table-title">Tool Usage Statistics</h3>
-                        <div class="table-actions">
-                            <button class="table-btn">Reset Stats</button>
-                            <button class="table-btn">Export</button>
+                
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <h3>Tool Usage</h3>
+                        <div class="chart-placeholder">
+                            <p>Usage analytics will appear here</p>
                         </div>
                     </div>
-                    <div class="table-content">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tool Name</th>
-                                    <th>Usage Count</th>
-                                    <th>Last Used</th>
-                                    <th>Status</th>
-                                    <th>Performance</th>
-                                </tr>
-                            </thead>
-                            <tbody id="toolsTable">
-                                <!-- Dynamic content -->
-                            </tbody>
-                        </table>
+                    
+                    <div class="chart-card">
+                        <h3>User Activity</h3>
+                        <div class="chart-placeholder">
+                            <p>Activity trends will appear here</p>
+                        </div>
+                        <div class="stat-label">Total API Calls</div>
                     </div>
-                </div>
-            </section>
-
-            <!-- System Section -->
-            <section id="system" class="admin-content">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="cpuUsage">15%</div>
-                        <div class="stat-label">CPU Usage</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="memoryUsage">2.1GB</div>
-                        <div class="stat-label">Memory Usage</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="diskUsage">45%</div>
-                        <div class="stat-label">Disk Usage</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="uptime">99.9%</div>
-                        <div class="stat-label">Uptime</div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3 class="chart-title">System Performance</h3>
-                        <p class="chart-subtitle">Real-time monitoring</p>
-                    </div>
-                    <div class="chart-placeholder">
-                        ⚙️ System metrics will be displayed here
                     </div>
                 </div>
             </section>
