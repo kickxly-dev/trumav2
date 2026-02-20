@@ -609,6 +609,18 @@ async function logToolUsage(toolName, parameters = {}, reqUser = null) {
 }
 
 async function resolveIpLookup(target) {
+  // Helper: try reverse DNS early if target is an IP and external providers likely blocked
+  async function tryReverseDns(ip) {
+    try {
+      const dns = require('dns').promises;
+      const reverse = await dns.reverse(ip);
+      return reverse.length > 0 ? reverse[0] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Try ip-api.com (HTTPS first, then HTTP)
   let ipApiFail = null;
   try {
     let data;
@@ -642,6 +654,7 @@ async function resolveIpLookup(target) {
     if (data && data.status === 'fail') {
       const message = String(data.message || '').toLowerCase();
       if (message.includes('private range') || message.includes('reserved range')) {
+        const hostname = await tryReverseDns(target);
         return {
           ok: true,
           provider: 'ip-api',
@@ -656,7 +669,7 @@ async function resolveIpLookup(target) {
             timezone: null,
             latitude: null,
             longitude: null,
-            note: 'Private or reserved IP range'
+            note: hostname ? `Private IP; reverse DNS: ${hostname}` : 'Private or reserved IP range'
           }
         };
       }
@@ -669,6 +682,7 @@ async function resolveIpLookup(target) {
     ipApiFail = e && e.message ? e.message : String(e);
   }
 
+  // Try ipwho.is as second provider
   try {
     const response = await fetchFn(`https://ipwho.is/${encodeURIComponent(target)}`);
     const data = await response.json();
@@ -695,9 +709,8 @@ async function resolveIpLookup(target) {
 
     const msg = data && (data.message || data.reason) ? String(data.message || data.reason) : 'lookup_failed';
     // Fallback: reverse DNS lookup if both providers fail
-    try {
-      const dns = require('dns').promises;
-      const reverse = await dns.reverse(target);
+    const hostname = await tryReverseDns(target);
+    if (hostname) {
       return {
         ok: true,
         provider: 'reverse-dns',
@@ -712,7 +725,7 @@ async function resolveIpLookup(target) {
           timezone: null,
           latitude: null,
           longitude: null,
-          note: `Limited info: reverse DNS: ${reverse.join(', ')}`,
+          note: `Limited info: reverse DNS: ${hostname}`,
           providerError: {
             provider: 'ipwho.is',
             details: msg,
@@ -720,7 +733,7 @@ async function resolveIpLookup(target) {
           }
         }
       };
-    } catch (dnsErr) {
+    } else {
       return {
         ok: true,
         provider: 'none',
@@ -739,17 +752,59 @@ async function resolveIpLookup(target) {
           providerError: {
             provider: 'ipwho.is',
             details: msg,
-            meta: { ipApiFail, reverseDnsError: dnsErr && dnsErr.message ? dnsErr.message : String(dnsErr) }
+            meta: { ipApiFail, reverseDnsError: 'No reverse DNS record' }
           }
         }
       };
     }
   } catch (e) {
+    // Final fallback: try reverse DNS even on network error
+    const hostname = await tryReverseDns(target);
+    if (hostname) {
+      return {
+        ok: true,
+        provider: 'reverse-dns',
+        data: {
+          ip: target,
+          country: null,
+          region: null,
+          city: null,
+          isp: null,
+          org: null,
+          as: null,
+          timezone: null,
+          latitude: null,
+          longitude: null,
+          note: `Limited info: reverse DNS: ${hostname}`,
+          providerError: {
+            provider: 'ipwho.is',
+            details: e && e.message ? e.message : String(e),
+            meta: { ipApiFail }
+          }
+        }
+      };
+    }
     return {
-      ok: false,
-      provider: 'ipwho.is',
-      error: e && e.message ? e.message : String(e),
-      meta: { ipApiFail }
+      ok: true,
+      provider: 'none',
+      data: {
+        ip: target,
+        country: null,
+        region: null,
+        city: null,
+        isp: null,
+        org: null,
+        as: null,
+        timezone: null,
+        latitude: null,
+        longitude: null,
+        note: 'No geo-location info available; all providers blocked',
+        providerError: {
+          provider: 'ipwho.is',
+          details: e && e.message ? e.message : String(e),
+          meta: { ipApiFail, reverseDnsError: 'No reverse DNS record' }
+        }
+      }
     };
   }
 }
