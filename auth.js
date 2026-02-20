@@ -162,7 +162,18 @@ async function handleLogin(event) {
         return;
     }
     
-    // Direct access with just the code
+    // Create mock token for admin access
+    const mockToken = 'admin_token_' + Date.now();
+    const mockUser = {
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@trauma-suite.com',
+        role: 'admin'
+    };
+    
+    localStorage.setItem('trauma_token', mockToken);
+    localStorage.setItem('trauma_user', JSON.stringify(mockUser));
+    
     showMessage('login', 'success', 'Access granted! Redirecting...');
     setTimeout(() => {
         window.location.href = 'admin.html';
