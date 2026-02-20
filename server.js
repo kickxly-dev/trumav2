@@ -1031,6 +1031,118 @@ app.put('/api/admin/settings', authenticateToken, requireAdmin, async (req, res)
   }
 });
 
+// User Profile API endpoints
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query(
+      'SELECT id, name, email, role, status, created_at, last_login FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = result.rows[0];
+    
+    // Get usage statistics
+    const usageStats = await pool.query(
+      `SELECT 
+        COUNT(*) as total_uses,
+        COUNT(DISTINCT tool_name) as unique_tools,
+        MAX(timestamp) as last_activity
+      FROM tool_usage 
+      WHERE user_id = $1`,
+      [userId]
+    );
+    
+    // Get favorite tools count
+    const favCount = await pool.query(
+      'SELECT COUNT(*) as count FROM user_favorites WHERE user_id = $1',
+      [userId]
+    );
+    
+    res.json({
+      profile: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        joined: user.created_at,
+        last_login: user.last_login
+      },
+      stats: {
+        totalUses: parseInt(usageStats.rows[0].total_uses) || 0,
+        uniqueTools: parseInt(usageStats.rows[0].unique_tools) || 0,
+        lastActivity: usageStats.rows[0].last_activity,
+        favoriteTools: parseInt(favCount.rows[0].count) || 0
+      }
+    });
+  } catch (error) {
+    console.error('Profile error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+app.get('/api/user/usage-history', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 50;
+    
+    const result = await pool.query(
+      `SELECT tool_name, timestamp, parameters 
+       FROM tool_usage 
+       WHERE user_id = $1 
+       ORDER BY timestamp DESC 
+       LIMIT $2`,
+      [userId, limit]
+    );
+    
+    const history = result.rows.map(row => ({
+      tool: row.tool_name,
+      timestamp: row.timestamp,
+      time: new Date(row.timestamp).toLocaleString(),
+      parameters: row.parameters ? JSON.parse(row.parameters) : null
+    }));
+    
+    res.json({ history, count: history.length });
+  } catch (error) {
+    console.error('Usage history error:', error);
+    res.status(500).json({ error: 'Failed to fetch usage history' });
+  }
+});
+
+app.get('/api/user/tool-stats', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const result = await pool.query(
+      `SELECT 
+        tool_name, 
+        COUNT(*) as uses,
+        MAX(timestamp) as last_used
+      FROM tool_usage 
+      WHERE user_id = $1 
+      GROUP BY tool_name 
+      ORDER BY uses DESC`,
+      [userId]
+    );
+    
+    res.json({ 
+      tools: result.rows.map(row => ({
+        name: row.tool_name,
+        uses: parseInt(row.uses),
+        lastUsed: row.last_used
+      }))
+    });
+  } catch (error) {
+    console.error('Tool stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch tool statistics' });
+  }
+});
+
 async function logToolUsage(toolName, parameters = {}, reqUser = null) {
   try {
     const clientIp = parameters.ip || 'unknown';
