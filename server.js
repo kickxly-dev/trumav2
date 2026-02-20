@@ -819,7 +819,7 @@ app.get('/api/ip-lookup', async (req, res) => {
   }
 });
 
-// Ping (cross-platform: use httpbin for Render compatibility)
+// Ping (cross-platform native ping)
 app.post('/api/ping', async (req, res) => {
   try {
     const { target } = req.body;
@@ -832,46 +832,65 @@ app.post('/api/ping', async (req, res) => {
 
     let result;
     try {
-      // Try native ping on non-Windows
-      const { exec } = require('child_process');
-      const { promisify } = require('util');
-      const execAsync = promisify(exec);
-      const { stdout } = await execAsync(`ping -c 1 -W 2 ${target}`);
-      const match = stdout.match(/time=(\d+(\.\d+)?)/);
-      const avgLatency = match ? parseFloat(match[1]) : null;
+      // Use platform-specific ping command
+      const isWin = process.platform === 'win32';
+      const cmd = isWin 
+        ? `ping -n 1 -w 2000 ${target}` 
+        : `ping -c 1 -W 2 ${target}`;
+      
+      const { stdout, stderr } = await execAsync(cmd, { timeout: 10000 });
+      const output = stdout || stderr;
+      
+      // Parse latency from output
+      let avgLatency = null;
+      let packetLoss = 100;
+      
+      if (isWin) {
+        // Windows: look for time=XXms or time<1ms
+        const match = output.match(/time[<=](\d+(?:\.\d+)?)ms/);
+        if (match) {
+          avgLatency = parseFloat(match[1]);
+          packetLoss = 0;
+        }
+        // Check for unreachable
+        if (output.includes('unreachable') || output.includes('Request timed out')) {
+          packetLoss = 100;
+          avgLatency = null;
+        }
+      } else {
+        // Linux: look for time=XX.X ms
+        const match = output.match(/time=(\d+(?:\.\d+)?)/);
+        if (match) {
+          avgLatency = parseFloat(match[1]);
+          packetLoss = 0;
+        }
+        // Check for 100% packet loss
+        if (output.includes('100% packet loss') || output.includes('unreachable')) {
+          packetLoss = 100;
+          avgLatency = null;
+        }
+      }
+      
       result = {
         target,
-        packetLoss: avgLatency !== null ? 0 : 100,
+        packetLoss,
         minLatency: avgLatency,
         maxLatency: avgLatency,
         avgLatency,
-        rawOutput: stdout.trim()
+        rawOutput: output.trim(),
+        platform: process.platform
       };
-    } catch {
-      // Fallback: simulate ping via httpbin for Render
-      try {
-        const start = Date.now();
-        const response = await fetchFn(`https://httpbin.org/ip`);
-        await response.json();
-        const latency = Date.now() - start;
-        result = {
-          target,
-          packetLoss: 0,
-          minLatency: latency,
-          maxLatency: latency,
-          avgLatency: latency,
-          note: 'Simulated via httpbin (network latency)'
-        };
-      } catch {
-        result = {
-          target,
-          packetLoss: 100,
-          minLatency: null,
-          maxLatency: null,
-          avgLatency: null,
-          note: 'Ping unavailable'
-        };
-      }
+    } catch (pingError) {
+      // Ping command failed - host might be down or blocked
+      result = {
+        target,
+        packetLoss: 100,
+        minLatency: null,
+        maxLatency: null,
+        avgLatency: null,
+        rawOutput: `Ping failed: ${pingError.message || 'Host unreachable'}`,
+        platform: process.platform
+      };
     }
 
     // Persist ping result (best-effort)
@@ -892,7 +911,7 @@ app.post('/api/ping', async (req, res) => {
   }
 });
 
-// DNS Lookup (with Google DoH fallback)
+// DNS Lookup (Node.js native + Google DoH fallback)
 app.post('/api/dns-lookup', async (req, res) => {
   try {
     const { domain, recordType = 'A' } = req.body;
@@ -904,7 +923,8 @@ app.post('/api/dns-lookup', async (req, res) => {
     await logToolUsage('dns-lookup', { domain, recordType, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     let records = [];
-    let note = '';
+    let method = 'native';
+    
     try {
       switch (recordType.toUpperCase()) {
         case 'A':
@@ -914,33 +934,46 @@ app.post('/api/dns-lookup', async (req, res) => {
           records = await dns.resolve6(domain);
           break;
         case 'MX':
-          records = await dns.resolveMx(domain);
+          const mxRecords = await dns.resolveMx(domain);
+          records = mxRecords.map(r => `${r.priority} ${r.exchange}`);
           break;
         case 'TXT':
-          records = await dns.resolveTxt(domain);
+          const txtRecords = await dns.resolveTxt(domain);
+          records = txtRecords.map(r => r.join(''));
           break;
         case 'NS':
           records = await dns.resolveNs(domain);
           break;
+        case 'CNAME':
+          records = await dns.resolveCname(domain);
+          break;
+        case 'SOA':
+          const soa = await dns.resolveSoa(domain);
+          records = [`${soa.nsname} ${soa.hostmaster} ${soa.serial} ${soa.refresh} ${soa.retry} ${soa.expire} ${soa.minttl}`];
+          break;
         default:
           return res.status(400).json({ error: 'Unsupported record type' });
       }
-    } catch (e) {
-      // Fallback: Google DNS-over-HTTPS
+    } catch (nativeError) {
+      // Native DNS failed, try Google DNS-over-HTTPS
       try {
-        const dohTypes = { A: 1, AAAA: 28, MX: 15, TXT: 16, NS: 2 };
+        const dohTypes = { A: 1, AAAA: 28, MX: 15, TXT: 16, NS: 2, CNAME: 5, SOA: 6, PTR: 12 };
         const dohType = dohTypes[recordType.toUpperCase()];
         if (dohType) {
           const dohRes = await fetchFn(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${dohType}`);
           const dohData = await dohRes.json();
           if (dohData.Answer) {
             records = dohData.Answer.map(r => r.data);
-            note = 'Via Google DNS-over-HTTPS';
+            method = 'google-doh';
           }
         }
-      } catch {
-        records = [];
-        note = 'DNS lookup failed';
+      } catch (dohError) {
+        return res.status(500).json({ 
+          error: 'DNS lookup failed', 
+          details: nativeError.message,
+          domain,
+          recordType
+        });
       }
     }
 
@@ -948,7 +981,8 @@ app.post('/api/dns-lookup', async (req, res) => {
       domain,
       recordType,
       records,
-      note,
+      count: records.length,
+      method,
       timestamp: new Date().toISOString()
     });
 
@@ -958,7 +992,7 @@ app.post('/api/dns-lookup', async (req, res) => {
   }
 });
 
-// WHOIS Lookup (with httpbin fallback)
+// WHOIS Lookup (real WHOIS with RDAP fallback for better reliability)
 app.post('/api/whois', async (req, res) => {
   try {
     const { domain } = req.body;
@@ -969,7 +1003,10 @@ app.post('/api/whois', async (req, res) => {
 
     await logToolUsage('whois', { domain, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
-    let rawOutput;
+    let rawOutput = '';
+    let method = 'whois';
+    
+    // Try native whois first
     try {
       rawOutput = await new Promise((resolve, reject) => {
         whois.lookup(domain, { follow: 3, timeout: 10000 }, (err, data) => {
@@ -977,14 +1014,48 @@ app.post('/api/whois', async (req, res) => {
           resolve(data);
         });
       });
-    } catch {
-      // Fallback: simulate WHOIS via httpbin
-      rawOutput = `WHOIS data for ${domain}\nDomain: ${domain}\nRegistrar: Example Registry\nCreated: 2023-01-01\nExpires: 2025-01-01\nStatus: active\nNote: Simulated due to restrictions`;
+    } catch (whoisError) {
+      // Fallback: try RDAP for domain info (ICANN RDAP)
+      try {
+        const tld = domain.split('.').pop();
+        const rdapUrl = `https://rdap.org/domain/${encodeURIComponent(domain)}`;
+        const rdapRes = await fetchFn(rdapUrl);
+        const rdapData = await rdapRes.json();
+        
+        // Format RDAP data as WHOIS-like text
+        rawOutput = `RDAP Data for ${domain}:\n\n`;
+        if (rdapData.ldhName) rawOutput += `Domain: ${rdapData.ldhName}\n`;
+        if (rdapData.status) rawOutput += `Status: ${rdapData.status.join(', ')}\n`;
+        if (rdapData.events) {
+          rdapData.events.forEach(e => {
+            rawOutput += `${e.eventAction}: ${e.eventDate}\n`;
+          });
+        }
+        if (rdapData.entities) {
+          rdapData.entities.forEach(e => {
+            if (e.handle) rawOutput += `Handle: ${e.handle}\n`;
+            if (e.vcardArray) {
+              const vcard = e.vcardArray[1];
+              vcard.forEach(v => {
+                if (v[0] === 'fn') rawOutput += `Name: ${v[3]}\n`;
+                if (v[0] === 'email') rawOutput += `Email: ${v[3]}\n`;
+                if (v[0] === 'tel') rawOutput += `Phone: ${v[3]}\n`;
+              });
+            }
+          });
+        }
+        method = 'rdap';
+      } catch (rdapError) {
+        // Last resort: provide basic info
+        rawOutput = `Domain: ${domain}\n\nWHOIS lookup failed.\nThis may be due to:\n- WHOIS servers being blocked\n- Rate limiting\n- Domain not found\n\nTry checking the domain directly at:\nhttps://who.is/${domain}\nhttps://www.whois.com/whois/${domain}`;
+        method = 'failed';
+      }
     }
 
     res.json({
       domain,
       rawOutput,
+      method,
       timestamp: new Date().toISOString()
     });
 
@@ -1221,16 +1292,25 @@ app.post('/api/password-check', async (req, res) => {
   }
 });
 
-// System Info (basic)
+// System Info (real data from Node.js process and os module)
+const os = require('os');
+
 app.get('/api/system-info', async (req, res) => {
   try {
     await logToolUsage('system-info', { ip: req.ip, userAgent: req.get('user-agent') }, req.user);
 
     const systemInfo = {
+      hostname: os.hostname(),
       platform: process.platform,
+      arch: process.arch,
       nodeVersion: process.version,
-      uptime: process.uptime(),
+      uptime: Math.floor(process.uptime()),
+      loadavg: os.loadavg(),
+      cpus: os.cpus().length,
+      totalMemory: Math.round(os.totalmem() / 1024 / 1024),
+      freeMemory: Math.round(os.freemem() / 1024 / 1024),
       memory: process.memoryUsage(),
+      networkInterfaces: Object.keys(os.networkInterfaces()),
       timestamp: new Date().toISOString()
     };
 
