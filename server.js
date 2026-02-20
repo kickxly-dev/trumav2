@@ -609,10 +609,9 @@ async function logToolUsage(toolName, parameters = {}, reqUser = null) {
 }
 
 async function resolveIpLookup(target) {
-  // Helper: try reverse DNS early if target is an IP and external providers likely blocked
+  // Helper: try reverse DNS
   async function tryReverseDns(ip) {
     try {
-      const dns = require('dns').promises;
       const reverse = await dns.reverse(ip);
       return reverse.length > 0 ? reverse[0] : null;
     } catch {
@@ -620,69 +619,34 @@ async function resolveIpLookup(target) {
     }
   }
 
-  // Try ip-api.com (HTTPS first, then HTTP)
-  let ipApiFail = null;
+  // Try ipinfo.io - very reliable, no rate limiting for basic use
   try {
-    let data;
-    try {
-      const response = await fetchFn(`https://ip-api.com/json/${encodeURIComponent(target)}`);
-      data = await response.json();
-    } catch (e) {
-      const response = await fetchFn(`http://ip-api.com/json/${encodeURIComponent(target)}`);
-      data = await response.json();
-    }
-
-    if (data && data.status === 'success') {
+    const response = await fetchFn(`https://ipinfo.io/${encodeURIComponent(target)}/json`);
+    const data = await response.json();
+    
+    if (data && data.ip) {
       return {
         ok: true,
-        provider: 'ip-api',
+        provider: 'ipinfo.io',
         data: {
-          ip: data.query,
+          ip: data.ip,
           country: data.country || null,
-          region: data.regionName || null,
+          region: data.region || null,
           city: data.city || null,
-          isp: data.isp || null,
+          isp: data.org || null,
           org: data.org || null,
-          as: data.as || null,
+          as: data.asn || null,
           timezone: data.timezone || null,
-          latitude: data.lat || null,
-          longitude: data.lon || null
+          latitude: data.loc ? data.loc.split(',')[0] : null,
+          longitude: data.loc ? data.loc.split(',')[1] : null
         }
       };
     }
-
-    if (data && data.status === 'fail') {
-      const message = String(data.message || '').toLowerCase();
-      if (message.includes('private range') || message.includes('reserved range')) {
-        const hostname = await tryReverseDns(target);
-        return {
-          ok: true,
-          provider: 'ip-api',
-          data: {
-            ip: target,
-            country: null,
-            region: null,
-            city: null,
-            isp: null,
-            org: null,
-            as: null,
-            timezone: null,
-            latitude: null,
-            longitude: null,
-            note: hostname ? `Private IP; reverse DNS: ${hostname}` : 'Private or reserved IP range'
-          }
-        };
-      }
-
-      ipApiFail = data.message || 'lookup_failed';
-    } else {
-      ipApiFail = 'invalid_response';
-    }
   } catch (e) {
-    ipApiFail = e && e.message ? e.message : String(e);
+    // ipinfo.io failed, try next
   }
 
-  // Try ipwho.is as second provider
+  // Try ipwho.is as fallback
   try {
     const response = await fetchFn(`https://ipwho.is/${encodeURIComponent(target)}`);
     const data = await response.json();
@@ -706,46 +670,19 @@ async function resolveIpLookup(target) {
         }
       };
     }
-
-    const msg = data && (data.message || data.reason) ? String(data.message || data.reason) : 'lookup_failed';
   } catch (e) {
-    // Continue to next fallback
+    // ipwho.is failed, try next
   }
 
-  // Try ipgeolocation.io as third provider (free tier)
+  // Try ip-api.com via HTTP
   try {
-    const response = await fetchFn(`https://api.ipgeolocation.io/ipgeo?apiKey=free&ip=${encodeURIComponent(target)}`);
+    const response = await fetchFn(`http://ip-api.com/json/${encodeURIComponent(target)}`);
     const data = await response.json();
-    if (data && data.ip) {
-      return {
-        ok: true,
-        provider: 'ipgeolocation.io',
-        data: {
-          ip: data.ip,
-          country: data.country_name || null,
-          region: data.state_prov || null,
-          city: data.city || null,
-          isp: data.isp || null,
-          org: data.organization || null,
-          as: null,
-          timezone: data.time_zone && data.time_zone.name ? data.time_zone.name : null,
-          latitude: data.latitude !== undefined ? data.latitude : null,
-          longitude: data.longitude !== undefined ? data.longitude : null
-        }
-      };
-    }
-  } catch (e) {
-    // Continue to next fallback
-  }
 
-  // Try ip-api.com via CORS proxy as fourth provider (free)
-  try {
-    const response = await fetchFn(`https://cors-anywhere.herokuapp.com/http://ip-api.com/json/${encodeURIComponent(target)}`);
-    const data = await response.json();
     if (data && data.status === 'success') {
       return {
         ok: true,
-        provider: 'ip-api-cors',
+        provider: 'ip-api',
         data: {
           ip: data.query,
           country: data.country || null,
@@ -761,7 +698,7 @@ async function resolveIpLookup(target) {
       };
     }
   } catch (e) {
-    // Continue to next fallback
+    // ip-api failed
   }
 
   // Final fallback: reverse DNS
@@ -786,7 +723,7 @@ async function resolveIpLookup(target) {
     };
   }
 
-  // Ultimate fallback: at least return the IP with a note
+  // Ultimate fallback
   return {
     ok: true,
     provider: 'none',
