@@ -183,6 +183,51 @@ async function initDatabase() {
     `);
     console.log('Failed logins table created/verified');
 
+    // API Keys table for programmatic access
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        key_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        last_used_at TIMESTAMP,
+        usage_count INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE
+      );
+    `);
+    console.log('API keys table created/verified');
+
+    // Shared results table for tool result sharing
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS shared_results (
+        id SERIAL PRIMARY KEY,
+        share_id VARCHAR(16) UNIQUE NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        tool_name VARCHAR(100) NOT NULL,
+        input_data JSONB,
+        result_data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
+        views INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE
+      );
+    `);
+    console.log('Shared results table created/verified');
+
+    // User favorites table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_favorites (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        tool_name VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, tool_name)
+      );
+    `);
+    console.log('User favorites table created/verified');
+
     // Create default admin user if not exists
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@trauma-suite.com']);
     if (adminExists.rows.length === 0) {
@@ -2253,6 +2298,117 @@ app.get('/api/version', (req, res) => {
     buildId: process.env.RENDER_SERVICE_ID || process.env.RENDER_INSTANCE_ID || process.env.HOSTNAME || null,
     timestamp: new Date().toISOString()
   });
+});
+
+// Tool Result Sharing endpoints
+app.post('/api/share', async (req, res) => {
+  try {
+    const { toolName, inputData, resultData, expiresInDays = 30 } = req.body;
+    
+    if (!toolName || !resultData) {
+      return res.status(400).json({ error: 'Tool name and result data are required' });
+    }
+    
+    // Generate short share ID (8 characters)
+    const shareId = crypto.randomBytes(4).toString('hex');
+    
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    
+    const userId = req.user ? req.user.id : null;
+    
+    await pool.query(
+      `INSERT INTO shared_results (share_id, user_id, tool_name, input_data, result_data, expires_at) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [shareId, userId, toolName, JSON.stringify(inputData || {}), JSON.stringify(resultData), expiresAt]
+    );
+    
+    const shareUrl = `${req.protocol}://${req.get('host')}/share/${shareId}`;
+    
+    res.json({
+      shareId,
+      shareUrl,
+      toolName,
+      expiresAt,
+      message: 'Result shared successfully'
+    });
+  } catch (error) {
+    console.error('Share error:', error);
+    res.status(500).json({ error: 'Failed to create share' });
+  }
+});
+
+app.get('/api/share/:id', async (req, res) => {
+  try {
+    const shareId = req.params.id;
+    
+    const result = await pool.query(
+      `SELECT tool_name, input_data, result_data, created_at, views, is_active, expires_at
+       FROM shared_results 
+       WHERE share_id = $1`,
+      [shareId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Share not found' });
+    }
+    
+    const share = result.rows[0];
+    
+    if (!share.is_active) {
+      return res.status(410).json({ error: 'This share has been deactivated' });
+    }
+    
+    if (new Date(share.expires_at) < new Date()) {
+      return res.status(410).json({ error: 'This share has expired' });
+    }
+    
+    // Increment view count
+    await pool.query(
+      'UPDATE shared_results SET views = views + 1 WHERE share_id = $1',
+      [shareId]
+    );
+    
+    res.json({
+      toolName: share.tool_name,
+      inputData: share.input_data,
+      resultData: share.result_data,
+      createdAt: share.created_at,
+      views: share.views + 1,
+      expiresAt: share.expires_at
+    });
+  } catch (error) {
+    console.error('Get share error:', error);
+    res.status(500).json({ error: 'Failed to retrieve share' });
+  }
+});
+
+// Serve shared result page
+app.get('/share/:id', async (req, res) => {
+  try {
+    const shareId = req.params.id;
+    
+    const result = await pool.query(
+      'SELECT is_active, expires_at FROM shared_results WHERE share_id = $1',
+      [shareId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).send('Share not found');
+    }
+    
+    const share = result.rows[0];
+    
+    if (!share.is_active || new Date(share.expires_at) < new Date()) {
+      return res.status(410).send('This share is no longer available');
+    }
+    
+    // Serve the main app which will handle the share view
+    res.sendFile(path.join(__dirname, 'index.html'));
+  } catch (error) {
+    console.error('Share page error:', error);
+    res.status(500).send('Server error');
+  }
 });
 
 // Serve the main application
