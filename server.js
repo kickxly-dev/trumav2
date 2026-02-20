@@ -694,12 +694,56 @@ async function resolveIpLookup(target) {
     }
 
     const msg = data && (data.message || data.reason) ? String(data.message || data.reason) : 'lookup_failed';
-    return {
-      ok: false,
-      provider: 'ipwho.is',
-      error: msg,
-      meta: { ipApiFail }
-    };
+    // Fallback: reverse DNS lookup if both providers fail
+    try {
+      const dns = require('dns').promises;
+      const reverse = await dns.reverse(target);
+      return {
+        ok: true,
+        provider: 'reverse-dns',
+        data: {
+          ip: target,
+          country: null,
+          region: null,
+          city: null,
+          isp: null,
+          org: null,
+          as: null,
+          timezone: null,
+          latitude: null,
+          longitude: null,
+          note: `Limited info: reverse DNS: ${reverse.join(', ')}`,
+          providerError: {
+            provider: 'ipwho.is',
+            details: msg,
+            meta: { ipApiFail }
+          }
+        }
+      };
+    } catch (dnsErr) {
+      return {
+        ok: true,
+        provider: 'none',
+        data: {
+          ip: target,
+          country: null,
+          region: null,
+          city: null,
+          isp: null,
+          org: null,
+          as: null,
+          timezone: null,
+          latitude: null,
+          longitude: null,
+          note: 'No geo-location info available; all providers blocked',
+          providerError: {
+            provider: 'ipwho.is',
+            details: msg,
+            meta: { ipApiFail, reverseDnsError: dnsErr && dnsErr.message ? dnsErr.message : String(dnsErr) }
+          }
+        }
+      };
+    }
   } catch (e) {
     return {
       ok: false,
