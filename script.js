@@ -521,6 +521,64 @@ class ToolLauncher {
                 <div id="pw-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.9rem;min-height:100px;"></div>
             `,
 
+            'ssl-checker': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">SSL Certificate Checker</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Verify SSL/TLS certificates and check expiration dates.</p>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Domain:</label>
+                    <input type="text" id="ssl-domain" placeholder="example.com" style="
+                        width: 100%;
+                        padding: 0.75rem;
+                        background: var(--bg-secondary);
+                        border: 1px solid var(--border-color);
+                        border-radius: 6px;
+                        color: var(--text-primary);
+                        font-family: 'JetBrains Mono', monospace;
+                    ">
+                </div>
+                <button type="button" id="ssl-btn" style="
+                    background: var(--crimson-primary);
+                    color: white;
+                    border: none;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-family: 'JetBrains Mono', monospace;
+                    margin-bottom: 1.5rem;
+                ">Check SSL</button>
+                <div id="ssl-result" style="
+                    background: var(--bg-secondary);
+                    padding: 1rem;
+                    border-radius: 6px;
+                    border: 1px solid var(--border-color);
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 0.9rem;
+                    min-height: 150px;
+                "></div>
+            `,
+
+            'url-encoder': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">URL Encoder/Decoder</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display:block;margin-bottom:0.5rem;color:var(--text-secondary);">Action</label>
+                    <select id="url-action" style="width:100%;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;">
+                        <option value="encode">Encode</option>
+                        <option value="decode">Decode</option>
+                    </select>
+                </div>
+                <textarea id="url-input" placeholder="Enter text to encode/decode" style="width:100%;min-height:120px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;"></textarea>
+                <button type="button" id="url-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Run</button>
+                <textarea id="url-output" readonly style="width:100%;min-height:120px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;"></textarea>
+            `,
+
+            'jwt-decoder': `
+                <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">JWT Decoder</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Decode and inspect JWT tokens.</p>
+                <textarea id="jwt-input" placeholder="Paste JWT token here" style="width:100%;min-height:100px;padding:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono', monospace;margin-bottom:1rem;"></textarea>
+                <button type="button" id="jwt-btn" style="background:var(--crimson-primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono', monospace;margin-bottom:1.5rem;">Decode</button>
+                <div id="jwt-result" style="background:var(--bg-secondary);padding:1rem;border-radius:6px;border:1px solid var(--border-color);font-family:'JetBrains Mono', monospace;font-size:0.85rem;min-height:200px;overflow-x:auto;"></div>
+            `,
+
             'network-scanner': `
                 <h2 style="color: var(--crimson-primary); margin-bottom: 1rem;">Local Network Scanner</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Lists discovered neighbors from the local ARP/neighbor table.</p>
@@ -690,6 +748,87 @@ class ToolLauncher {
                 });
                 const data = await res.json();
                 out.textContent = res.ok ? `${data.strength} (${data.score}/${data.maxScore})\n${(data.feedback || []).join('\n')}` : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'ssl-checker') {
+            const btn = document.getElementById('ssl-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const domain = document.getElementById('ssl-domain').value;
+                const out = document.getElementById('ssl-result');
+                out.innerHTML = '<div style="color: var(--success-color);">Checking SSL certificate...</div>';
+                const res = await fetch('/api/ssl-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const statusColor = data.expired ? 'var(--error-color)' : data.expiresSoon ? '#ffaa00' : 'var(--success-color)';
+                    const statusText = data.expired ? 'EXPIRED' : data.expiresSoon ? 'Expires Soon' : 'Valid';
+                    out.innerHTML = `
+                        <div style="color: ${statusColor}; font-weight: bold; margin-bottom: 1rem;">${statusText}</div>
+                        <div><strong>Subject:</strong> ${data.subject?.CN || 'N/A'}</div>
+                        <div><strong>Issuer:</strong> ${data.issuer?.O || 'N/A'}</div>
+                        <div><strong>Valid From:</strong> ${data.validFrom}</div>
+                        <div><strong>Valid To:</strong> ${data.validTo}</div>
+                        <div><strong>Days Remaining:</strong> ${data.daysRemaining}</div>
+                        <div><strong>Serial Number:</strong> ${data.serialNumber}</div>
+                        <div><strong>Fingerprint:</strong> ${data.fingerprint}</div>
+                    `;
+                } else {
+                    out.innerHTML = `<span style="color: var(--error-color);">${data.error}</span>`;
+                }
+            });
+        }
+
+        if (toolName === 'url-encoder') {
+            const btn = document.getElementById('url-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const action = document.getElementById('url-action').value;
+                const text = document.getElementById('url-input').value;
+                const out = document.getElementById('url-output');
+                const res = await fetch('/api/url-encode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, action })
+                });
+                const data = await res.json();
+                out.value = res.ok ? data.output : (data.error || 'Request failed');
+            });
+        }
+
+        if (toolName === 'jwt-decoder') {
+            const btn = document.getElementById('jwt-btn');
+            if (btn) btn.addEventListener('click', async () => {
+                const token = document.getElementById('jwt-input').value;
+                const out = document.getElementById('jwt-result');
+                const res = await fetch('/api/jwt-decode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const statusColor = data.expired ? 'var(--error-color)' : 'var(--success-color)';
+                    const statusText = data.expired ? 'EXPIRED' : data.expiresIn > 0 ? `Valid (expires in ${Math.floor(data.expiresIn / 60)} min)` : 'Valid';
+                    out.innerHTML = `
+                        <div style="color: ${statusColor}; font-weight: bold; margin-bottom: 1rem;">${statusText}</div>
+                        <div style="margin-bottom: 1rem;">
+                            <strong>Header:</strong>
+                            <pre style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data.header, null, 2)}</pre>
+                        </div>
+                        <div>
+                            <strong>Payload:</strong>
+                            <pre style="background: var(--bg-secondary); padding: 0.5rem; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data.payload, null, 2)}</pre>
+                        </div>
+                        <div style="margin-top: 1rem; color: var(--text-dim);">
+                            <strong>Signature:</strong> ${data.signature}
+                        </div>
+                    `;
+                } else {
+                    out.innerHTML = `<span style="color: var(--error-color);">${data.error}</span>`;
+                }
             });
         }
 

@@ -1729,6 +1729,220 @@ app.post('/api/password-check', async (req, res) => {
   }
 });
 
+// Password Generator
+app.post('/api/password-generate', async (req, res) => {
+  try {
+    const { length = 16, includeUppercase = true, includeLowercase = true, includeNumbers = true, includeSymbols = true } = req.body;
+    
+    await logToolUsage('password-generate', { length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    
+    let charset = '';
+    if (includeUppercase) charset += uppercase;
+    if (includeLowercase) charset += lowercase;
+    if (includeNumbers) charset += numbers;
+    if (includeSymbols) charset += symbols;
+    
+    if (charset === '') {
+      return res.status(400).json({ error: 'At least one character type must be selected' });
+    }
+    
+    let password = '';
+    const randomValues = crypto.randomBytes(length);
+    for (let i = 0; i < length; i++) {
+      password += charset[randomValues[i] % charset.length];
+    }
+    
+    // Calculate entropy
+    const charsetSize = charset.length;
+    const entropy = Math.log2(Math.pow(charsetSize, length));
+    
+    res.json({
+      password,
+      length,
+      charsetSize,
+      entropy: Math.round(entropy * 100) / 100,
+      strength: entropy > 100 ? 'Very Strong' : entropy > 60 ? 'Strong' : entropy > 40 ? 'Moderate' : 'Weak',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Password generate error:', error);
+    res.status(500).json({ error: 'Password generation failed' });
+  }
+});
+
+// SSL/TLS Certificate Checker
+const tls = require('tls');
+
+app.post('/api/ssl-check', async (req, res) => {
+  try {
+    const { domain, port = 443 } = req.body;
+    
+    if (!domain) {
+      return res.status(400).json({ error: 'Domain is required' });
+    }
+
+    await logToolUsage('ssl-check', { domain, port, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const options = {
+      host: domain,
+      port: parseInt(port) || 443,
+      servername: domain,
+      timeout: 10000
+    };
+
+    const certInfo = await new Promise((resolve, reject) => {
+      const socket = tls.connect(options, () => {
+        const cert = socket.getPeerCertificate(true);
+        socket.end();
+        resolve(cert);
+      });
+      
+      socket.on('error', (err) => {
+        reject(err);
+      });
+      
+      socket.setTimeout(10000, () => {
+        socket.destroy();
+        reject(new Error('SSL connection timeout'));
+      });
+    });
+
+    const now = new Date();
+    const validFrom = new Date(certInfo.valid_from);
+    const validTo = new Date(certInfo.valid_to);
+    const daysRemaining = Math.floor((validTo - now) / (1000 * 60 * 60 * 24));
+    
+    res.json({
+      domain,
+      port,
+      subject: certInfo.subject,
+      issuer: certInfo.issuer,
+      validFrom: certInfo.valid_from,
+      validTo: certInfo.valid_to,
+      daysRemaining,
+      serialNumber: certInfo.serialNumber,
+      fingerprint: certInfo.fingerprint,
+      subjectAltName: certInfo.subjectaltname,
+      protocol: certInfo.protocol,
+      valid: daysRemaining > 0,
+      expired: daysRemaining < 0,
+      expiresSoon: daysRemaining <= 30 && daysRemaining > 0,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('SSL check error:', error);
+    res.status(500).json({ 
+      error: 'SSL certificate check failed', 
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// URL Encoder/Decoder
+app.post('/api/url-encode', async (req, res) => {
+  try {
+    const { text, action = 'encode' } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    await logToolUsage('url-encode', { action, textLength: text.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    let result;
+    if (action === 'encode') {
+      result = encodeURIComponent(text);
+    } else if (action === 'decode') {
+      try {
+        result = decodeURIComponent(text);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid URL encoding' });
+      }
+    } else {
+      return res.status(400).json({ error: 'Invalid action. Use "encode" or "decode"' });
+    }
+
+    res.json({
+      action,
+      input: text,
+      output: result,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('URL encode error:', error);
+    res.status(500).json({ error: 'URL encoding/decoding failed' });
+  }
+});
+
+// JWT Decoder
+app.post('/api/jwt-decode', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ error: 'JWT token is required' });
+    }
+
+    await logToolUsage('jwt-decode', { tokenLength: token.length, ip: req.ip, userAgent: req.get('user-agent') }, req.user);
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return res.status(400).json({ error: 'Invalid JWT format. Expected 3 parts separated by dots.' });
+    }
+
+    // Decode header and payload (base64url)
+    const decodeBase64Url = (str) => {
+      // Convert base64url to base64
+      let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+      // Add padding
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+      return JSON.parse(Buffer.from(base64, 'base64').toString('utf8'));
+    };
+
+    let header, payload;
+    try {
+      header = decodeBase64Url(parts[0]);
+      payload = decodeBase64Url(parts[1]);
+    } catch (e) {
+      return res.status(400).json({ error: 'Failed to decode JWT. Invalid base64 encoding.' });
+    }
+
+    // Check if token is expired
+    let expired = false;
+    let expiresIn = null;
+    if (payload.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      expired = now > payload.exp;
+      expiresIn = payload.exp - now;
+    }
+
+    res.json({
+      header,
+      payload,
+      signature: parts[2].substring(0, 20) + '...',
+      expired,
+      expiresIn: expiresIn ? Math.floor(expiresIn) : null,
+      expiresAt: payload.exp ? new Date(payload.exp * 1000).toISOString() : null,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('JWT decode error:', error);
+    res.status(500).json({ error: 'JWT decoding failed' });
+  }
+});
+
 // System Info (real data from Node.js process and os module)
 const os = require('os');
 
