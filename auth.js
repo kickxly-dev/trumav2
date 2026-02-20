@@ -7,18 +7,14 @@ class AuthSystem {
     }
 
     init() {
-        // Clear any existing tokens to force fresh login
-        localStorage.removeItem('trauma_token');
-        localStorage.removeItem('trauma_user');
+        // Keep existing session (do not clear tokens on page load)
+        this.token = localStorage.getItem('trauma_token');
+        this.user = JSON.parse(localStorage.getItem('trauma_user') || 'null');
     }
 
     async login(email, password) {
         try {
-            // Use current port for API calls
-            const currentPort = window.location.port || '10000';
-            const apiUrl = `http://localhost:${currentPort}/api/auth/login`;
-            
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,10 +42,7 @@ class AuthSystem {
 
     async signup(name, email, password) {
         try {
-            const currentPort = window.location.port || '10000';
-            const apiUrl = `http://localhost:${currentPort}/api/auth/signup`;
-            
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
