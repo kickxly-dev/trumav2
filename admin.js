@@ -503,11 +503,11 @@ class AdminDashboard {
                     table.style.display = 'block';
                     tbody.innerHTML = data.logs.map(log => `
                         <tr>
-                            <td>${log.ip_address}</td>
+                            <td>${log.ip_address || 'N/A'}</td>
                             <td>${log.country || 'Unknown'}${log.city ? `, ${log.city}` : ''}</td>
-                            <td>${log.path}</td>
-                            <td>${log.method}</td>
-                            <td>${new Date(log.timestamp).toLocaleString()}</td>
+                            <td>${log.path || '/'}</td>
+                            <td>${log.method || 'GET'}</td>
+                            <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</td>
                             <td>${log.is_threat ? `<span class="status-badge" style="background:rgba(255,68,68,0.2);color:#ff4444;">${log.threat_type || 'THREAT'}</span>` : '-'}</td>
                         </tr>
                     `).join('');
