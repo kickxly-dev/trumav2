@@ -276,12 +276,12 @@
             </div>
 
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchTab('login')">Admin Login</button>
-                <button class="auth-tab" onclick="switchTab('signup')" style="display: none;">Sign Up</button>
+                <button class="auth-tab active" id="loginTab">Admin Login</button>
+                <button class="auth-tab" id="signupTab" style="display: none;">Sign Up</button>
             </div>
 
             <!-- Login Form -->
-            <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+            <form id="loginForm" class="auth-form active">
                 <div id="loginError" class="auth-error" style="display: none;"></div>
                 <div id="loginSuccess" class="auth-success" style="display: none;"></div>
                 
@@ -290,7 +290,7 @@
                     <input type="text" id="adminCode" class="form-input" placeholder="Enter admin code (required for admin access)" required>
                 </div>
                 
-                <button type="button" class="auth-button" onclick="testServer()" style="background: var(--bg-secondary); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+                <button type="button" class="auth-button" id="testServerBtn" style="background: var(--bg-secondary); border: 1px solid var(--border-color); margin-bottom: 1rem;">
                     Test Server Connection
                 </button>
                 
@@ -300,7 +300,7 @@
             </form>
 
             <!-- Signup Form -->
-            <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)" style="display: none;">
+            <form id="signupForm" class="auth-form" style="display: none;">
                 <div id="signupError" class="auth-error" style="display: none;"></div>
                 <div id="signupSuccess" class="auth-success" style="display: none;"></div>
                 
@@ -316,7 +316,7 @@
                 
                 <div class="form-group">
                     <label class="form-label" for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" class="form-input" placeholder="Create strong password" required oninput="checkPasswordStrength()">
+                    <input type="password" id="signupPassword" class="form-input" placeholder="Create strong password" required>
                     <div class="password-strength">
                         <div id="passwordStrengthBar" class="password-strength-bar"></div>
                     </div>

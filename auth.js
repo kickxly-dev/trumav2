@@ -255,6 +255,13 @@ async function testServer() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Add event listeners
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    document.getElementById('signupForm').addEventListener('submit', handleSignup);
+    document.getElementById('testServerBtn').addEventListener('click', testServer);
+    document.getElementById('loginTab').addEventListener('click', () => switchTab('login'));
+    document.getElementById('signupTab').addEventListener('click', () => switchTab('signup'));
+    
     // Check if user is already logged in
     const auth = new AuthSystem();
     if (auth.token && auth.user) {
