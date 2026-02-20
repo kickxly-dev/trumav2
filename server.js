@@ -1221,6 +1221,8 @@ app.get('/api/system-info', async (req, res) => {
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'unknown';
   let dbError = null;
+  const gitCommit = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || null;
+  const buildId = process.env.RENDER_SERVICE_ID || process.env.RENDER_INSTANCE_ID || process.env.HOSTNAME || null;
 
   if (!process.env.DATABASE_URL) {
     dbStatus = 'missing_env';
@@ -1239,8 +1241,19 @@ app.get('/api/health', async (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
+    gitCommit,
+    buildId,
     dbStatus,
     dbError
+  });
+});
+
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: '1.0.0',
+    gitCommit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || null,
+    buildId: process.env.RENDER_SERVICE_ID || process.env.RENDER_INSTANCE_ID || process.env.HOSTNAME || null,
+    timestamp: new Date().toISOString()
   });
 });
 
