@@ -446,30 +446,34 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Admin Routes
+// Admin Routes - with enhanced error handling
 app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    console.log('Fetching admin stats...');
     const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
     const todayUsage = await pool.query('SELECT COUNT(*) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
     const activeTools = await pool.query('SELECT COUNT(DISTINCT tool_name) as count FROM tool_usage WHERE DATE(timestamp) = CURRENT_DATE');
     const activeUsers = await pool.query("SELECT COUNT(*) as count FROM users WHERE status = 'active'");
 
-    res.json({
-      totalUsers: totalUsers.rows[0].count,
-      activeUsers: activeUsers.rows[0].count,
-      totalTools: activeTools.rows[0].count,
+    const result = {
+      totalUsers: parseInt(totalUsers.rows[0].count) || 0,
+      activeUsers: parseInt(activeUsers.rows[0].count) || 0,
+      totalTools: parseInt(activeTools.rows[0].count) || 0,
       systemUptime: '99.9%',
-      todayUsage: todayUsage.rows[0].count
-    });
+      todayUsage: parseInt(todayUsage.rows[0].count) || 0
+    };
+    console.log('Admin stats result:', result);
+    res.json(result);
 
   } catch (error) {
     console.error('Stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    res.status(500).json({ error: 'Failed to fetch stats', details: error.message });
   }
 });
 
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    console.log('Fetching admin users...');
     const result = await pool.query('SELECT id, name, email, role, status, created_at, last_login FROM users ORDER BY created_at DESC');
     
     const users = result.rows.map(user => ({
@@ -482,11 +486,12 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
       last_login: user.last_login
     }));
 
+    console.log(`Found ${users.length} users`);
     res.json({ users });
 
   } catch (error) {
     console.error('Users error:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    res.status(500).json({ error: 'Failed to fetch users', details: error.message });
   }
 });
 
