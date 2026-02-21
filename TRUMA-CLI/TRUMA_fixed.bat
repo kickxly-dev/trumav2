@@ -8,7 +8,7 @@ title TRUMA - Advanced Network Security Suite v2.0
 
 :: Version check for updater
 set "VERSION=2.0"
-set "UPDATE_URL=https://raw.githubusercontent.com/kickxly-dev/trumav2/main/TRUMA-CLI/version.txt"
+set "UPDATE_URL=https://raw.githubusercontent.com/kickxly-dev/trumav2/master/TRUMA-CLI/version.txt"
 
 :: Initialize paths
 set "TRUMA_HOME=%~dp0"
