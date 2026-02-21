@@ -39,7 +39,7 @@ echo    ^|                         MAIN MENU                              ^|
 echo    +==============================================================+
 echo.
 
-if %IS_LOGGED_IN%==1 (
+if "%IS_LOGGED_IN%"=="1" (
     echo    [1] Network Tools              [5] My Profile
     echo    [2] System Tools               [6] View Logs  
     echo    [3] Security Tools             [7] Logout
@@ -62,7 +62,7 @@ echo    ================================================================
 echo.
 set /p choice="> Enter choice: "
 
-if %IS_LOGGED_IN%==1 (
+if "%IS_LOGGED_IN%"=="1" (
     if /i "%choice%"=="1" goto network_tools
     if /i "%choice%"=="2" goto system_tools
     if /i "%choice%"=="3" goto security_tools
@@ -153,7 +153,7 @@ for /f "tokens=1,2 delims=:" %%a in ('type "%USERS_FILE%"') do (
     )
 )
 
-if %found%==1 (
+if "%found%"=="1" (
     set IS_LOGGED_IN=1
     echo %CURRENT_USER%>%SESSION_FILE%
     echo.
@@ -728,7 +728,7 @@ goto :eof
 
 :log_activity
 echo [%date% %time%] %~1 >> "%LOGS_DIR%\activity.log"
-if %IS_LOGGED_IN%==1 (
+if "%IS_LOGGED_IN%"=="1" (
     echo [%date% %time%] %~1 >> "%LOGS_DIR%\%CURRENT_USER%.log"
 )
 goto :eof

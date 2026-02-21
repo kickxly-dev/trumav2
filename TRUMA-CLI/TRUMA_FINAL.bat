@@ -2,32 +2,29 @@
 setlocal enabledelayedexpansion
 title TRUMA - Advanced Network Security Suite v2.0
 
-:: Version
-set "VERSION=2.0"
+:: ============================================
+:: TRUMA CLI v2.0 - Final Release
+:: ============================================
 
-:: Initialize paths
-set "TRUMA_HOME=%~dp0"
-set "DATA_DIR=%TRUMA_HOME%data"
-set "LOGS_DIR=%TRUMA_HOME%logs"
-set "USERS_FILE=%DATA_DIR%\users.db"
-set "SESSION_FILE=%DATA_DIR%\session.tmp"
+set VERSION=2.0
+set TRUMA_HOME=%~dp0
+set DATA_DIR=%TRUMA_HOME%data
+set LOGS_DIR=%TRUMA_HOME%logs
+set USERS_FILE=%DATA_DIR%\users.db
+set SESSION_FILE=%DATA_DIR%\session.tmp
 
-:: Create directories
 if not exist "%DATA_DIR%" mkdir "%DATA_DIR%"
 if not exist "%LOGS_DIR%" mkdir "%LOGS_DIR%"
 
-:: Theme
-set "THEME=CRIMSON"
+set THEME=CRIMSON
 color 0C
 
-:: Initialize session
-set "CURRENT_USER="
-set "IS_LOGGED_IN=0"
+set CURRENT_USER=
+set IS_LOGGED_IN=0
 
-:: Check for existing session
 if exist "%SESSION_FILE%" (
     set /p CURRENT_USER=<"%SESSION_FILE%"
-    if not "!CURRENT_USER!"=="" set "IS_LOGGED_IN=1"
+    if not "!CURRENT_USER!"=="" set IS_LOGGED_IN=1
 )
 
 :main_menu
@@ -50,14 +47,14 @@ if "%IS_LOGGED_IN%"=="1" (
     echo    [1] Network Tools              [5] My Profile
     echo    [2] System Tools               [6] View Logs  
     echo    [3] Security Tools             [7] Logout
-    echo    [4] Utilities                  [T] Theme
+    echo    [4] Utilities                  [T] Theme [%THEME%]
     echo    [U] Check Updates
     echo.
     echo    [0] Exit TRUMA                 [User: %CURRENT_USER%]
 ) else (
     echo       Welcome to TRUMA Network Security Suite v%VERSION%
     echo.
-    echo    [1] Login                      [T] Theme
+    echo    [1] Login                      [T] Theme [%THEME%]
     echo    [2] Sign Up (Create Account)   [U] Check Updates
     echo    [3] Guest Access (Limited)
     echo.
@@ -107,11 +104,26 @@ echo    [0] Back
 echo.
 set /p theme_choice="> Select theme: "
 
-if "%theme_choice%"=="1" set "THEME=CRIMSON" & color 0C
-if "%theme_choice%"=="2" set "THEME=CYBER" & color 0B
-if "%theme_choice%"=="3" set "THEME=MATRIX" & color 0A
-if "%theme_choice%"=="4" set "THEME=GOLD" & color 0E
-if "%theme_choice%"=="5" set "THEME=DARK" & color 0F
+if "%theme_choice%"=="1" (
+    set THEME=CRIMSON
+    color 0C
+)
+if "%theme_choice%"=="2" (
+    set THEME=CYBER
+    color 0B
+)
+if "%theme_choice%"=="3" (
+    set THEME=MATRIX
+    color 0A
+)
+if "%theme_choice%"=="4" (
+    set THEME=GOLD
+    color 0E
+)
+if "%theme_choice%"=="5" (
+    set THEME=DARK
+    color 0F
+)
 if "%theme_choice%"=="0" goto main_menu
 
 echo.
@@ -135,21 +147,22 @@ if not exist "%USERS_FILE%" (
     goto main_menu
 )
 
-set "found=0"
+set found=0
 for /f "tokens=1,2 delims=:" %%a in ('type "%USERS_FILE%"') do (
     if "%%a"=="%username%" (
         if "%%b"=="%password%" (
-            set "found=1"
-            set "CURRENT_USER=%username%"
+            set found=1
+            set CURRENT_USER=%username%
         )
     )
 )
 
 if "%found%"=="1" (
-    set "IS_LOGGED_IN=1"
-    echo %username%>%SESSION_FILE%
+    set IS_LOGGED_IN=1
+    echo %CURRENT_USER%>%SESSION_FILE%
     echo.
-    echo    [OK] Login successful! Welcome back, %username%
+    echo    [OK] Login successful! Welcome back, %CURRENT_USER%
+    call :log_activity "User logged in: %CURRENT_USER%"
     pause
     goto main_menu
 ) else (
@@ -193,36 +206,33 @@ if exist "%USERS_FILE%" (
 echo %newuser%:%newpass%>>"%USERS_FILE%"
 echo.
 echo    [OK] Account created successfully!
-set "CURRENT_USER=%newuser%"
-set "IS_LOGGED_IN=1"
+call :log_activity "New user registered: %newuser%"
+set CURRENT_USER=%newuser%
+set IS_LOGGED_IN=1
 echo %newuser%>%SESSION_FILE%
 pause
 goto main_menu
 
 :guest_access
-set "CURRENT_USER=Guest"
+set CURRENT_USER=Guest
+set IS_LOGGED_IN=1
+call :log_activity "Guest login"
 
 :network_tools
 cls
 echo.
 echo     NETWORK TOOLS
-echo     =============
-echo.
-echo    [1] IP Information Lookup
-    echo    [2] Ping / Latency Tester
-    echo    [3] DNS Lookup Tool
-    echo    [4] Port Scanner
-    echo    [5] Network Scanner (ARP)
-    echo    [6] WHOIS Lookup
-    echo    [7] Traceroute
-    echo    [8] Subnet Calculator
-    echo    [9] WiFi Scanner
-    echo    [10] HTTP Headers
-    echo    [11] IP Reputation
-    echo    [12] Speed Test
+    echo     =============
+    echo.
+    echo    [1] IP Information Lookup     [7] Traceroute
+    echo    [2] Ping / Latency Tester     [8] Subnet Calculator
+    echo    [3] DNS Lookup Tool            [9] WiFi Scanner
+    echo    [4] Port Scanner               [10] HTTP Headers
+    echo    [5] Network Scanner (ARP)      [11] IP Reputation
+    echo    [6] WHOIS Lookup               [12] Speed Test
     echo    [0] Back to Main Menu
-echo.
-set /p choice="> Enter choice: "
+    echo.
+    set /p choice="> Enter choice: "
 
 if "%choice%"=="1" goto tool_ip_lookup
 if "%choice%"=="2" goto tool_ping
@@ -241,8 +251,10 @@ goto network_tools
 
 :tool_ip_lookup
 cls
+call :draw_header
 echo.
 echo     IP INFORMATION LOOKUP
+echo.
 set /p target="> Enter IP or Domain: "
 echo.
 echo    [i] Looking up: %target%
@@ -253,25 +265,31 @@ if %errorlevel%==0 (
     echo    [!] Host may be unreachable
 )
 ipconfig | findstr /i "ipv4"
+call :log_activity "IP Lookup: %target%"
 pause
 goto network_tools
 
 :tool_ping
 cls
+call :draw_header
 echo.
 echo     PING / LATENCY TESTER
+echo.
 set /p target="> Enter target: "
 set /p count="> Packets (default 4): "
 if "%count%"=="" set count=4
 echo.
 ping -n %count% %target%
+call :log_activity "Ping: %target% (%count% packets)"
 pause
 goto network_tools
 
 :tool_dns
 cls
+call :draw_header
 echo.
 echo     DNS LOOKUP TOOL
+echo.
 set /p domain="> Enter domain: "
 echo.
 echo    A Records:
@@ -282,82 +300,101 @@ nslookup -type=NS %domain% 2>nul | findstr "nameserver"
 echo.
 echo    MX Records:
 nslookup -type=MX %domain% 2>nul | findstr "mail"
+call :log_activity "DNS Lookup: %domain%"
 pause
 goto network_tools
 
 :tool_port_scan
 cls
+call :draw_header
 echo.
 echo     PORT SCANNER
 echo    Common: 21(FTP) 22(SSH) 80(HTTP) 443(HTTPS)
+echo.
 set /p target="> Target IP: "
 set /p ports="> Ports (e.g., 80,443): "
 echo.
 echo    Scanning... (please wait)
-powershell -Command "$t='%target%'; $ports='%ports%' -split ','; foreach ($p in $ports) { $port=$p.Trim(); if ($port -match '^\d+$') { try { $tcp=New-Object Net.Sockets.TcpClient; $c=$tcp.BeginConnect($t,[int]$port,$null,$null); $w=$c.AsyncWaitHandle.WaitOne(500,$false); if($w -and $tcp.Connected) { Write-Host ('    ' + $port + ' OPEN'); $tcp.Close() } else { Write-Host ('    ' + $port + ' closed') } } catch { } } }"
+powershell -Command "$t='%target%'; $p='%ports%' -split ','; foreach ($port in $p) { $port=$port.Trim(); if ($port -match '^\d+$') { try { $tcp=New-Object Net.Sockets.TcpClient; $c=$tcp.BeginConnect($t,[int]$port,$null,$null); $w=$c.AsyncWaitHandle.WaitOne(500,$false); if($w -and $tcp.Connected) { Write-Host ('    ' + $port + ' OPEN'); $tcp.Close() } else { Write-Host ('    ' + $port + ' closed') } } catch { } } }"
+call :log_activity "Port scan: %target% (%ports%)"
 pause
 goto network_tools
 
 :tool_network_scan
 cls
+call :draw_header
 echo.
 echo     NETWORK SCANNER (ARP)
 echo    [i] Scanning local network...
 arp -a | findstr /v "Interface"
+call :log_activity "Network ARP scan"
 pause
 goto network_tools
 
 :tool_whois
 cls
+call :draw_header
 echo.
 echo     WHOIS LOOKUP
+echo.
 set /p domain="> Enter domain: "
 echo.
-nslookup %domain% 2>nul | findstr /i "Name:\|Address:"
+nslookup %domain% 2>nul | findstr /i "Name:"
 where curl >nul 2>&1
 if %errorlevel%==0 (
     echo.
     echo    RDAP Data:
-    curl -s "https://rdap.org/domain/%domain%" 2>nul | findstr "ldhName" | head -2
+    curl -s "https://rdap.org/domain/%domain%" 2>nul
 )
+call :log_activity "WHOIS: %domain%"
 pause
 goto network_tools
 
 :tool_traceroute
 cls
+call :draw_header
 echo.
 echo     TRACEROUTE TOOL
+echo.
 set /p target="> Enter target: "
 set /p hops="> Max hops (default 30): "
 if "%hops%"=="" set hops=30
 echo.
 tracert -d -h %hops% %target%
+call :log_activity "Traceroute: %target% (%hops% hops)"
 pause
 goto network_tools
 
 :tool_subnet
 cls
+call :draw_header
 echo.
 echo     SUBNET CALCULATOR
 echo    Enter IP/CIDR (e.g., 192.168.1.0/24)
+echo.
 set /p subnet="> IP/CIDR: "
 echo.
 powershell -Command "$input='%subnet%'; if ($input -match '^(\d+\.\d+\.\d+\.\d+)/(\d+)$') { $ip=$matches[1]; $cidr=[int]$matches[2]; $mask=[uint32]([math]::Pow(2,32)-[math]::Pow(2,32-$cidr)); $ipBytes=$ip.Split('.'); $ipInt=([uint32]$ipBytes[0]*16777216)+([uint32]$ipBytes[1]*65536)+([uint32]$ipBytes[2]*256)+[uint32]$ipBytes[3]; $networkInt=$ipInt -band $mask; $broadcastInt=$networkInt -bor ([uint32]([math]::Pow(2,32-$cidr)-1)); $hosts=[math]::Pow(2,32-$cidr)-2; Write-Host ('    Network: ' + ([IPAddress]([BitConverter]::GetBytes([uint32]$networkInt) | ForEach-Object { [int]$_ } | ForEach-Object { [string]$_ } -join '.')).IPAddressToString); Write-Host ('    Broadcast: ' + ([IPAddress]([BitConverter]::GetBytes([uint32]$broadcastInt) | ForEach-Object { [int]$_ } | ForEach-Object { [string]$_ } -join '.')).IPAddressToString); Write-Host ('    Hosts: ' + $hosts); } else { Write-Host '    Invalid format' }"
+call :log_activity "Subnet calc: %subnet%"
 pause
 goto network_tools
 
 :tool_wifi
 cls
+call :draw_header
 echo.
 echo     WIFI SCANNER
 netsh wlan show networks mode=bssid
+call :log_activity "WiFi scan"
 pause
 goto network_tools
 
 :tool_http_headers
 cls
+call :draw_header
 echo.
 echo     HTTP HEADERS CHECKER
+echo.
 set /p url="> Enter URL: "
 echo.
 where curl >nul 2>&1
@@ -366,13 +403,16 @@ if %errorlevel%==0 (
 ) else (
     echo    [!] curl not found
 )
+call :log_activity "HTTP Headers: %url%"
 pause
 goto network_tools
 
 :tool_ip_reputation
 cls
+call :draw_header
 echo.
 echo     IP REPUTATION CHECK
+echo.
 set /p ip="> Enter IP: "
 echo.
 ping -n 1 %ip% >nul 2>&1
@@ -383,47 +423,76 @@ echo.
 echo    Check online:
 echo    - abuseipdb.com/check/%ip%
 echo    - virustotal.com/gui/ip-address/%ip%
+call :log_activity "IP Reputation: %ip%"
 pause
 goto network_tools
 
 :tool_speedtest
 cls
+call :draw_header
 echo.
 echo     INTERNET SPEED TEST
 echo    [i] Downloading 10MB test file...
-powershell -Command "$url='http://speedtest.tele2.net/10MB.zip'; $sizeMB=10; $start=Get-Date; try { $wc=New-Object System.Net.WebClient; $data=$wc.DownloadData($url); $end=Get-Date; $duration=($end-$start).TotalSeconds; $speedMbps=($sizeMB*8)/$duration; Write-Host ('    Speed: ' + [math]::Round($speedMbps,2) + ' Mbps'); } catch { Write-Host '    [!] Failed'; }"
+powershell -Command "$url='http://speedtest.tele2.net/10MB.zip'; $sizeMB=10; $start=Get-Date; try { $wc=New-Object System.Net.WebClient; $data=$wc.DownloadData($url); $end=Get-Date; $duration=($end-$start).TotalSeconds; $speedMbps=($sizeMB*8)/$duration; Write-Host ('    Speed: ' + [math]::Round($speedMbps,2) + ' Mbps'); } catch { Write-Host '    Speed test failed'; }"
+call :log_activity "Speed test completed"
 pause
 goto network_tools
 
 :system_tools
 cls
+call :draw_header
 echo.
 echo     SYSTEM TOOLS
-echo    [1] Active Connections
+    echo    [1] Active Connections
     echo    [2] Firewall Status
     echo    [3] System Information
     echo    [4] Process Monitor
     echo    [0] Back
     echo.
-set /p choice="> Enter choice: "
-if "%choice%"=="1" netstat -an | findstr "ESTABLISHED LISTENING" | more & pause & goto system_tools
-if "%choice%"=="2" netsh advfirewall show allprofiles & pause & goto system_tools
-if "%choice%"=="3" echo Computer: %computername% & ver & ipconfig | findstr /i "ipv4" & wmic cpu get name /value 2>nul | findstr "=" & wmic ComputerSystem get TotalPhysicalMemory /value 2>nul | findstr "=" & pause & goto system_tools
-if "%choice%"=="4" tasklist | sort /+58 | more +3 & pause & goto system_tools
+    set /p choice="> Enter choice: "
+if "%choice%"=="1" (
+    netstat -an | findstr "ESTABLISHED LISTENING" | more
+    call :log_activity "Viewed active connections"
+    pause
+    goto system_tools
+)
+if "%choice%"=="2" (
+    netsh advfirewall show allprofiles
+    call :log_activity "Viewed firewall status"
+    pause
+    goto system_tools
+)
+if "%choice%"=="3" (
+    echo Computer: %computername%
+    ver
+    ipconfig | findstr /i "ipv4"
+    wmic cpu get name /value 2>nul | findstr "="
+    wmic ComputerSystem get TotalPhysicalMemory /value 2>nul | findstr "="
+    call :log_activity "Viewed system info"
+    pause
+    goto system_tools
+)
+if "%choice%"=="4" (
+    tasklist | sort /+58 | more +3
+    call :log_activity "Viewed process monitor"
+    pause
+    goto system_tools
+)
 if "%choice%"=="0" goto main_menu
 goto system_tools
 
 :security_tools
 cls
+call :draw_header
 echo.
 echo     SECURITY TOOLS
-echo    [1] SSL Certificate Checker
+    echo    [1] SSL Certificate Checker
     echo    [2] Hash Generator
     echo    [3] Password Strength
     echo    [4] Base64 Encoder
     echo    [0] Back
     echo.
-set /p choice="> Enter choice: "
+    set /p choice="> Enter choice: "
 if "%choice%"=="1" goto tool_ssl
 if "%choice%"=="2" goto tool_hash
 if "%choice%"=="3" goto tool_password
@@ -433,45 +502,63 @@ goto security_tools
 
 :tool_ssl
 cls
+call :draw_header
 echo.
 echo     SSL CERTIFICATE CHECKER
+echo.
 set /p domain="> Enter domain: "
 echo.
-powershell -Command "try { $tcp=New-Object Net.Sockets.TcpClient('%domain%',443); $stream=$tcp.GetStream(); $ssl=New-Object Net.Security.SslStream($stream); $ssl.AuthenticateAsClient('%domain%'); $cert=$ssl.RemoteCertificate; Write-Host ('    Valid until: ' + $cert.GetExpirationDateString()); $tcp.Close(); } catch { Write-Host '    [!] SSL failed'; }"
+powershell -Command "try { $tcp=New-Object Net.Sockets.TcpClient('%domain%',443); $stream=$tcp.GetStream(); $ssl=New-Object Net.Security.SslStream($stream); $ssl.AuthenticateAsClient('%domain%'); $cert=$ssl.RemoteCertificate; Write-Host ('    Valid until: ' + $cert.GetExpirationDateString()); $tcp.Close(); } catch { Write-Host '    SSL failed'; }"
+call :log_activity "SSL check: %domain%"
 pause
 goto security_tools
 
 :tool_hash
 cls
+call :draw_header
 echo.
 echo     HASH GENERATOR
+echo.
 set /p text="> Enter text: "
 echo.
 echo    MD5:
-echo %text% > __t__.txt
-certutil -hashfile __t__.txt MD5 2>nul | findstr /v "Certutil\|md5"
-del __t__.txt 2>nul
+echo %text% > __temp.txt
+certutil -hashfile __temp.txt MD5 2>nul | findstr /v "Certutil"
+del __temp.txt 2>nul
 echo.
 echo    SHA256:
 powershell -Command "$bytes=[Text.Encoding]::UTF8.GetBytes('%text%'); $sha=[Security.Cryptography.SHA256]::Create(); $hash=$sha.ComputeHash($bytes); Write-Host ('    ' + [BitConverter]::ToString($hash).Replace('-','').ToLower())"
+call :log_activity "Hash generated"
 pause
 goto security_tools
 
 :tool_password
 cls
+call :draw_header
 echo.
 echo     PASSWORD STRENGTH CHECKER
+echo.
 set /p pass="> Enter password: "
 echo.
-set "len=0"
-for /l %%i in (0,1,100) do (if not "!pass:~%%i,1!"=="" set /a len+=1)
+set len=0
+for /l %%i in (0,1,100) do (
+    if not "!pass:~%%i,1!"=="" set /a len+=1
+)
 echo    Length: %len%
-if %len% lss 8 (echo    Strength: WEAK) else if %len% lss 12 (echo    Strength: MODERATE) else (echo    Strength: STRONG)
+if %len% lss 8 (
+    echo    Strength: WEAK
+) else if %len% lss 12 (
+    echo    Strength: MODERATE
+) else (
+    echo    Strength: STRONG
+)
+call :log_activity "Password strength checked"
 pause
 goto security_tools
 
 :tool_base64
 cls
+call :draw_header
 echo.
 echo     BASE64 ENCODER/DECODER
 echo    [1] Encode
@@ -485,13 +572,15 @@ if "%action%"=="1" (
     powershell -Command "Write-Host ([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('%text%')))"
 ) else (
     echo    Decoded:
-    powershell -Command "try { Write-Host ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('%text%'))) } catch { Write-Host '    [!] Invalid' }"
+    powershell -Command "try { Write-Host ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('%text%'))) } catch { Write-Host '    Invalid' }"
 )
+call :log_activity "Base64 operation"
 pause
 goto security_tools
 
 :utilities_menu
 cls
+call :draw_header
 echo.
 echo     UTILITIES
 echo    [1] JSON Formatter
@@ -511,7 +600,8 @@ echo.
 echo     JSON FORMATTER
 set /p jsonin="> Paste JSON: "
 echo.
-powershell -Command "try { $j=ConvertFrom-Json '%jsonin%'; ConvertTo-Json $j -Depth 10 } catch { Write-Host '    [!] Invalid JSON' }"
+powershell -Command "try { $j=ConvertFrom-Json '%jsonin%'; ConvertTo-Json $j -Depth 10 } catch { Write-Host '    Invalid JSON' }"
+call :log_activity "JSON formatted"
 pause
 goto utilities_menu
 
@@ -529,6 +619,7 @@ if "%action%"=="1" (
 ) else (
     powershell -Command "Add-Type -AssemblyName System.Web; Write-Host ([Web.HttpUtility]::UrlDecode('%text%'))"
 )
+call :log_activity "URL encode/decode"
 pause
 goto utilities_menu
 
@@ -542,11 +633,13 @@ for /f "delims=. tokens=1" %%a in ("%token%") do powershell -Command "try { $b='
 echo.
 echo    Payload:
 for /f "delims=. tokens=2" %%a in ("%token%") do powershell -Command "try { $b='%%a'; while($b.Length%%4){$b+='='}; $bytes=[Convert]::FromBase64String($b.Replace('-','+').Replace('_','/')); Write-Host ('    ' + [Text.Encoding]::UTF8.GetString($bytes)) } catch { }"
+call :log_activity "JWT decoded"
 pause
 goto utilities_menu
 
 :user_profile
 cls
+call :draw_header
 echo.
 echo     USER PROFILE
 echo    Username: %CURRENT_USER%
@@ -564,6 +657,7 @@ goto main_menu
 
 :view_logs
 cls
+call :draw_header
 echo.
 echo     ACTIVITY LOGS
 if exist "%LOGS_DIR%\activity.log" (
@@ -578,14 +672,15 @@ goto main_menu
 echo.
 echo    Logging out...
 if exist "%SESSION_FILE%" del "%SESSION_FILE%"
-set "CURRENT_USER="
-set "IS_LOGGED_IN=0"
+set CURRENT_USER=
+set IS_LOGGED_IN=0
 echo    [OK] Logged out
 timeout /t 1 >nul
 goto main_menu
 
 :check_updates
 cls
+call :draw_header
 echo.
 echo     UPDATE CHECKER
 echo    Current Version: %VERSION%
@@ -615,9 +710,29 @@ goto main_menu
 
 :exit_truma
 cls
+call :draw_header
 echo.
 echo     Thank you for using TRUMA!
 echo     Goodbye, %CURRENT_USER%
 echo.
 timeout /t 2 >nul
 exit /b 0
+
+:draw_header
+echo.
+echo     TTTTT RRRR  U   U M   M  AAA
+echo       T   R   R U   U MM MM A   A
+echo       T   RRRR  U   U M M M AAAAA
+echo       T   R  R  U   U M   M A   A
+echo       T   R   R  UUU  M   M A   A
+echo     ===================================
+echo       Advanced Network Security v%VERSION%
+echo.
+goto :eof
+
+:log_activity
+echo [%date% %time%] %~1 >> "%LOGS_DIR%\activity.log"
+if "%IS_LOGGED_IN%"=="1" (
+    echo [%date% %time%] %~1 >> "%LOGS_DIR%\%CURRENT_USER%.log"
+)
+goto :eof
