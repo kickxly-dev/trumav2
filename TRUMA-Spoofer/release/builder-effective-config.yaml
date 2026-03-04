@@ -1,0 +1,21 @@
+directories:
+  output: release
+  buildResources: build
+appId: com.truma.spoofer
+productName: TRUMA Spoofer
+files:
+  - filter:
+      - main.js
+      - preload.js
+      - index.html
+      - renderer.js
+      - styles.css
+win:
+  target: nsis
+  icon: assets/icon.ico
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: true
+  runAfterFinish: true
+electronVersion: 30.5.1

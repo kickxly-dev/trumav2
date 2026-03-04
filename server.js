@@ -11,12 +11,35 @@ const ping = require('ping');
 const whois = require('whois');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const validator = require('validator');
+const xss = require('xss');
 require('dotenv').config();
 
 const execAsync = promisify(exec);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// TRUMA NET V2 Security Configuration
+const TRUMA_NET = {
+  version: 'V2',
+  build: '2.0.0',
+  securityLevel: 'MAXIMUM',
+  features: {
+    threatDetection: true,
+    autoBlocking: true,
+    geoBlocking: true,
+    botDetection: true,
+    rateLimitAdvanced: true,
+    requestValidation: true,
+    encryptionAtRest: true,
+    realTimeMonitoring: true
+  }
+};
+
+// Security: Generate strong secret if not provided
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 
 const fetchFn = (...args) => {
   if (typeof fetch !== 'undefined') {
@@ -25,24 +48,86 @@ const fetchFn = (...args) => {
   return import('node-fetch').then(({ default: f }) => f(...args));
 };
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-  origin: ['http://localhost:10000', 'http://localhost:3000', 'http://127.0.0.1:10000'],
-  credentials: true
+// Middleware - Enhanced Security Headers (TRUMA NET V2)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+      fontSrc: ["'self'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.ipify.org", "https://ipapi.co"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: "same-origin" },
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: 'deny' },
+  hidePoweredBy: true,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  ieNoOpen: true,
+  noSniff: true,
+  originAgentCluster: true,
+  permittedCrossDomainPolicies: { permittedPolicies: "none" },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  xssFilter: true
 }));
-app.use(express.json());
+
+// CORS with strict settings
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:10000',
+      'http://localhost:3000',
+      'http://127.0.0.1:10000',
+      'https://trauma-suite.onrender.com',
+      process.env.SITE_URL
+    ].filter(Boolean);
+    
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS policy violation'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],
+  exposedHeaders: ['X-Request-ID', 'X-RateLimit-Remaining'],
+  maxAge: 600
+}));
+
+// Request size limiting
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(express.static(path.join(__dirname)));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+// Rate limiting - Advanced (TRUMA NET V2)
+const createRateLimiter = (windowMs, max, message) => rateLimit({
+  windowMs,
+  max,
+  message: { error: message || 'Too many requests', code: 'RATE_LIMITED' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.user?.role === 'admin',
+  handler: async (req, res, next) => {
+    await logThreat(req.ip, 'RATE_LIMIT', `Exceeded rate limit: ${req.path}`);
+    res.status(429).json({ error: 'Too many requests', code: 'RATE_LIMITED' });
+  }
 });
-app.use('/api/', limiter);
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// General API limiter
+const apiLimiter = createRateLimiter(15 * 60 * 1000, 100, 'Too many API requests');
+// Strict limiter for auth endpoints
+const authLimiter = createRateLimiter(60 * 60 * 1000, 10, 'Too many auth attempts');
+// Tool usage limiter
+const toolLimiter = createRateLimiter(60 * 1000, 30, 'Too many tool requests');
+
+app.use('/api/', apiLimiter);
 
 function isWindows() {
   return process.platform === 'win32';
@@ -52,6 +137,328 @@ async function execSafe(command) {
   const { stdout, stderr } = await execAsync(command, { windowsHide: true, maxBuffer: 1024 * 1024 });
   return { stdout, stderr };
 }
+
+// ==================== TRUMA NET V2 SECURITY FUNCTIONS ====================
+
+// Threat types for detection
+const THREAT_TYPES = {
+  SQL_INJECTION: 'SQL_INJECTION',
+  XSS_ATTACK: 'XSS_ATTACK',
+  PATH_TRAVERSAL: 'PATH_TRAVERSAL',
+  COMMAND_INJECTION: 'COMMAND_INJECTION',
+  BRUTE_FORCE: 'BRUTE_FORCE',
+  RATE_LIMIT: 'RATE_LIMIT',
+  SUSPICIOUS_UA: 'SUSPICIOUS_UA',
+  BOT_DETECTED: 'BOT_DETECTED',
+  MALICIOUS_IP: 'MALICIOUS_IP'
+};
+
+// Suspicious user agents (bots, scanners, etc.)
+const SUSPICIOUS_USER_AGENTS = [
+  'sqlmap', 'nmap', 'nikto', 'masscan', 'zgrab', 'gobuster', 
+  'dirbuster', 'wpscan', 'burp', 'owasp', 'acunetix', 'nessus',
+  'metasploit', 'hydra', 'medusa', 'ncrack', 'skipfish', 'w3af',
+  'arachni', 'vega', 'zap', 'censys', 'shodan', 'zabbix'
+];
+
+// Malicious patterns for request validation
+const MALICIOUS_PATTERNS = {
+  sqlInjection: /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute|xp_|sp_|0x)\b|(--|#|\/\*|\*\/|;|'|")\s*(or|and)\s*('|")?\s*\w+\s*=|'(\s*or\s*'|")|1\s*=\s*1|'\s*;\s*--)/i,
+  xss: /(<script|javascript:|on\w+\s*=|<iframe|<object|<embed|<svg|<img\s+[^>]*onerror|expression\s*\(|document\.cookie|eval\s*\(|alert\s*\()/i,
+  pathTraversal: /(\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e\/|\.\.%2f|%2e%2e%5c|\.\\|%00)/i,
+  commandInjection: /(\||;|\$\(|`|&&|\|\||>\s*\/|<\s*\/|\b(cat|ls|pwd|whoami|id|uname|wget|curl|nc|bash|sh|cmd|powershell)\b\s*[;&|])/i
+};
+
+// Log threat to database
+async function logThreat(ip, threatType, details, req = null) {
+  try {
+    await pool.query(`
+      INSERT INTO visitor_logs (ip_address, user_agent, referer, path, method, is_threat, threat_type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [
+      ip,
+      req?.get('user-agent') || 'unknown',
+      req?.get('referer') || 'direct',
+      req?.path || 'unknown',
+      req?.method || 'unknown',
+      true,
+      threatType
+    ]);
+
+    // Check if IP should be auto-blocked
+    const threatCount = await pool.query(`
+      SELECT COUNT(*) as count FROM visitor_logs 
+      WHERE ip_address = $1 AND is_threat = true AND timestamp > NOW() - INTERVAL '1 hour'
+    `, [ip]);
+
+    if (parseInt(threatCount.rows[0].count) >= 5) {
+      await blockIP(ip, `Auto-blocked: ${threatType} - Multiple threats detected`);
+    }
+  } catch (error) {
+    console.error('Error logging threat:', error);
+  }
+}
+
+// Block IP address
+async function blockIP(ip, reason, durationHours = 24) {
+  try {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + durationHours);
+
+    await pool.query(`
+      INSERT INTO ip_blocklist (ip_address, reason, expires_at, threat_count)
+      VALUES ($1, $2, $3, 1)
+      ON CONFLICT (ip_address) 
+      DO UPDATE SET 
+        threat_count = ip_blocklist.threat_count + 1,
+        reason = $2,
+        expires_at = $3,
+        is_active = true,
+        last_threat_type = 'REPEAT_OFFENDER'
+    `, [ip, reason, expiresAt]);
+
+    console.log(`[TRUMA NET V2] IP Blocked: ${ip} - ${reason}`);
+    return true;
+  } catch (error) {
+    console.error('Error blocking IP:', error);
+    return false;
+  }
+}
+
+// Check if IP is blocked
+async function isIPBlocked(ip) {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM ip_blocklist 
+      WHERE ip_address = $1 AND is_active = true 
+      AND (expires_at IS NULL OR expires_at > NOW())
+    `, [ip]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking IP block:', error);
+    return false;
+  }
+}
+
+// Validate and sanitize request
+function validateRequest(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  
+  // Check for blocked IP
+  isIPBlocked(ip).then(blocked => {
+    if (blocked) {
+      logThreat(ip, 'MALICIOUS_IP', 'Blocked IP attempted access', req);
+      return res.status(403).json({ error: 'Access denied', code: 'IP_BLOCKED' });
+    }
+    next();
+  }).catch(() => next());
+}
+
+// Detect malicious patterns in request
+function detectMaliciousInput(data) {
+  if (!data || typeof data !== 'object') return null;
+  
+  const stringData = JSON.stringify(data);
+  
+  for (const [type, pattern] of Object.entries(MALICIOUS_PATTERNS)) {
+    if (pattern.test(stringData)) {
+      return type;
+    }
+  }
+  return null;
+}
+
+// XSS Sanitization middleware
+function sanitizeInput(req, res, next) {
+  if (req.body) {
+    const maliciousType = detectMaliciousInput(req.body);
+    if (maliciousType) {
+      logThreat(req.ip, maliciousType, `Malicious input detected in ${req.path}`, req);
+      return res.status(400).json({ 
+        error: 'Invalid input detected', 
+        code: 'SECURITY_VIOLATION' 
+      });
+    }
+    
+    // Sanitize string fields
+    const sanitize = (obj) => {
+      for (const key in obj) {
+        if (typeof obj[key] === 'string') {
+          obj[key] = xss(obj[key].trim());
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          sanitize(obj[key]);
+        }
+      }
+    };
+    sanitize(req.body);
+  }
+  
+  if (req.query) {
+    for (const key in req.query) {
+      if (typeof req.query[key] === 'string') {
+        req.query[key] = xss(req.query[key]);
+      }
+    }
+  }
+  
+  next();
+}
+
+// Bot detection middleware
+function detectBot(req, res, next) {
+  const userAgent = req.get('user-agent')?.toLowerCase() || '';
+  const ip = req.ip || req.connection.remoteAddress;
+  
+  // Check for suspicious user agents
+  for (const suspicious of SUSPICIOUS_USER_AGENTS) {
+    if (userAgent.includes(suspicious)) {
+      logThreat(ip, 'BOT_DETECTED', `Suspicious UA: ${suspicious}`, req);
+      return res.status(403).json({ 
+        error: 'Automated access not allowed', 
+        code: 'BOT_DETECTED' 
+      });
+    }
+  }
+  
+  // Check for missing common headers (bots often skip these)
+  const acceptHeader = req.get('accept');
+  const acceptLanguage = req.get('accept-language');
+  
+  if (!acceptHeader || !acceptLanguage) {
+    // Log but don't block - some legitimate tools skip these
+    logThreat(ip, 'SUSPICIOUS_UA', 'Missing standard headers', req);
+  }
+  
+  next();
+}
+
+// IP Blocking middleware
+async function ipBlockMiddleware(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  
+  try {
+    const blocked = await isIPBlocked(ip);
+    if (blocked) {
+      return res.status(403).json({ error: 'Access denied', code: 'IP_BLOCKED' });
+    }
+    next();
+  } catch (error) {
+    next();
+  }
+}
+
+// Encryption utilities
+function encrypt(text) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag();
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(encrypted) {
+  const [ivHex, authTagHex, encryptedText] = encrypted.split(':');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm',
+    Buffer.from(ENCRYPTION_KEY, 'hex'),
+    Buffer.from(ivHex, 'hex')
+  );
+  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
+
+// Request ID for tracking
+function addRequestId(req, res, next) {
+  req.requestId = crypto.randomBytes(8).toString('hex');
+  res.setHeader('X-Request-ID', req.requestId);
+  next();
+}
+
+// Apply security middleware
+app.use(addRequestId);
+app.use(ipBlockMiddleware);
+app.use(detectBot);
+app.use('/api/', sanitizeInput);
+
+// ==================== END TRUMA NET V2 SECURITY ====================
+
+// TRUMA NET V2 Status Endpoint
+app.get('/api/security/status', async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM visitor_logs WHERE is_threat = true AND timestamp > NOW() - INTERVAL '24 hours') as threats_24h,
+        (SELECT COUNT(*) FROM ip_blocklist WHERE is_active = true) as blocked_ips,
+        (SELECT COUNT(*) FROM visitor_logs WHERE timestamp > NOW() - INTERVAL '24 hours') as visitors_24h,
+        (SELECT COUNT(*) FROM failed_logins WHERE timestamp > NOW() - INTERVAL '1 hour') as failed_logins_1h
+    `);
+    
+    res.json({
+      trauma_net: TRUMA_NET,
+      stats: {
+        threats24h: parseInt(stats.rows[0].threats_24h) || 0,
+        blockedIPs: parseInt(stats.rows[0].blocked_ips) || 0,
+        visitors24h: parseInt(stats.rows[0].visitors_24h) || 0,
+        failedLogins1h: parseInt(stats.rows[0].failed_logins_1h) || 0
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      trauma_net: TRUMA_NET,
+      stats: { threats24h: 0, blockedIPs: 0, visitors24h: 0, failedLogins1h: 0 },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Admin: Get blocked IPs
+app.get('/api/security/blocked-ips', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT ip_address, reason, blocked_at, expires_at, threat_count, last_threat_type
+      FROM ip_blocklist 
+      WHERE is_active = true 
+      ORDER BY blocked_at DESC 
+      LIMIT 100
+    `);
+    res.json({ blockedIPs: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch blocked IPs' });
+  }
+});
+
+// Admin: Unblock IP
+app.delete('/api/security/blocked-ips/:ip', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE ip_blocklist SET is_active = false WHERE ip_address = $1',
+      [req.params.ip]
+    );
+    res.json({ message: 'IP unblocked successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to unblock IP' });
+  }
+});
+
+// Admin: Get threat logs
+app.get('/api/security/threats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT ip_address, user_agent, path, method, threat_type, timestamp
+      FROM visitor_logs 
+      WHERE is_threat = true 
+      ORDER BY timestamp DESC 
+      LIMIT 200
+    `);
+    res.json({ threats: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch threats' });
+  }
+});
 
 // Database connection (PostgreSQL on Render)
 const { Pool } = require('pg');
