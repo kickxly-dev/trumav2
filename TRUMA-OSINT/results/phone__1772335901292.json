@@ -1,0 +1,20 @@
+{
+  "phone": "cappingforclout",
+  "timestamp": "2026-03-01T03:31:41.289Z",
+  "data": {
+    "clean": "",
+    "valid": false,
+    "formats": {
+      "intl": "+"
+    },
+    "accounts": {
+      "whatsapp": "https://wa.me/",
+      "telegram": "https://t.me/+",
+      "searches": [
+        "\"\" site:facebook.com",
+        "\"\" site:twitter.com",
+        "\"\" site:linkedin.com"
+      ]
+    }
+  }
+}

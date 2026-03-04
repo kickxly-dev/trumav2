@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRUMA Spoofer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="brand">
+          <div class="brand-mark">
+            <div class="brand-orb"></div>
+            <div class="brand-orb2"></div>
+          </div>
+          <div>
+            <div class="brand-name">TRUMA</div>
+            <div class="brand-sub">SPOOFER</div>
+          </div>
+        </div>
+        <div class="actions">
+          <div id="admin-badge" class="pill warn hidden">⚠ ADMIN REQUIRED</div>
+          <button id="btn-refresh" class="btn">Refresh</button>
+        </div>
+      </header>
+
+      <main id="main">
+        <section class="card hero">
+          <div class="hero-left">
+            <div class="hero-title">Mask your digital fingerprint.</div>
+            <div class="hero-sub">Change MAC addresses and hardware IDs. Zero logs. Session-only storage.</div>
+            <div class="hero-chips">
+              <span class="chip">MAC SPOOFING</span>
+              <span class="chip">HARDWARE ID</span>
+              <span class="chip">ZERO PERSISTENCE</span>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="stat">
+              <div class="stat-label">Adapters</div>
+              <div class="stat-value" id="adapter-count">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Status</div>
+              <div class="stat-value" id="status-text">Idle</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Network Adapters</div>
+              <div class="muted">Click spoof to randomize MAC address. Originals stored in memory only.</div>
+            </div>
+            <div class="card-actions">
+              <button id="btn-spoof-all-mac" class="btn btn-primary">Spoof All</button>
+            </div>
+          </div>
+          <div id="adapters"></div>
+        </section>
+
+        <section class="card" style="display:none;">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Volume Serial Numbers</div>
+              <div class="muted">Requires kernel-level access - currently simulated only.</div>
+            </div>
+            <div class="card-actions">
+              <button id="btn-spoof-all-vol" class="btn btn-primary" disabled>Spoof All</button>
+            </div>
+          </div>
+          <div id="volumes"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Machine Identifiers</div>
+              <div class="muted">Registry-based IDs. Some software uses these for licensing/fingerprinting.</div>
+            </div>
+            <div class="card-actions">
+              <button id="btn-spoof-guid" class="btn btn-primary">Spoof Machine GUID</button>
+              <button id="btn-spoof-uuid" class="btn btn-primary">Spoof System UUID</button>
+            </div>
+          </div>
+          <div id="machine-ids"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Generator</div>
+              <div class="muted">Generate random identifiers for manual use.</div>
+            </div>
+          </div>
+          <div class="generator-grid">
+            <div class="gen-item">
+              <div class="gen-label">MAC Address</div>
+              <input type="text" id="gen-mac" class="gen-input" readonly />
+              <button id="btn-gen-mac" class="btn btn-ghost">Generate</button>
+              <button id="btn-copy-mac" class="btn btn-ghost">Copy</button>
+            </div>
+            <div class="gen-item">
+              <div class="gen-label">Volume Serial</div>
+              <input type="text" id="gen-serial" class="gen-input" readonly />
+              <button id="btn-gen-serial" class="btn btn-ghost">Generate</button>
+              <button id="btn-copy-serial" class="btn btn-ghost">Copy</button>
+            </div>
+            <div class="gen-item">
+              <div class="gen-label">GUID</div>
+              <input type="text" id="gen-guid" class="gen-input" readonly />
+              <button id="btn-gen-guid" class="btn btn-ghost">Generate</button>
+              <button id="btn-copy-guid" class="btn btn-ghost">Copy</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer id="statusbar">
+        <div id="footer-status">Ready</div>
+        <div class="pill">NO LOGS</div>
+        <div class="pill">SESSION ONLY</div>
+      </footer>
+    </div>
+
+    <div id="modal" class="hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <div class="modal-title">Custom MAC Address</div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label>MAC Address (format: XX:XX:XX:XX:XX:XX)</label>
+            <input type="text" id="custom-mac-input" class="text-input" placeholder="00:11:22:33:44:55" maxlength="17" />
+          </div>
+          <div class="muted" style="margin-top:8px;">Leave empty for random MAC</div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-modal-cancel" class="btn">Cancel</button>
+          <button id="btn-modal-confirm" class="btn btn-primary">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

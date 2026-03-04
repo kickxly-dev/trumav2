@@ -1,0 +1,66 @@
+{
+  "url": "https://discord.com/channels/1474259499496767571/1474263054031261858",
+  "timestamp": "2026-03-01T03:24:58.123Z",
+  "data": {
+    "domain": "discord.com",
+    "path": "/channels/1474259499496767571/1474263054031261858",
+    "fetched": true,
+    "size": 4874,
+    "meta": {
+      "title": "Discord",
+      "opengraph": {
+        "type": "website",
+        "site_name": "Discord",
+        "title": "Discord - Group Chat That’s All Fun &amp; Games",
+        "description": "Discord is great for playing games and chilling with friends, or even building a worldwide community. Customize your own space to talk, play, and hang out.",
+        "image": "https://cdn.discordapp.com/assets/og_img_discord_home.png"
+      },
+      "twitter": {
+        "card": "summary_large_image",
+        "site": "@discord",
+        "creator": "@discord"
+      }
+    },
+    "links": [],
+    "emails": [],
+    "phones": [
+      "17721803313"
+    ],
+    "social": {
+      "twitter": [],
+      "facebook": [],
+      "instagram": [],
+      "linkedin": [],
+      "youtube": [],
+      "github": [],
+      "tiktok": [],
+      "reddit": [],
+      "pinterest": [],
+      "twitch": []
+    },
+    "technologies": [],
+    "forms": [],
+    "images": [],
+    "scripts": [
+      {},
+      {},
+      {},
+      {
+        "src": "/assets/libdiscore-wasm-fetch.6ca8bf601536d821.js"
+      },
+      {
+        "src": "/assets/fast-connect.c796b7ede8e78233.js"
+      },
+      {
+        "src": "/assets/sentry.326b8e376f098d48.js"
+      },
+      {
+        "src": "/assets/web.e33b617fc9bf2b61.js"
+      }
+    ],
+    "security": {
+      "secureForms": true,
+      "warnings": []
+    }
+  }
+}

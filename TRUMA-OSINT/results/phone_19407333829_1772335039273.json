@@ -1,0 +1,26 @@
+{
+  "phone": "19407333829",
+  "timestamp": "2026-03-01T03:17:19.270Z",
+  "data": {
+    "clean": "19407333829",
+    "valid": true,
+    "country": {
+      "code": "+1",
+      "name": "USA/Canada"
+    },
+    "area": "Unknown",
+    "formats": {
+      "us": "+1 (940) 733-3829",
+      "intl": "+1 940 733 3829"
+    },
+    "accounts": {
+      "whatsapp": "https://wa.me/19407333829",
+      "telegram": "https://t.me/+19407333829",
+      "searches": [
+        "\"19407333829\" site:facebook.com",
+        "\"19407333829\" site:twitter.com",
+        "\"19407333829\" site:linkedin.com"
+      ]
+    }
+  }
+}

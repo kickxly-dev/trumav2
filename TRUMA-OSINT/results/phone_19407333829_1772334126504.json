@@ -1,0 +1,17 @@
+{
+  "phone": "19407333829",
+  "timestamp": "2026-03-01T03:02:06.501Z",
+  "data": {
+    "cleanPhone": "19407333829",
+    "validLength": true,
+    "country": {
+      "code": "+1",
+      "country": "USA/Canada"
+    },
+    "phoneType": "Standard",
+    "formats": {
+      "us": "+1 (940) 733-3829",
+      "international": "+1 940 733 3829"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "truma-browser",
+  "productName": "TRUMA Browser",
+  "version": "1.0.0",
+  "description": "TRUMA Browser - zero-persistence DuckDuckGo browser",
+  "main": "main.js",
+  "author": "kickxly-dev",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "dev.kickxly.truma.browser",
+    "productName": "TRUMA Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    }
+  }
+}

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRUMA Cleaner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="brand">
+          <div class="brand-mark">
+            <div class="brand-orb"></div>
+            <div class="brand-orb2"></div>
+          </div>
+          <div>
+            <div class="brand-name">TRUMA</div>
+            <div class="brand-sub">CLEANER</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btn-scan" class="btn">Scan</button>
+          <button id="btn-clean" class="btn btn-primary" disabled>Clean Selected</button>
+        </div>
+      </header>
+
+      <main id="main">
+        <section class="card hero" id="hero-card">
+          <div class="hero-left">
+            <div class="hero-title">Clean junk. Reclaim space. Stay fast.</div>
+            <div class="hero-sub">Safe-mode cleaner designed for everyday PCs. No passwords. No telemetry.</div>
+            <div class="hero-chips">
+              <span class="chip">SAFE MODE</span>
+              <span class="chip">LOCKED FILE REPORT</span>
+              <span class="chip">ZERO SECRETS</span>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="stat">
+              <div class="stat-label">Reclaimable</div>
+              <div class="stat-value" id="summary-bytes">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Status</div>
+              <div class="stat-value" id="summary-status">Idle</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Selected</div>
+              <div class="stat-value" id="selected-bytes">—</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="targets-card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Cleaning Targets</div>
+              <div class="muted">Recommended targets are pre-selected. Caution targets may impact recent lists or diagnostics.</div>
+            </div>
+            <div class="card-actions">
+              <button id="btn-select-recommended" class="btn btn-ghost">Recommended</button>
+              <button id="btn-select-none" class="btn btn-ghost">None</button>
+            </div>
+          </div>
+          <div id="targets"></div>
+        </section>
+
+        <section class="card" id="details-card">
+          <div class="card-title">Largest Files (Preview)</div>
+          <div class="muted">Preview only. TRUMA Cleaner deletes temp contents, not system folders.</div>
+          <div id="largest"></div>
+        </section>
+
+        <section class="card" id="report-card">
+          <div class="card-title">Clean Report</div>
+          <div class="muted" id="report-summary">Run a clean to see details.</div>
+          <div id="report"></div>
+        </section>
+      </main>
+
+      <footer id="statusbar">
+        <div id="status-text">Ready</div>
+        <div class="pill">SAFE MODE</div>
+        <div class="pill">NO PASSWORDS</div>
+        <button id="btn-settings" class="btn btn-ghost" style="margin-left:auto;height:28px;padding:0 12px;font-size:11px;">⚙ Settings</button>
+      </footer>
+    </div>
+
+    <div id="modal" class="hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <div class="modal-title">Confirm Clean</div>
+        <div class="modal-body" id="modal-body">—</div>
+        <div class="modal-actions">
+          <button id="btn-modal-cancel" class="btn">Cancel</button>
+          <button id="btn-modal-confirm" class="btn btn-primary">Clean Now</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-card settings-card">
+        <div class="modal-title">Settings</div>
+        <div class="settings-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Auto-scan on launch</div>
+              <div class="setting-desc">Automatically scan when TRUMA Cleaner opens</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-auto-scan" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Default selection</div>
+              <div class="setting-desc">What to select by default after scanning</div>
+            </div>
+            <select id="setting-default-selection" class="setting-select">
+              <option value="recommended">Recommended only</option>
+              <option value="all">All targets</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Scheduled clean</div>
+              <div class="setting-desc">Remind you to clean on a schedule</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-scheduled">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row sub-setting" id="schedule-interval-row" style="opacity:0.5;">
+            <div>
+              <div class="setting-label">Schedule interval</div>
+              <div class="setting-desc">How often to remind</div>
+            </div>
+            <select id="setting-schedule-interval" class="setting-select" disabled>
+              <option value="daily">Daily</option>
+              <option value="weekly" selected>Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          <div class="setting-info" id="last-clean-info" style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(0,200,100,0.05);border:1px solid rgba(0,200,100,0.15);color:#00c864;font-size:12px;">
+            No clean recorded yet.
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-settings-cancel" class="btn">Close</button>
+          <button id="btn-settings-save" class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,526 @@
+{
+  "username": "elon musk",
+  "timestamp": "2026-03-01T04:12:05.792Z",
+  "platforms": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "GitLab",
+      "url": "https://gitlab.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bitbucket",
+      "url": "https://bitbucket.org/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dev.to",
+      "url": "https://dev.to/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Codecademy",
+      "url": "https://codecademy.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Replit",
+      "url": "https://replit.com/@elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com/users/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "HackerNews",
+      "url": "https://news.ycombinator.com/user?id=elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "SourceForge",
+      "url": "https://sourceforge.net/u/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Launchpad",
+      "url": "https://launchpad.net/~elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Gitee",
+      "url": "https://gitee.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Codeforces",
+      "url": "https://codeforces.com/profile/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "LeetCode",
+      "url": "https://leetcode.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "HackerRank",
+      "url": "https://hackerrank.com/elon musk",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Twitter/X",
+      "url": "https://twitter.com/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Instagram",
+      "url": "https://instagram.com/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Facebook",
+      "url": "https://facebook.com/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "TikTok",
+      "url": "https://tiktok.com/@elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Snapchat",
+      "url": "https://snapchat.com/add/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Reddit",
+      "url": "https://reddit.com/user/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Pinterest",
+      "url": "https://pinterest.com/elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Tumblr",
+      "url": "https://elon musk.tumblr.com",
+      "category": "social",
+      "status": "ERROR"
+    },
+    {
+      "name": "Mastodon",
+      "url": "https://mastodon.social/@elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Threads",
+      "url": "https://threads.net/@elon musk",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Discord",
+      "url": "https://discord.com/users/elon musk",
+      "category": "social",
+      "status": "FOUND"
+    },
+    {
+      "name": "LinkedIn",
+      "url": "https://linkedin.com/in/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Xing",
+      "url": "https://xing.com/profile/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "AngelList",
+      "url": "https://wellfound.com/u/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Crunchbase",
+      "url": "https://crunchbase.com/person/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Glassdoor",
+      "url": "https://glassdoor.com/profile/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "F6s",
+      "url": "https://f6s.com/elon musk",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "YouTube",
+      "url": "https://youtube.com/@elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Vimeo",
+      "url": "https://vimeo.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Twitch",
+      "url": "https://twitch.tv/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dailymotion",
+      "url": "https://dailymotion.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "SoundCloud",
+      "url": "https://soundcloud.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Spotify",
+      "url": "https://open.spotify.com/user/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bandcamp",
+      "url": "https://bandcamp.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Mixcloud",
+      "url": "https://mixcloud.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dribbble",
+      "url": "https://dribbble.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Behance",
+      "url": "https://behance.net/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "DeviantArt",
+      "url": "https://elon musk.deviantart.com",
+      "category": "creative",
+      "status": "ERROR"
+    },
+    {
+      "name": "ArtStation",
+      "url": "https://artstation.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Flickr",
+      "url": "https://flickr.com/people/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "500px",
+      "url": "https://500px.com/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Unsplash",
+      "url": "https://unsplash.com/@elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Pexels",
+      "url": "https://pexels.com/@elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Medium",
+      "url": "https://medium.com/@elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Substack",
+      "url": "https://elon musk.substack.com",
+      "category": "creative",
+      "status": "ERROR"
+    },
+    {
+      "name": "Wattpad",
+      "url": "https://wattpad.com/user/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Fanfiction",
+      "url": "https://fanfiction.net/~elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Archive of Our Own",
+      "url": "https://archiveofourown.org/users/elon musk",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Steam",
+      "url": "https://steamcommunity.com/id/elon musk",
+      "category": "gaming",
+      "status": "FOUND"
+    },
+    {
+      "name": "Xbox",
+      "url": "https://xboxgamertag.com/search/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "PlayStation",
+      "url": "https://psnprofiles.com/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Nintendo",
+      "url": "https://nintendo.com/us/switch/friends/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Epic Games",
+      "url": "https://fortnitetracker.com/profile/all/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Riot Games",
+      "url": "https://op.gg/summoners/na/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Roblox",
+      "url": "https://roblox.com/user.aspx?username=elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Minecraft",
+      "url": "https://namemc.com/profile/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Chess.com",
+      "url": "https://chess.com/member/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Lichess",
+      "url": "https://lichess.org/@/elon musk",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Keybase",
+      "url": "https://keybase.io/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Gravatar",
+      "url": "https://gravatar.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "About.me",
+      "url": "https://about.me/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Linktree",
+      "url": "https://linktr.ee/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bio.link",
+      "url": "https://bio.link/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Carrd",
+      "url": "https://elon musk.carrd.co",
+      "category": "other",
+      "status": "ERROR"
+    },
+    {
+      "name": "ProductHunt",
+      "url": "https://producthunt.com/@elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Slideshare",
+      "url": "https://slideshare.net/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Academia",
+      "url": "https://academia.edu/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "ResearchGate",
+      "url": "https://researchgate.net/profile/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Goodreads",
+      "url": "https://goodreads.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Letterboxd",
+      "url": "https://letterboxd.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Last.fm",
+      "url": "https://last.fm/user/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Strava",
+      "url": "https://strava.com/athletes/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "MyFitnessPal",
+      "url": "https://myfitnesspal.com/profile/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Duolingo",
+      "url": "https://duolingo.com/profile/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Cash App",
+      "url": "https://cash.app/$elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Patreon",
+      "url": "https://patreon.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Ko-fi",
+      "url": "https://ko-fi.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Buy Me a Coffee",
+      "url": "https://buymeacoffee.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "PayPal",
+      "url": "https://paypal.me/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Venmo",
+      "url": "https://venmo.com/elon musk",
+      "category": "other",
+      "status": "NOT FOUND"
+    }
+  ],
+  "variations": [
+    "elon musk",
+    "ELON MUSK",
+    "theelon musk",
+    "realelon musk",
+    "elon muskofficial",
+    "elon musk2024",
+    "elon musk2025",
+    "iamelon musk",
+    "itselon musk"
+  ],
+  "analysis": {
+    "length": 9,
+    "hasNumbers": false,
+    "hasSpecial": true
+  }
+}

@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRUMA Browser</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="welcome-screen">
+      <div class="welcome-glow"></div>
+      <div class="welcome-content">
+        <div class="welcome-logo">
+          <div class="logo-main">TRUMA</div>
+          <div class="logo-accent">BROWSER</div>
+        </div>
+        <div class="loading-bar-container">
+          <div class="loading-bar"></div>
+        </div>
+        <div class="loading-text">Initializing secure session...</div>
+        <div class="privacy-tags">
+          <span class="tag">ZERO DATA</span>
+          <span class="tag">NO TRACKING</span>
+          <span class="tag">PRIVATE</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="app">
+      <div id="titlebar">
+        <div id="brand">TRUMA <span class="brand-sub">BROWSER</span></div>
+        <div id="controls">
+          <button id="btn-back" class="icon-btn" title="Back">◀</button>
+          <button id="btn-forward" class="icon-btn" title="Forward">▶</button>
+          <button id="btn-reload" class="icon-btn" title="Reload">⟳</button>
+          <div id="omnibox-wrap">
+            <input id="omnibox" type="text" spellcheck="false" placeholder="Search or type URL..." />
+          </div>
+          <button id="btn-bookmarks" class="icon-btn" title="Bookmarks">★</button>
+          <button id="btn-history" class="icon-btn" title="History">⏱</button>
+          <button id="btn-downloads" class="icon-btn" title="Downloads">▼</button>
+          <button id="btn-settings" class="icon-btn" title="Settings">⚙</button>
+          <button id="btn-go" class="primary-btn" title="Go">GO</button>
+        </div>
+      </div>
+
+      <div id="tabsbar">
+        <div id="tabs"></div>
+        <button id="btn-new-tab" class="tab-btn" title="New Tab">＋</button>
+      </div>
+
+      <div id="drawer-overlay" class="hidden"></div>
+      <div id="drawer" class="hidden">
+        <div id="bookmarks-panel" class="panel hidden">
+          <div class="panel-header">
+            <h3>Bookmarks</h3>
+            <button id="btn-close-bookmarks" class="panel-close">×</button>
+          </div>
+          <div id="bookmarks-list" class="panel-content"></div>
+          <div class="panel-footer">
+            <button id="btn-add-bookmark" class="panel-btn">+ Add Current Page</button>
+          </div>
+        </div>
+
+        <div id="history-panel" class="panel hidden">
+          <div class="panel-header">
+            <h3>History</h3>
+            <button id="btn-close-history" class="panel-close">×</button>
+          </div>
+          <div id="history-list" class="panel-content"></div>
+          <div class="panel-footer">
+            <button id="btn-clear-history" class="panel-btn">Clear History</button>
+          </div>
+        </div>
+
+        <div id="downloads-panel" class="panel hidden">
+          <div class="panel-header">
+            <h3>Downloads</h3>
+            <button id="btn-close-downloads" class="panel-close">×</button>
+          </div>
+          <div id="downloads-list" class="panel-content"></div>
+          <div class="panel-footer">
+            <button id="btn-clear-downloads" class="panel-btn">Clear</button>
+          </div>
+        </div>
+
+        <div id="settings-panel" class="panel hidden">
+          <div class="panel-header">
+            <h3>Settings</h3>
+            <button id="btn-close-settings" class="panel-close">×</button>
+          </div>
+          <div class="panel-content">
+            <!-- Theme Section -->
+            <div class="settings-section" style="margin-top:0; padding-top:0; border-top:none;">
+              <div class="settings-section-title">Appearance</div>
+              <div class="setting-row">
+                <label>Theme Mode</label>
+                <select id="setting-theme-mode" class="setting-select">
+                  <option value="dark" selected>Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <label>Accent Color</label>
+                <div class="accent-picker">
+                  <button class="accent-btn" data-accent="crimson" style="background:#e0002a" title="Crimson"></button>
+                  <button class="accent-btn" data-accent="cyan" style="background:#00d4ff" title="Cyan"></button>
+                  <button class="accent-btn" data-accent="matrix" style="background:#00ff41" title="Matrix"></button>
+                  <button class="accent-btn" data-accent="gold" style="background:#ffc107" title="Gold"></button>
+                  <button class="accent-btn" data-accent="purple" style="background:#a855f7" title="Purple"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Privacy Section -->
+            <div class="settings-section">
+              <div class="settings-section-title">Privacy & Security</div>
+              <div class="setting-row">
+                <label>Adblock Level</label>
+                <select id="setting-adblock-level" class="setting-select">
+                  <option value="off">Off</option>
+                  <option value="basic" selected>Basic</option>
+                  <option value="strict">Strict</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <label>Ad & Tracker Blocker</label>
+                <label class="switch">
+                  <input type="checkbox" id="setting-adblock" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <label>Block Third-Party Cookies</label>
+                <label class="switch">
+                  <input type="checkbox" id="setting-cookies" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <label>Strict HTTPS Mode</label>
+                <label class="switch">
+                  <input type="checkbox" id="setting-https">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tools Section -->
+            <div class="settings-section">
+              <div class="settings-section-title">Quick Tools</div>
+              <div class="tools-grid">
+                <button id="tool-password-gen" class="tool-btn">
+                  <span class="tool-icon">🔑</span>
+                  <span>Password Gen</span>
+                </button>
+                <button id="tool-privacy-stats" class="tool-btn">
+                  <span class="tool-icon">🛡️</span>
+                  <span>Privacy Stats</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Homepage Shortcuts</div>
+              <div class="shortcuts-editor" id="shortcuts-editor">
+                <div class="shortcut-edit-row">
+                  <input class="shortcut-input" data-field="label" data-i="0" placeholder="Label" />
+                  <input class="shortcut-input" data-field="url" data-i="0" placeholder="URL" />
+                  <input class="shortcut-input" data-field="icon" data-i="0" placeholder="Icon" />
+                </div>
+                <div class="shortcut-edit-row">
+                  <input class="shortcut-input" data-field="label" data-i="1" placeholder="Label" />
+                  <input class="shortcut-input" data-field="url" data-i="1" placeholder="URL" />
+                  <input class="shortcut-input" data-field="icon" data-i="1" placeholder="Icon" />
+                </div>
+                <div class="shortcut-edit-row">
+                  <input class="shortcut-input" data-field="label" data-i="2" placeholder="Label" />
+                  <input class="shortcut-input" data-field="url" data-i="2" placeholder="URL" />
+                  <input class="shortcut-input" data-field="icon" data-i="2" placeholder="Icon" />
+                </div>
+                <div class="shortcut-edit-row">
+                  <input class="shortcut-input" data-field="label" data-i="3" placeholder="Label" />
+                  <input class="shortcut-input" data-field="url" data-i="3" placeholder="URL" />
+                  <input class="shortcut-input" data-field="icon" data-i="3" placeholder="Icon" />
+                </div>
+              </div>
+              <button id="btn-save-shortcuts" class="panel-btn">Save Shortcuts</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="content">
+        <div id="views"></div>
+      </div>
+
+      <!-- Find Bar -->
+      <div id="find-bar" class="hidden">
+        <input id="find-input" type="text" placeholder="Find in page..." />
+        <span id="find-count"></span>
+        <button id="find-prev" class="find-btn">▲</button>
+        <button id="find-next" class="find-btn">▼</button>
+        <button id="find-close" class="find-btn">×</button>
+      </div>
+
+      <!-- Password Generator Modal -->
+      <div id="password-modal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>🔑 Password Generator</h3>
+            <button id="password-modal-close" class="modal-close">×</button>
+          </div>
+          <div class="password-display">
+            <div id="password-output" class="password-output"></div>
+            <button id="password-copy" class="password-copy" title="Copy">📋</button>
+          </div>
+          <div class="password-options">
+            <div class="password-length">
+              <span>Length:</span>
+              <input type="range" id="password-length" min="8" max="32" value="16">
+              <span id="password-length-value">16</span>
+            </div>
+            <div class="password-checkboxes">
+              <label><input type="checkbox" id="pwd-upper" checked> Uppercase</label>
+              <label><input type="checkbox" id="pwd-lower" checked> Lowercase</label>
+              <label><input type="checkbox" id="pwd-numbers" checked> Numbers</label>
+              <label><input type="checkbox" id="pwd-symbols" checked> Symbols</label>
+            </div>
+          </div>
+          <button id="password-regenerate" class="panel-btn">🔄 Generate New</button>
+        </div>
+      </div>
+
+      <!-- Privacy Stats Modal -->
+      <div id="privacy-modal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>🛡️ Privacy Stats</h3>
+            <button id="privacy-modal-close" class="modal-close">×</button>
+          </div>
+          <div class="privacy-stats">
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">🚫</span> Ads Blocked</div>
+              <div id="stat-ads" class="stat-value">0</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">👁️</span> Trackers Blocked</div>
+              <div id="stat-trackers" class="stat-value">0</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">🍪</span> Cookies Blocked</div>
+              <div id="stat-cookies" class="stat-value">0</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">🔒</span> HTTPS Upgrades</div>
+              <div id="stat-https" class="stat-value">0</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">📊</span> Sites Visited</div>
+              <div id="stat-sites" class="stat-value">0</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label"><span class="stat-icon">🪟</span> Popups Blocked</div>
+              <div id="stat-popups" class="stat-value">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Popup Notification -->
+      <div id="popup-notification" class="popup-notification hidden">
+        <span class="popup-icon">🪟</span>
+        <span class="popup-text">Popup blocked</span>
+        <button id="popup-allow" class="popup-btn allow">Allow</button>
+        <button id="popup-dismiss" class="popup-btn">Dismiss</button>
+      </div>
+
+      <div id="statusbar">
+        <div id="status-left">
+          <span id="status-text">Ready</span>
+        </div>
+        <div id="status-right">
+          <span class="pill">ZERO DATA</span>
+          <span class="pill">TEMP SESSION</span>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

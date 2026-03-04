@@ -1,0 +1,44 @@
+{
+  "name": "truma-cleaner",
+  "productName": "TRUMA Cleaner",
+  "version": "1.0.0",
+  "description": "TRUMA Cleaner - safe cleanup and storage scanner",
+  "main": "main.js",
+  "author": "kickxly-dev",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "dev.kickxly.truma.cleaner",
+    "productName": "TRUMA Cleaner",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "artifactName": "TRUMA Cleaner Setup ${version}.exe"
+    }
+  }
+}

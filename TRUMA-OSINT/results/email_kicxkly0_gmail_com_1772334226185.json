@@ -1,0 +1,57 @@
+{
+  "email": "kicxkly0@gmail.com",
+  "timestamp": "2026-03-01T03:03:45.895Z",
+  "data": {
+    "validFormat": true,
+    "mxRecords": [
+      {
+        "exchange": "alt2.gmail-smtp-in.l.google.com",
+        "priority": 20,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt4.gmail-smtp-in.l.google.com",
+        "priority": 40,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt3.gmail-smtp-in.l.google.com",
+        "priority": 30,
+        "type": "MX"
+      },
+      {
+        "exchange": "gmail-smtp-in.l.google.com",
+        "priority": 5,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt1.gmail-smtp-in.l.google.com",
+        "priority": 10,
+        "type": "MX"
+      }
+    ],
+    "aRecords": [
+      "142.250.26.83",
+      "142.250.26.19",
+      "142.250.26.18",
+      "142.250.26.17"
+    ],
+    "txtRecords": [
+      [
+        "v=spf1 redirect=_spf.google.com"
+      ],
+      [
+        "globalsign-smime-dv=CDYX+XFHUw2wml6/Gb8+59BsH31KzUr6c1l2BPvqKX8="
+      ],
+      [
+        "yahoo-verification-key=dKYwfVbaxatmcXiXy6LDAxMRirqpOq5tj98iJv9qWVk="
+      ]
+    ],
+    "smtpReachable": true,
+    "patterns": {
+      "isTemporaryDomain": false,
+      "localPartLength": 8,
+      "hasNumbers": true
+    }
+  }
+}

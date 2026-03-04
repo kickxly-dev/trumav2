@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUMA - New Tab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b0b0b 0%, #1a0a0f 50%, #0b0b0b 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(176,0,32,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .logo {
+            margin-bottom: 40px;
+        }
+
+        .logo-text {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            color: #f2f2f2;
+            text-shadow: 0 0 40px rgba(176,0,32,0.5);
+        }
+
+        .logo-sub {
+            font-size: 18px;
+            color: #e0002a;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            margin-top: 8px;
+        }
+
+        .tagline {
+            color: #888;
+            font-size: 14px;
+            margin-top: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        .search-container {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(224,0,42,0.3);
+            border-radius: 16px;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+        }
+
+        .search-container:focus-within {
+            border-color: rgba(224,0,42,0.8);
+            box-shadow: 0 0 30px rgba(224,0,42,0.2);
+        }
+
+        .search-icon {
+            color: #e0002a;
+            font-size: 20px;
+            margin: 0 16px;
+        }
+
+        #search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #f2f2f2;
+            font-size: 16px;
+            padding: 12px 0;
+            outline: none;
+        }
+
+        #search-input::placeholder {
+            color: #666;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #b00020, #e0002a);
+            border: none;
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(224,0,42,0.4);
+        }
+
+        .shortcuts {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .shortcut {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shortcut:hover {
+            background: rgba(224,0,42,0.1);
+            border-color: rgba(224,0,42,0.3);
+            transform: translateY(-3px);
+        }
+
+        .shortcut-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(224,0,42,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .shortcut-label {
+            color: #aaa;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            color: #444;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+        }
+
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,200,100,0.1);
+            border: 1px solid rgba(0,200,100,0.3);
+            color: #00c864;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-orb"></div>
+    
+    <div class="container">
+        <div class="privacy-badge">
+            🔒 ZERO DATA • NO TRACKING • PRIVATE
+        </div>
+
+        <div class="logo">
+            <div class="logo-text">TRUMA</div>
+            <div class="logo-sub">BROWSER</div>
+            <div class="tagline">Privacy-First. Always Secure.</div>
+        </div>
+
+        <form class="search-container" onsubmit="return doSearch()">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search with DuckDuckGo..." autocomplete="off">
+            <button type="submit" class="search-btn">SEARCH</button>
+        </form>
+
+        <div class="shortcuts">
+            <a href="https://duckduckgo.com" class="shortcut">
+                <div class="shortcut-icon">🦆</div>
+                <span class="shortcut-label">DuckDuckGo</span>
+            </a>
+            <a href="https://github.com" class="shortcut">
+                <div class="shortcut-icon">⚡</div>
+                <span class="shortcut-label">GitHub</span>
+            </a>
+            <a href="https://reddit.com" class="shortcut">
+                <div class="shortcut-icon">🔴</div>
+                <span class="shortcut-label">Reddit</span>
+            </a>
+            <a href="https://youtube.com" class="shortcut">
+                <div class="shortcut-icon">▶️</div>
+                <span class="shortcut-label">YouTube</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        TRUMA BROWSER v1.0 • SESSION DATA AUTO-CLEARED ON EXIT
+    </div>
+
+    <script>
+        function doSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (query) {
+                window.location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(query);
+            }
+            return false;
+        }
+
+        document.getElementById('search-input').focus();
+    </script>
+</body>
+</html>
