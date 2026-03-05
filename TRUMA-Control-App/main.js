@@ -5,7 +5,7 @@ const axios = require('axios');
 let mainWindow;
 let tray;
 let authToken = null;
-let API_URL = 'https://trauma-suite.onrender.com'; // Change to your deployed URL
+let API_URL = 'http://localhost:10000'; // Local server
 
 // Create main window
 function createWindow() {
@@ -19,16 +19,13 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
-        },
-        icon: path.join(__dirname, 'icon.png')
+        }
     });
 
     mainWindow.loadFile('index.html');
 
     // Create tray icon
-    const trayIcon = nativeImage.createFromDataURL(
-        Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABjSURBVDhPYxj6oDnE////Z2RkZPzPwMDwHxjqAwcG+v9HjhyJQQdhYmICRgkGFrDgPwZkJSQk/P/PwMD4H0gI8B+IbEIsYQACDAwM/2dQUP+DqwtQhlgENrFQNoYk2AAAbBcW4kFZdxwAAAAASUVORK5CYII=', 'base64')
-    );
+    const trayIcon = nativeImage.createEmpty();
     
     tray = new Tray(trayIcon);
     const contextMenu = Menu.buildFromTemplate([

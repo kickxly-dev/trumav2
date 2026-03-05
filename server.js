@@ -191,7 +191,23 @@ let SECURITY_SETTINGS = {
   },
   notifications: {
     emailAlerts: false,
-    alertEmail: ''
+    alertEmail: '',
+    alertOnThreat: true,
+    alertOnBlocked: true,
+    alertOnEmergency: true
+  },
+  // Email settings (configure in .env)
+  email: {
+    enabled: false,
+    service: 'gmail',
+    from: '',
+    to: ''
+  },
+  // Geo-blocking
+  geoBlocking: {
+    enabled: false,
+    blockedCountries: [],
+    mode: 'blacklist' // blacklist or whitelist
   }
 };
 
@@ -227,18 +243,71 @@ async function logThreat(ip, threatType, details, req = null) {
       threatType
     ]);
 
+    // Send email alert if enabled
+    if (SECURITY_SETTINGS.notifications?.alertOnThreat && SECURITY_SETTINGS.email?.enabled) {
+      sendAlertEmail(
+        `[TRUMA NET] Threat Detected: ${threatType}`,
+        `IP: ${ip}\nType: ${threatType}\nDetails: ${details}\nTime: ${new Date().toISOString()}`
+      );
+    }
+
     // Check if IP should be auto-blocked
     const threatCount = await pool.query(`
       SELECT COUNT(*) as count FROM visitor_logs 
       WHERE ip_address = $1 AND is_threat = true AND timestamp > NOW() - INTERVAL '1 hour'
     `, [ip]);
 
-    if (parseInt(threatCount.rows[0].count) >= 5) {
+    if (parseInt(threatCount.rows[0].count) >= SECURITY_SETTINGS.autoBlockThreshold) {
       await blockIP(ip, `Auto-blocked: ${threatType} - Multiple threats detected`);
     }
   } catch (error) {
     console.error('Error logging threat:', error);
   }
+}
+
+// Send email alert (placeholder - implement with nodemailer or external service)
+async function sendAlertEmail(subject, message) {
+  console.log(`[EMAIL ALERT] ${subject}`);
+  console.log(message);
+  
+  // When ready to implement, add nodemailer:
+  // const nodemailer = require('nodemailer');
+  // const transporter = nodemailer.createTransport({
+  //   service: SECURITY_SETTINGS.email.service,
+  //   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  // });
+  // await transporter.sendMail({
+  //   from: SECURITY_SETTINGS.email.from,
+  //   to: SECURITY_SETTINGS.email.to,
+  //   subject,
+  //   text: message
+  // });
+}
+
+// Geo-blocking: Get country from IP
+async function getCountryFromIP(ip) {
+  try {
+    const res = await fetchFn(`https://ipapi.co/${ip}/country_code/`);
+    const country = await res.text();
+    return country.trim();
+  } catch {
+    return null;
+  }
+}
+
+// Check if IP is geo-blocked
+async function isGeoBlocked(ip) {
+  if (!SECURITY_SETTINGS.geoBlocking?.enabled) return false;
+  
+  const country = await getCountryFromIP(ip);
+  if (!country) return false;
+  
+  const blocked = SECURITY_SETTINGS.geoBlocking.blockedCountries || [];
+  
+  if (SECURITY_SETTINGS.geoBlocking.mode === 'whitelist') {
+    return !blocked.includes(country);
+  }
+  return blocked.includes(country);
 }
 
 // Block IP address
@@ -1205,6 +1274,197 @@ app.delete('/api/truma-net/sites/:siteId', authenticateToken, requireOwner, asyn
 });
 
 // ==================== END TRUMA NET EXTERNAL SITE PROTECTION ====================
+
+// ==================== API KEYS FOR DEVELOPERS ====================
+
+// Generate API key
+function generateAPIKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let key = 'truma_';
+  for (let i = 0; i < 32; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+}
+
+// Create API key (owner only)
+app.post('/api/api-keys', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { name, permissions, rateLimit } = req.body;
+    const apiKey = generateAPIKey();
+    
+    await pool.query(`
+      INSERT INTO api_keys (key, name, permissions, rate_limit, created_by)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [apiKey, name || 'Unnamed', JSON.stringify(permissions || ['read']), rateLimit || 1000, req.user.id]);
+
+    res.json({ 
+      message: 'API key created', 
+      key: apiKey,
+      name: name 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create API key' });
+  }
+});
+
+// List API keys (owner only)
+app.get('/api/api-keys', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, key, name, permissions, rate_limit, is_active, created_at, last_used
+      FROM api_keys
+      ORDER BY created_at DESC
+    `);
+    res.json({ keys: result.rows });
+  } catch (error) {
+    res.json({ keys: [] });
+  }
+});
+
+// Revoke API key (owner only)
+app.delete('/api/api-keys/:id', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    await pool.query('UPDATE api_keys SET is_active = false WHERE id = $1', [req.params.id]);
+    res.json({ message: 'API key revoked' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to revoke key' });
+  }
+});
+
+// Middleware for API key authentication
+async function authenticateAPIKey(req, res, next) {
+  const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT * FROM api_keys WHERE key = $1 AND is_active = true',
+      [apiKey]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: 'Invalid or revoked API key' });
+    }
+
+    const keyData = result.rows[0];
+    
+    // Update last used
+    await pool.query('UPDATE api_keys SET last_used = NOW() WHERE id = $1', [keyData.id]);
+    
+    req.apiKey = keyData;
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'API key validation failed' });
+  }
+}
+
+// Public API endpoints (require API key)
+app.get('/api/public/security-status', authenticateAPIKey, async (req, res) => {
+  res.json({
+    protection: SECURITY_SETTINGS.enabled,
+    level: SECURITY_SETTINGS.level,
+    autoBlock: SECURITY_SETTINGS.autoBlock
+  });
+});
+
+app.get('/api/public/check-ip/:ip', authenticateAPIKey, async (req, res) => {
+  const blocked = await isIPBlocked(req.params.ip);
+  res.json({ ip: req.params.ip, blocked });
+});
+
+// ==================== END API KEYS ====================
+
+// ==================== ANALYTICS ENDPOINTS ====================
+
+// Get visitor analytics (owner only)
+app.get('/api/analytics/visitors', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    
+    const result = await pool.query(`
+      SELECT 
+        DATE(timestamp) as date,
+        COUNT(*) as visitors,
+        COUNT(DISTINCT ip_address) as unique_visitors,
+        COUNT(CASE WHEN is_threat = true THEN 1 END) as threats
+      FROM visitor_logs
+      WHERE timestamp > NOW() - INTERVAL '1 day' * $1
+      GROUP BY DATE(timestamp)
+      ORDER BY date DESC
+    `, [days]);
+
+    res.json({ analytics: result.rows });
+  } catch (error) {
+    res.json({ analytics: [] });
+  }
+});
+
+// Get threat breakdown (owner only)
+app.get('/api/analytics/threats', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        threat_type,
+        COUNT(*) as count
+      FROM visitor_logs
+      WHERE is_threat = true AND timestamp > NOW() - INTERVAL '30 days'
+      GROUP BY threat_type
+      ORDER BY count DESC
+    `);
+
+    res.json({ threats: result.rows });
+  } catch (error) {
+    res.json({ threats: [] });
+  }
+});
+
+// Get top visitor IPs (owner only)
+app.get('/api/analytics/top-ips', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        ip_address,
+        COUNT(*) as visits,
+        COUNT(CASE WHEN is_threat = true THEN 1 END) as threats
+      FROM visitor_logs
+      WHERE timestamp > NOW() - INTERVAL '7 days'
+      GROUP BY ip_address
+      ORDER BY visits DESC
+      LIMIT 20
+    `);
+
+    res.json({ ips: result.rows });
+  } catch (error) {
+    res.json({ ips: [] });
+  }
+});
+
+// Get path analytics (owner only)
+app.get('/api/analytics/paths', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        path,
+        COUNT(*) as visits,
+        COUNT(CASE WHEN is_threat = true THEN 1 END) as threats
+      FROM visitor_logs
+      WHERE timestamp > NOW() - INTERVAL '7 days'
+      GROUP BY path
+      ORDER BY visits DESC
+      LIMIT 20
+    `);
+
+    res.json({ paths: result.rows });
+  } catch (error) {
+    res.json({ paths: [] });
+  }
+});
+
+// ==================== END ANALYTICS ====================
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - TRUMA NET</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            min-height: 100vh;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+        }
+
+        .shield {
+            font-size: 8rem;
+            margin-bottom: 2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #dc143c;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: #ff4444;
+            margin-bottom: 2rem;
+        }
+
+        .message {
+            color: #888;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .details {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .detail-label { color: #888; }
+
+        .detail-value {
+            color: #dc143c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc143c, #8b0000);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-top: 2rem;
+        }
+
+        .contact {
+            margin-top: 2rem;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .contact a {
+            color: #dc143c;
+            text-decoration: none;
+        }
+
+        .contact a:hover {
+            text-decoration: underline;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, transparent 0%, #0a0a0a 70%),
+                        conic-gradient(from 0deg, transparent, rgba(220, 20, 60, 0.1), transparent, rgba(220, 20, 60, 0.1), transparent);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <div class="container">
+        <div class="shield">🛡️</div>
+        <h1 class="title">ACCESS DENIED</h1>
+        <p class="subtitle">Your IP has been blocked</p>
+        
+        <div class="message">
+            Your access to this website has been restricted by TRUMA NET security system.
+            This may be due to suspicious activity, multiple failed attempts, or violation of site policies.
+        </div>
+
+        <div class="details">
+            <div class="detail-row">
+                <span class="detail-label">Your IP</span>
+                <span class="detail-value" id="ipAddress">Loading...</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Reason</span>
+                <span class="detail-value" id="reason">Security Violation</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Blocked At</span>
+                <span class="detail-value" id="blockedAt">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Expires</span>
+                <span class="detail-value" id="expires">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Block ID</span>
+                <span class="detail-value" id="blockId">--</span>
+            </div>
+        </div>
+
+        <div class="badge">PROTECTED BY TRUMA NET V2</div>
+
+        <div class="contact">
+            <p>Believe this is an error?</p>
+            <p>Contact the site administrator with your Block ID</p>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const params = new URLSearchParams(window.location.search);
+        
+        document.getElementById('ipAddress').textContent = params.get('ip') || 'Unknown';
+        document.getElementById('reason').textContent = params.get('reason') || 'Security Violation';
+        document.getElementById('blockedAt').textContent = params.get('blocked') || '--';
+        document.getElementById('expires').textContent = params.get('expires') || '--';
+        document.getElementById('blockId').textContent = params.get('id') || '--';
+    </script>
+</body>
+</html>
