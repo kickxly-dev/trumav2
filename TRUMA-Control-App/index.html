@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUMA NET V2 Control</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --crimson-primary: #dc143c;
+            --crimson-dark: #8b0000;
+            --success-color: #00ff88;
+            --warning-color: #ffaa00;
+            --error-color: #ff4444;
+            --border-color: #333333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Title Bar */
+        .title-bar {
+            height: 40px;
+            background: var(--bg-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .title-bar-title {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--crimson-primary);
+            font-size: 14px;
+        }
+
+        .title-bar-controls {
+            display: flex;
+            -webkit-app-region: no-drag;
+        }
+
+        .title-btn {
+            width: 40px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .title-btn:hover { background: rgba(255,255,255,0.1); }
+        .title-btn.close:hover { background: var(--error-color); color: white; }
+
+        /* Login Screen */
+        .login-screen {
+            height: calc(100vh - 40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a0a0a 100%);
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--crimson-primary);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 350px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--crimson-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 1rem;
+        }
+
+        .login-input:focus { outline: none; border-color: var(--crimson-primary); }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--crimson-primary), var(--crimson-dark));
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .login-btn:hover { transform: scale(1.02); }
+
+        .login-error { color: var(--error-color); font-size: 0.85rem; margin-top: 1rem; display: none; }
+
+        /* Dashboard */
+        .dashboard { display: none; height: calc(100vh - 40px); }
+
+        .dashboard.active { display: flex; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-title {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--crimson-primary);
+        }
+
+        .nav-item {
+            padding: 12px 1rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover { background: rgba(220, 20, 60, 0.1); color: var(--crimson-primary); }
+        .nav-item.active { background: rgba(220, 20, 60, 0.15); color: var(--crimson-primary); border-left-color: var(--crimson-primary); }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        .logout-btn:hover { background: var(--error-color); color: white; }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--crimson-primary);
+            border-radius: 8px 0 0 8px;
+        }
+
+        .stat-card.success::before { background: var(--success-color); }
+        .stat-card.error::before { background: var(--error-color); }
+        .stat-card.warning::before { background: var(--warning-color); }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--crimson-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-card.success .stat-value { color: var(--success-color); }
+        .stat-card.error .stat-value { color: var(--error-color); }
+        .stat-card.warning .stat-value { color: var(--warning-color); }
+
+        .stat-label { color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px; }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .panel-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title { font-family: 'Courier New', monospace; font-weight: 600; }
+
+        .panel-body { padding: 1rem; }
+
+        /* Toggle */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toggle-row:last-child { border-bottom: none; }
+
+        .toggle-label { color: var(--text-secondary); font-size: 0.9rem; }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 22px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 22px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background: var(--crimson-primary); border-color: var(--crimson-primary); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); background: white; }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary { background: var(--crimson-primary); color: white; }
+        .btn-primary:hover { background: var(--crimson-dark); }
+        .btn-danger { background: var(--error-color); color: white; }
+        .btn-success { background: var(--success-color); color: black; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .btn-outline:hover { border-color: var(--crimson-primary); color: var(--crimson-primary); }
+
+        /* Input */
+        .input-field {
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .input-field:focus { outline: none; border-color: var(--crimson-primary); }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            padding: 10px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .data-table tr:hover { background: rgba(220, 20, 60, 0.05); }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .badge-success { background: rgba(0, 255, 136, 0.1); color: var(--success-color); }
+        .badge-danger { background: rgba(255, 68, 68, 0.1); color: var(--error-color); }
+        .badge-warning { background: rgba(255, 170, 0, 0.1); color: var(--warning-color); }
+
+        /* Emergency */
+        .emergency-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .emergency-btn:hover { background: #cc0000; }
+        .emergency-btn.active { background: var(--success-color); color: black; }
+
+        /* Live indicator */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink 1s infinite;
+            margin-right: 6px;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Content sections */
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        /* IP Form */
+        .ip-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .ip-form input { flex: 1; }
+
+        /* Sites list */
+        .site-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .site-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .site-info p { color: var(--text-secondary); font-size: 0.8rem; }
+        .site-embed { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--success-color); background: rgba(0,255,136,0.1); padding: 4px 8px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-title">🛡️ TRUMA NET V2 Control</div>
+        <div class="title-bar-controls">
+            <button class="title-btn" onclick="minimize()">─</button>
+            <button class="title-btn" onclick="maximize()">□</button>
+            <button class="title-btn close" onclick="closeApp()">✕</button>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="login-logo">TRUMA NET</div>
+            <div class="login-subtitle">V2 Owner Control Panel</div>
+            <input type="password" class="login-input" id="ownerCode" placeholder="Owner Access Code">
+            <button class="login-btn" onclick="login()">AUTHENTICATE</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title"><span class="live-dot"></span>LIVE</div>
+            </div>
+            <nav>
+                <div class="nav-item active" data-section="overview">📊 Overview</div>
+                <div class="nav-item" data-section="security">🛡️ Security</div>
+                <div class="nav-item" data-section="threats">⚠️ Threats</div>
+                <div class="nav-item" data-section="ips">🔒 IP Control</div>
+                <div class="nav-item" data-section="sites">🌐 Sites</div>
+                <div class="nav-item" data-section="emergency">🚨 Emergency</div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">LOGOUT</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Overview -->
+            <div class="content-section active" id="overview">
+                <h2 class="section-title">📊 Real-Time Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="visitors1h">0</div>
+                        <div class="stat-label">Visitors (1h)</div>
+                    </div>
+                    <div class="stat-card error">
+                        <div class="stat-value" id="threats1h">0</div>
+                        <div class="stat-label">Threats (1h)</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="blockedIPs">0</div>
+                        <div class="stat-label">Blocked IPs</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-value" id="uniqueIPs">0</div>
+                        <div class="stat-label">Unique IPs</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Quick Actions</span>
+                    </div>
+                    <div class="panel-body">
+                        <button class="btn btn-outline" onclick="refreshStats()">🔄 Refresh</button>
+                        <button class="btn btn-danger" style="margin-left: 10px;" onclick="activateEmergency()">🚨 Emergency Mode</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security -->
+            <div class="content-section" id="security">
+                <h2 class="section-title">🛡️ Security Settings</h2>
+                <div class="panel">
+                    <div class="panel-header"><span class="panel-title">Protection Controls</span></div>
+                    <div class="panel-body">
+                        <div class="toggle-row">
+                            <span class="toggle-label">TRUMA NET Enabled</span>
+                            <label class="toggle-switch"><input type="checkbox" id="toggleEnabled" checked onchange="updateSetting('enabled', this.checked)"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Auto-Block Threats</span>
+                            <label class="toggle-switch"><input type="checkbox" id="toggleAutoBlock" checked onchange="updateSetting('autoBlock', this.checked)"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Bot Detection</span>
+                            <label class="toggle-switch"><input type="checkbox" id="toggleBotDetection" checked onchange="updateSetting('botDetection', this.checked)"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Rate Limiting</span>
+                            <label class="toggle-switch"><input type="checkbox" id="toggleRateLimit" checked onchange="updateSetting('rateLimitEnabled', this.checked)"><span class="toggle-slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threats -->
+            <div class="content-section" id="threats">
+                <h2 class="section-title">⚠️ Recent Threats</h2>
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Threat Log</span>
+                        <button class="btn btn-outline" onclick="refreshThreats()">Refresh</button>
+                    </div>
+                    <div class="panel-body" style="padding: 0; max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead><tr><th>IP</th><th>Type</th><th>Path</th><th>Time</th><th>Action</th></tr></thead>
+                            <tbody id="threatsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IP Control -->
+            <div class="content-section" id="ips">
+                <h2 class="section-title">🔒 IP Control</h2>
+                <div class="panel">
+                    <div class="panel-header"><span class="panel-title">Block IP</span></div>
+                    <div class="panel-body">
+                        <div class="ip-form">
+                            <input type="text" class="input-field" id="blockIP" placeholder="IP Address">
+                            <input type="text" class="input-field" id="blockReason" placeholder="Reason">
+                            <button class="btn btn-danger" onclick="blockIP()">Block</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Blocked IPs</span>
+                        <button class="btn btn-outline" onclick="refreshBlockedIPs()">Refresh</button>
+                    </div>
+                    <div class="panel-body" style="padding: 0; max-height: 300px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead><tr><th>IP</th><th>Reason</th><th>Blocked</th><th>Action</th></tr></thead>
+                            <tbody id="blockedIPsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sites -->
+            <div class="content-section" id="sites">
+                <h2 class="section-title">🌐 Protected Sites</h2>
+                <div class="panel">
+                    <div class="panel-header"><span class="panel-title">Add New Site</span></div>
+                    <div class="panel-body">
+                        <div class="ip-form">
+                            <input type="text" class="input-field" id="siteId" placeholder="Site ID (e.g., mysite)">
+                            <input type="text" class="input-field" id="siteName" placeholder="Site Name">
+                            <input type="text" class="input-field" id="siteUrl" placeholder="Site URL">
+                            <button class="btn btn-primary" onclick="addSite()">Add</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="sitesList"></div>
+            </div>
+
+            <!-- Emergency -->
+            <div class="content-section" id="emergency">
+                <h2 class="section-title">🚨 Emergency Controls</h2>
+                <div class="panel">
+                    <div class="panel-header"><span class="panel-title">Emergency Mode</span></div>
+                    <div class="panel-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">When enabled, ALL new visitors will be blocked instantly.</p>
+                        <button class="emergency-btn" id="emergencyBtn" onclick="toggleEmergency()">🚨 ACTIVATE EMERGENCY MODE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Window controls
+        function minimize() { ipcRenderer.send('minimize'); }
+        function maximize() { ipcRenderer.send('maximize'); }
+        function closeApp() { ipcRenderer.send('close'); }
+
+        // Login
+        async function login() {
+            const code = document.getElementById('ownerCode').value;
+            const result = await ipcRenderer.invoke('login', code);
+            
+            if (result.success) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                loadAll();
+            } else {
+                document.getElementById('loginError').textContent = result.error;
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // Logout
+        async function logout() {
+            await ipcRenderer.invoke('logout');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').classList.remove('active');
+        }
+
+        // Load all data
+        async function loadAll() {
+            await Promise.all([loadStats(), loadSettings(), refreshBlockedIPs(), refreshThreats(), loadSites()]);
+        }
+
+        // Load stats
+        async function loadStats() {
+            const data = await ipcRenderer.invoke('getStats');
+            if (data) {
+                document.getElementById('visitors1h').textContent = data.stats.visitors1h;
+                document.getElementById('threats1h').textContent = data.stats.threats1h;
+                document.getElementById('blockedIPs').textContent = data.stats.totalBlocked;
+                document.getElementById('uniqueIPs').textContent = data.stats.uniqueIPs1h;
+            }
+        }
+
+        // Load settings
+        async function loadSettings() {
+            const settings = await ipcRenderer.invoke('getSettings');
+            if (settings) {
+                document.getElementById('toggleEnabled').checked = settings.enabled;
+                document.getElementById('toggleAutoBlock').checked = settings.autoBlock;
+                document.getElementById('toggleBotDetection').checked = settings.botDetection;
+                document.getElementById('toggleRateLimit').checked = settings.rateLimitEnabled;
+            }
+        }
+
+        // Update setting
+        async function updateSetting(key, value) {
+            const settings = {};
+            settings[key] = value;
+            await ipcRenderer.invoke('updateSettings', settings);
+        }
+
+        // Refresh stats
+        async function refreshStats() {
+            await loadStats();
+        }
+
+        // Block IP
+        async function blockIP() {
+            const ip = document.getElementById('blockIP').value;
+            const reason = document.getElementById('blockReason').value || 'Manual block';
+            
+            if (!ip) return;
+            
+            await ipcRenderer.invoke('blockIP', { ip, reason, durationHours: 24 });
+            document.getElementById('blockIP').value = '';
+            document.getElementById('blockReason').value = '';
+            refreshBlockedIPs();
+        }
+
+        // Unblock IP
+        async function unblockIP(ip) {
+            await ipcRenderer.invoke('unblockIP', ip);
+            refreshBlockedIPs();
+        }
+
+        // Refresh blocked IPs
+        async function refreshBlockedIPs() {
+            const ips = await ipcRenderer.invoke('getBlockedIPs');
+            const tbody = document.getElementById('blockedIPsTable');
+            tbody.innerHTML = ips.map(ip => `
+                <tr>
+                    <td>${ip.ip_address}</td>
+                    <td>${ip.reason}</td>
+                    <td>${new Date(ip.blocked_at).toLocaleString()}</td>
+                    <td><button class="btn btn-outline" onclick="unblockIP('${ip.ip_address}')">Unblock</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" style="text-align:center;">No blocked IPs</td></tr>';
+        }
+
+        // Refresh threats
+        async function refreshThreats() {
+            const threats = await ipcRenderer.invoke('getThreats');
+            const tbody = document.getElementById('threatsTable');
+            tbody.innerHTML = threats.slice(0, 50).map(t => `
+                <tr>
+                    <td>${t.ip_address}</td>
+                    <td><span class="badge badge-danger">${t.threat_type}</span></td>
+                    <td>${t.path}</td>
+                    <td>${new Date(t.timestamp).toLocaleString()}</td>
+                    <td><button class="btn btn-danger" onclick="blockIPFromThreat('${t.ip_address}', '${t.threat_type}')">Block</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" style="text-align:center;">No threats</td></tr>';
+        }
+
+        // Block IP from threat
+        async function blockIPFromThreat(ip, type) {
+            await ipcRenderer.invoke('blockIP', { ip, reason: `Threat: ${type}`, durationHours: 24 });
+            refreshBlockedIPs();
+        }
+
+        // Load sites
+        async function loadSites() {
+            const sites = await ipcRenderer.invoke('getSites');
+            const container = document.getElementById('sitesList');
+            container.innerHTML = sites.map(site => `
+                <div class="site-item">
+                    <div class="site-info">
+                        <h4>${site.site_name}</h4>
+                        <p>${site.site_url || 'No URL'}</p>
+                        <div class="site-embed">data-site-id="${site.site_id}"</div>
+                    </div>
+                    <button class="btn btn-outline" onclick="removeSite('${site.site_id}')">Remove</button>
+                </div>
+            `).join('') || '<p style="color: var(--text-secondary);">No sites registered</p>';
+        }
+
+        // Add site
+        async function addSite() {
+            const siteId = document.getElementById('siteId').value;
+            const siteName = document.getElementById('siteName').value;
+            const siteUrl = document.getElementById('siteUrl').value;
+            
+            if (!siteId || !siteName) return;
+            
+            const result = await ipcRenderer.invoke('addSite', { siteId, siteName, siteUrl });
+            if (result.success) {
+                alert('Site added!\n\nEmbed code:\n' + result.embedCode);
+                document.getElementById('siteId').value = '';
+                document.getElementById('siteName').value = '';
+                document.getElementById('siteUrl').value = '';
+                loadSites();
+            }
+        }
+
+        // Remove site
+        async function removeSite(siteId) {
+            if (!confirm('Remove this site from protection?')) return;
+            await ipcRenderer.invoke('removeSite', siteId);
+            loadSites();
+        }
+
+        // Emergency
+        async function toggleEmergency() {
+            const btn = document.getElementById('emergencyBtn');
+            const activate = !btn.classList.contains('active');
+            
+            await ipcRenderer.invoke('emergencyMode', activate);
+            
+            if (activate) {
+                btn.classList.add('active');
+                btn.textContent = '✓ DEACTIVATE EMERGENCY MODE';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🚨 ACTIVATE EMERGENCY MODE';
+            }
+        }
+
+        async function activateEmergency() {
+            await toggleEmergency();
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                item.classList.add('active');
+                document.getElementById(item.dataset.section).classList.add('active');
+            });
+        });
+
+        // Auto-update stats
+        ipcRenderer.on('stats-update', (event, data) => {
+            document.getElementById('visitors1h').textContent = data.stats.visitors1h;
+            document.getElementById('threats1h').textContent = data.stats.threats1h;
+            document.getElementById('blockedIPs').textContent = data.stats.totalBlocked;
+            document.getElementById('uniqueIPs').textContent = data.stats.uniqueIPs1h;
+        });
+
+        // Enter key for login
+        document.getElementById('ownerCode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

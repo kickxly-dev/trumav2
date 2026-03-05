@@ -991,6 +991,220 @@ app.get('/api/security/realtime-stats', authenticateToken, requireOwner, async (
 });
 
 // ==================== END TRUMA NET V2 OWNER CONTROL ====================
+
+// ==================== TRUMA NET EXTERNAL SITE PROTECTION ====================
+
+// Registered sites for external protection
+let REGISTERED_SITES = new Map();
+
+// Load registered sites from database on startup
+async function loadRegisteredSites() {
+  try {
+    const result = await pool.query('SELECT * FROM registered_sites WHERE is_active = true');
+    result.rows.forEach(site => {
+      REGISTERED_SITES.set(site.site_id, {
+        id: site.site_id,
+        name: site.site_name,
+        url: site.site_url,
+        settings: site.settings || {},
+        owner_id: site.owner_id
+      });
+    });
+    console.log(`[TRUMA NET] Loaded ${REGISTERED_SITES.size} registered sites`);
+  } catch (error) {
+    console.log('[TRUMA NET] Sites table not found, will create on first registration');
+  }
+}
+
+// Initialize sites on startup
+loadRegisteredSites();
+
+// External visitor reporting (for client script)
+app.post('/api/truma-net/visitor', async (req, res) => {
+  try {
+    const siteId = req.headers['x-truma-site'] || req.body.siteId;
+    const ip = req.ip || req.connection.remoteAddress;
+    
+    // Check if site is registered
+    const site = REGISTERED_SITES.get(siteId);
+    if (!site) {
+      // Auto-register unknown sites (can disable this)
+      return res.json({ blocked: false, message: 'Site not registered' });
+    }
+
+    // Check if IP is globally blocked
+    const blocked = await isIPBlocked(ip);
+    if (blocked) {
+      return res.json({ blocked: true, reason: 'IP globally blocked by TRUMA NET' });
+    }
+
+    // Check emergency mode
+    if (SECURITY_SETTINGS.emergencyMode) {
+      return res.json({ blocked: true, reason: 'Emergency mode active' });
+    }
+
+    // Log visitor for this site
+    await pool.query(`
+      INSERT INTO site_visitors (site_id, ip_address, user_agent, path, referrer, metadata, timestamp)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    `, [siteId, ip, req.body.userAgent, req.body.path, req.body.referrer, JSON.stringify(req.body)]);
+
+    res.json({ blocked: false, message: 'Visitor logged' });
+  } catch (error) {
+    res.json({ blocked: false, message: 'Error processing' });
+  }
+});
+
+// Check request permission
+app.post('/api/truma-net/check', async (req, res) => {
+  try {
+    const siteId = req.headers['x-truma-site'];
+    const ip = req.ip || req.connection.remoteAddress;
+    
+    const blocked = await isIPBlocked(ip);
+    res.json({ allowed: !blocked });
+  } catch (error) {
+    res.json({ allowed: true });
+  }
+});
+
+// Report threat from external site
+app.post('/api/truma-net/threat', async (req, res) => {
+  try {
+    const siteId = req.headers['x-truma-site'];
+    const ip = req.ip || req.connection.remoteAddress;
+    
+    await logThreat(ip, req.body.threatType, `Site: ${siteId} - ${req.body.details}`, req);
+    
+    res.json({ message: 'Threat logged' });
+  } catch (error) {
+    res.json({ message: 'Error' });
+  }
+});
+
+// Heartbeat from external sites
+app.post('/api/truma-net/heartbeat', async (req, res) => {
+  res.json({ message: 'ok' });
+});
+
+// ==================== SITE REGISTRATION (OWNER ONLY) ====================
+
+// Register a new site for protection
+app.post('/api/truma-net/sites', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { siteId, siteName, siteUrl, settings } = req.body;
+    
+    if (!siteId || !siteName) {
+      return res.status(400).json({ error: 'Site ID and name required' });
+    }
+
+    // Create site_visitors table if not exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS site_visitors (
+        id SERIAL PRIMARY KEY,
+        site_id VARCHAR(100) NOT NULL,
+        ip_address INET NOT NULL,
+        user_agent TEXT,
+        path TEXT,
+        referrer TEXT,
+        metadata JSONB,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create registered_sites table if not exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS registered_sites (
+        id SERIAL PRIMARY KEY,
+        site_id VARCHAR(100) UNIQUE NOT NULL,
+        site_name VARCHAR(255) NOT NULL,
+        site_url TEXT,
+        settings JSONB,
+        owner_id INTEGER,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert site
+    await pool.query(`
+      INSERT INTO registered_sites (site_id, site_name, site_url, settings, owner_id)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (site_id) 
+      DO UPDATE SET site_name = $2, site_url = $3, settings = $4, is_active = true
+    `, [siteId, siteName, siteUrl, JSON.stringify(settings || {}), req.user.id]);
+
+    // Add to memory
+    REGISTERED_SITES.set(siteId, {
+      id: siteId,
+      name: siteName,
+      url: siteUrl,
+      settings: settings || {},
+      owner_id: req.user.id
+    });
+
+    res.json({ 
+      message: 'Site registered',
+      site: { siteId, siteName, siteUrl },
+      embedCode: `<script src="${req.protocol}://${req.get('host')}/truma-net-client.js" data-site-id="${siteId}"></script>`
+    });
+  } catch (error) {
+    console.error('Site registration error:', error);
+    res.status(500).json({ error: 'Failed to register site' });
+  }
+});
+
+// Get all registered sites
+app.get('/api/truma-net/sites', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT site_id, site_name, site_url, settings, is_active, created_at,
+             (SELECT COUNT(*) FROM site_visitors WHERE site_id = registered_sites.site_id) as visitor_count
+      FROM registered_sites
+      ORDER BY created_at DESC
+    `);
+    
+    res.json({ sites: result.rows });
+  } catch (error) {
+    res.json({ sites: Array.from(REGISTERED_SITES.values()) });
+  }
+});
+
+// Get site statistics
+app.get('/api/truma-net/sites/:siteId/stats', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { siteId } = req.params;
+    
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_visitors,
+        COUNT(DISTINCT ip_address) as unique_visitors,
+        COUNT(CASE WHEN timestamp > NOW() - INTERVAL '24 hours' THEN 1 END) as visitors_24h,
+        COUNT(CASE WHEN timestamp > NOW() - INTERVAL '1 hour' THEN 1 END) as visitors_1h
+      FROM site_visitors WHERE site_id = $1
+    `, [siteId]);
+
+    res.json({ stats: stats.rows[0] });
+  } catch (error) {
+    res.json({ stats: { total_visitors: 0, unique_visitors: 0, visitors_24h: 0, visitors_1h: 0 } });
+  }
+});
+
+// Remove site from protection
+app.delete('/api/truma-net/sites/:siteId', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { siteId } = req.params;
+    
+    await pool.query('UPDATE registered_sites SET is_active = false WHERE site_id = $1', [siteId]);
+    REGISTERED_SITES.delete(siteId);
+    
+    res.json({ message: 'Site removed from protection' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove site' });
+  }
+});
+
+// ==================== END TRUMA NET EXTERNAL SITE PROTECTION ====================
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;
