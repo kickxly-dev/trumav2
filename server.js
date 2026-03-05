@@ -338,6 +338,12 @@ async function blockIP(ip, reason, durationHours = 24) {
 
 // Check if IP is blocked
 async function isIPBlocked(ip) {
+  // Whitelist localhost IPs - never block local development
+  const localhostIPs = ['::1', '::ffff:127.0.0.1', '127.0.0.1', 'localhost'];
+  if (localhostIPs.includes(ip) || ip?.startsWith('::ffff:127.') || ip?.startsWith('192.168.') || ip?.startsWith('10.') || ip?.startsWith('172.')) {
+    return false;
+  }
+  
   try {
     const result = await pool.query(`
       SELECT * FROM ip_blocklist 
