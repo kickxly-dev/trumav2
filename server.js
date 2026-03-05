@@ -140,6 +140,15 @@ async function execSafe(command) {
 
 // ==================== TRUMA NET V2 SECURITY FUNCTIONS ====================
 
+// Owner credentials - ONLY YOU CAN ACCESS
+const OWNER_CREDENTIALS = {
+  email: process.env.OWNER_EMAIL || 'owner@trauma-secure.io',
+  // In production, use a strong hashed password from env
+  passwordHash: process.env.OWNER_PASSWORD_HASH || null,
+  // Owner access code for quick login
+  ownerCode: process.env.OWNER_CODE || 'TRUMA-OWNER-2024-V2-SECURE'
+};
+
 // Threat types for detection
 const THREAT_TYPES = {
   SQL_INJECTION: 'SQL_INJECTION',
@@ -151,6 +160,39 @@ const THREAT_TYPES = {
   SUSPICIOUS_UA: 'SUSPICIOUS_UA',
   BOT_DETECTED: 'BOT_DETECTED',
   MALICIOUS_IP: 'MALICIOUS_IP'
+};
+
+// TRUMA NET V2 Security Settings (controllable by owner)
+let SECURITY_SETTINGS = {
+  enabled: true,
+  level: 'MAXIMUM', // LOW, MEDIUM, HIGH, MAXIMUM
+  autoBlock: true,
+  autoBlockThreshold: 5, // threats before auto-block
+  blockDuration: 24, // hours
+  rateLimitEnabled: true,
+  rateLimitApi: 100,
+  rateLimitAuth: 10,
+  rateLimitTools: 30,
+  botDetection: true,
+  geoBlocking: {
+    enabled: false,
+    blockedCountries: []
+  },
+  threatDetection: {
+    sqlInjection: true,
+    xss: true,
+    pathTraversal: true,
+    commandInjection: true
+  },
+  logging: {
+    enabled: true,
+    retentionDays: 30,
+    logAllRequests: true
+  },
+  notifications: {
+    emailAlerts: false,
+    alertEmail: ''
+  }
 };
 
 // Suspicious user agents (bots, scanners, etc.)
@@ -688,13 +730,267 @@ function authenticateToken(req, res, next) {
 
 // Middleware to check admin role
 function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 }
 
-// Authentication Routes
+// Middleware to check OWNER ONLY access - STRICTEST SECURITY
+function requireOwner(req, res, next) {
+  if (req.user.role !== 'owner') {
+    return res.status(403).json({ 
+      error: 'OWNER ACCESS ONLY', 
+      code: 'NOT_OWNER',
+      message: 'This action requires owner privileges. Contact the site owner.'
+    });
+  }
+  next();
+}
+
+// Owner Login - STRICT SECURITY
+app.post('/api/auth/owner-login', authLimiter, async (req, res) => {
+  try {
+    const { ownerCode, email, password } = req.body;
+    const ip = req.ip || req.connection.remoteAddress;
+
+    // Log all owner login attempts
+    console.log(`[OWNER LOGIN ATTEMPT] IP: ${ip}`);
+
+    // Method 1: Owner Code Login
+    if (ownerCode) {
+      if (ownerCode !== OWNER_CREDENTIALS.ownerCode) {
+        await logThreat(ip, 'BRUTE_FORCE', 'Invalid owner code attempt', req);
+        return res.status(401).json({ error: 'Invalid owner code', code: 'INVALID_CODE' });
+      }
+
+      // Create owner token
+      const token = jwt.sign(
+        { id: 0, name: 'Owner', email: OWNER_CREDENTIALS.email, role: 'owner' },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+
+      console.log(`[OWNER LOGIN SUCCESS] IP: ${ip}`);
+      return res.json({
+        message: 'Owner authenticated',
+        token,
+        user: { id: 0, name: 'Owner', email: OWNER_CREDENTIALS.email, role: 'owner' }
+      });
+    }
+
+    // Method 2: Email/Password Login
+    if (email && password) {
+      if (email !== OWNER_CREDENTIALS.email) {
+        await logThreat(ip, 'BRUTE_FORCE', 'Invalid owner email attempt', req);
+        return res.status(401).json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
+      }
+
+      // Check password hash if set, otherwise deny
+      if (!OWNER_CREDENTIALS.passwordHash) {
+        return res.status(401).json({ 
+          error: 'Password login disabled. Use owner code.', 
+          code: 'USE_CODE' 
+        });
+      }
+
+      const validPassword = await bcrypt.compare(password, OWNER_CREDENTIALS.passwordHash);
+      if (!validPassword) {
+        await logThreat(ip, 'BRUTE_FORCE', 'Invalid owner password attempt', req);
+        return res.status(401).json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
+      }
+
+      const token = jwt.sign(
+        { id: 0, name: 'Owner', email: OWNER_CREDENTIALS.email, role: 'owner' },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+
+      console.log(`[OWNER LOGIN SUCCESS] IP: ${ip}`);
+      return res.json({
+        message: 'Owner authenticated',
+        token,
+        user: { id: 0, name: 'Owner', email: OWNER_CREDENTIALS.email, role: 'owner' }
+      });
+    }
+
+    return res.status(400).json({ error: 'Owner code or credentials required', code: 'MISSING_CREDENTIALS' });
+
+  } catch (error) {
+    console.error('Owner login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==================== TRUMA NET V2 OWNER CONTROL ENDPOINTS ====================
+
+// Get current security settings (owner only)
+app.get('/api/security/settings', authenticateToken, requireOwner, (req, res) => {
+  res.json({ settings: SECURITY_SETTINGS });
+});
+
+// Update security settings (owner only)
+app.put('/api/security/settings', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const updates = req.body;
+    
+    // Merge updates into settings
+    SECURITY_SETTINGS = { ...SECURITY_SETTINGS, ...updates };
+    
+    // Save to database for persistence
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ('securitySettings', $1)
+       ON CONFLICT (key) DO UPDATE SET value = $1`,
+      [JSON.stringify(SECURITY_SETTINGS)]
+    );
+
+    console.log(`[TRUMA NET V2] Settings updated by owner`);
+    res.json({ 
+      message: 'Security settings updated', 
+      settings: SECURITY_SETTINGS 
+    });
+  } catch (error) {
+    console.error('Error updating security settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Manual IP block (owner only)
+app.post('/api/security/block-ip', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { ip, reason, durationHours } = req.body;
+    
+    if (!ip) {
+      return res.status(400).json({ error: 'IP address required' });
+    }
+
+    const blocked = await blockIP(ip, reason || 'Manual block by owner', durationHours || 24);
+    
+    if (blocked) {
+      res.json({ message: 'IP blocked successfully', ip, reason });
+    } else {
+      res.status(500).json({ error: 'Failed to block IP' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to block IP' });
+  }
+});
+
+// Unblock IP (owner only)
+app.delete('/api/security/block-ip/:ip', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE ip_blocklist SET is_active = false WHERE ip_address = $1',
+      [req.params.ip]
+    );
+    res.json({ message: 'IP unblocked', ip: req.params.ip });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to unblock IP' });
+  }
+});
+
+// Get all visitors with filtering (owner only)
+app.get('/api/security/visitors', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { limit = 100, threatsOnly = false, ip } = req.query;
+    
+    let query = 'SELECT * FROM visitor_logs';
+    const conditions = [];
+    const params = [];
+    
+    if (threatsOnly === 'true') {
+      conditions.push('is_threat = true');
+    }
+    if (ip) {
+      params.push(ip);
+      conditions.push(`ip_address = $${params.length}`);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    params.push(limit);
+    query += ` ORDER BY timestamp DESC LIMIT $${params.length}`;
+    
+    const result = await pool.query(query, params);
+    res.json({ visitors: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch visitors' });
+  }
+});
+
+// Clear old logs (owner only)
+app.delete('/api/security/logs', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { daysOld = 30 } = req.body;
+    
+    const result = await pool.query(
+      'DELETE FROM visitor_logs WHERE timestamp < NOW() - INTERVAL \'1 day\' * $1',
+      [daysOld]
+    );
+    
+    res.json({ 
+      message: 'Old logs cleared', 
+      deletedCount: result.rowCount 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear logs' });
+  }
+});
+
+// Emergency mode - Block all new visitors (owner only)
+app.post('/api/security/emergency-mode', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    
+    SECURITY_SETTINGS.emergencyMode = enabled;
+    
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ('securitySettings', $1)
+       ON CONFLICT (key) DO UPDATE SET value = $1`,
+      [JSON.stringify(SECURITY_SETTINGS)]
+    );
+
+    console.log(`[TRUMA NET V2] EMERGENCY MODE: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    res.json({ 
+      message: `Emergency mode ${enabled ? 'enabled' : 'disabled'}`,
+      emergencyMode: enabled 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle emergency mode' });
+  }
+});
+
+// Get real-time stats (owner only)
+app.get('/api/security/realtime-stats', authenticateToken, requireOwner, async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM visitor_logs WHERE timestamp > NOW() - INTERVAL '1 hour') as visitors_1h,
+        (SELECT COUNT(*) FROM visitor_logs WHERE is_threat = true AND timestamp > NOW() - INTERVAL '1 hour') as threats_1h,
+        (SELECT COUNT(*) FROM ip_blocklist WHERE is_active = true) as total_blocked,
+        (SELECT COUNT(*) FROM failed_logins WHERE timestamp > NOW() - INTERVAL '1 hour') as failed_logins_1h,
+        (SELECT COUNT(DISTINCT ip_address) FROM visitor_logs WHERE timestamp > NOW() - INTERVAL '1 hour') as unique_ips_1h
+    `);
+
+    res.json({
+      stats: {
+        visitors1h: parseInt(stats.rows[0].visitors_1h) || 0,
+        threats1h: parseInt(stats.rows[0].threats_1h) || 0,
+        totalBlocked: parseInt(stats.rows[0].total_blocked) || 0,
+        failedLogins1h: parseInt(stats.rows[0].failed_logins_1h) || 0,
+        uniqueIPs1h: parseInt(stats.rows[0].unique_ips_1h) || 0
+      },
+      settings: SECURITY_SETTINGS,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ==================== END TRUMA NET V2 OWNER CONTROL ====================
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;

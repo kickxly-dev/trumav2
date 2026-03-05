@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUMA NET V2 - Owner Control Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --text-dim: #555555;
+            --crimson-primary: #dc143c;
+            --crimson-dark: #8b0000;
+            --crimson-glow: rgba(220, 20, 60, 0.5);
+            --success-color: #00ff88;
+            --warning-color: #ffaa00;
+            --error-color: #ff4444;
+            --border-color: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a0a0a 100%);
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--crimson-primary);
+            border-radius: 16px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 0 50px rgba(220, 20, 60, 0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--crimson-primary);
+            text-shadow: 0 0 30px var(--crimson-glow);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .login-badge {
+            display: inline-block;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--crimson-primary);
+            box-shadow: 0 0 20px rgba(220, 20, 60, 0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--crimson-primary), var(--crimson-dark));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(220, 20, 60, 0.5);
+        }
+
+        .login-error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .nav-bar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--crimson-primary);
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-badge {
+            background: var(--crimson-primary);
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title .icon {
+            font-size: 1.2rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--crimson-primary);
+        }
+
+        .stat-card.success::before { background: var(--success-color); }
+        .stat-card.warning::before { background: var(--warning-color); }
+        .stat-card.error::before { background: var(--error-color); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--crimson-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-card.success .stat-value { color: var(--success-color); }
+        .stat-card.warning .stat-value { color: var(--warning-color); }
+        .stat-card.error .stat-value { color: var(--error-color); }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Control Panels */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-secondary);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-label {
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--crimson-primary);
+            border-color: var(--crimson-primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+            background-color: white;
+        }
+
+        /* Input Fields */
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .input-row:last-child {
+            border-bottom: none;
+        }
+
+        .input-label {
+            color: var(--text-secondary);
+        }
+
+        .input-field {
+            width: 120px;
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--crimson-primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--crimson-primary), var(--crimson-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(220, 20, 60, 0.4);
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #cc0000;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: black;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--crimson-primary);
+            color: var(--crimson-primary);
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:hover {
+            background: rgba(220, 20, 60, 0.05);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-success { background: rgba(0, 255, 136, 0.1); color: var(--success-color); }
+        .badge-danger { background: rgba(255, 68, 68, 0.1); color: var(--error-color); }
+        .badge-warning { background: rgba(255, 170, 0, 0.1); color: var(--warning-color); }
+
+        /* Emergency Mode */
+        .emergency-banner {
+            background: linear-gradient(135deg, var(--error-color), var(--crimson-dark));
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .emergency-btn {
+            background: var(--error-color);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .emergency-btn:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+        }
+
+        .emergency-btn.active {
+            background: var(--success-color);
+            color: black;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            border-color: var(--crimson-primary);
+            color: var(--crimson-primary);
+        }
+
+        .tab.active {
+            background: var(--crimson-primary);
+            border-color: var(--crimson-primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* IP Block Form */
+        .block-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .block-form input {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .block-form input:focus {
+            outline: none;
+            border-color: var(--crimson-primary);
+        }
+
+        /* Real-time indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success-color);
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .block-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">TRUMA NET</div>
+                <div class="login-subtitle">V2 Owner Control Panel</div>
+                <div class="login-badge">OWNER ACCESS ONLY</div>
+            </div>
+            
+            <div class="login-error" id="loginError"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Owner Access Code</label>
+                    <input type="password" class="form-input" id="ownerCode" placeholder="Enter owner code..." autocomplete="off">
+                </div>
+                <button type="submit" class="login-btn">AUTHENTICATE</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Emergency Banner (hidden by default) -->
+        <div class="emergency-banner" id="emergencyBanner" style="display: none;">
+            🚨 EMERGENCY MODE ACTIVE - ALL NEW VISITORS BLOCKED 🚨
+        </div>
+
+        <!-- Nav Bar -->
+        <nav class="nav-bar">
+            <div class="nav-logo">TRUMA NET V2</div>
+            <div class="nav-user">
+                <span class="nav-badge">OWNER</span>
+                <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+                <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="overview">Overview</div>
+                <div class="tab" data-tab="security">Security Settings</div>
+                <div class="tab" data-tab="threats">Threat Monitor</div>
+                <div class="tab" data-tab="ip-control">IP Control</div>
+                <div class="tab" data-tab="visitors">Visitor Logs</div>
+                <div class="tab" data-tab="emergency">Emergency</div>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview">
+                <h2 class="section-title"><span class="icon">📊</span> Real-Time Overview</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="visitors1h">0</div>
+                        <div class="stat-label">Visitors (1h)</div>
+                    </div>
+                    <div class="stat-card error">
+                        <div class="stat-value" id="threats1h">0</div>
+                        <div class="stat-label">Threats (1h)</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="blockedIPs">0</div>
+                        <div class="stat-label">Blocked IPs</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="failedLogins">0</div>
+                        <div class="stat-label">Failed Logins (1h)</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-value" id="uniqueIPs">0</div>
+                        <div class="stat-label">Unique IPs (1h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="securityLevel">MAX</div>
+                        <div class="stat-label">Security Level</div>
+                    </div>
+                </div>
+
+                <div class="control-grid">
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Quick Actions</span>
+                        </div>
+                        <div class="panel-body">
+                            <button class="emergency-btn" id="emergencyToggle">🚨 ACTIVATE EMERGENCY MODE</button>
+                            <div style="margin-top: 1rem;">
+                                <button class="btn btn-outline" id="refreshStats">🔄 Refresh Stats</button>
+                                <button class="btn btn-outline" id="clearLogs" style="margin-left: 0.5rem;">🗑️ Clear Old Logs</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">System Status</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="toggle-row">
+                                <span class="toggle-label">TRUMA NET Protection</span>
+                                <span class="badge badge-success" id="protectionStatus">ACTIVE</span>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Auto-Blocking</span>
+                                <span class="badge badge-success" id="autoBlockStatus">ENABLED</span>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Bot Detection</span>
+                                <span class="badge badge-success" id="botDetectionStatus">ACTIVE</span>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Rate Limiting</span>
+                                <span class="badge badge-success" id="rateLimitStatus">ACTIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings Tab -->
+            <div class="tab-content" id="security">
+                <h2 class="section-title"><span class="icon">🛡️</span> Security Configuration</h2>
+                
+                <div class="control-grid">
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Protection Controls</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="toggle-row">
+                                <span class="toggle-label">Enable TRUMA NET</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleEnabled" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Auto-Block Threats</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleAutoBlock" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Bot Detection</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleBotDetection" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Rate Limiting</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleRateLimit" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Threat Detection</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="toggle-row">
+                                <span class="toggle-label">SQL Injection Detection</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleSql" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">XSS Detection</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleXss" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Path Traversal Detection</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="togglePathTraversal" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Command Injection Detection</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggleCmdInjection" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Auto-Block Settings</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="input-row">
+                                <span class="input-label">Threats before auto-block</span>
+                                <input type="number" class="input-field" id="autoBlockThreshold" value="5" min="1" max="100">
+                            </div>
+                            <div class="input-row">
+                                <span class="input-label">Block duration (hours)</span>
+                                <input type="number" class="input-field" id="blockDuration" value="24" min="1" max="720">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">Rate Limits</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="input-row">
+                                <span class="input-label">API (per 15min)</span>
+                                <input type="number" class="input-field" id="rateApi" value="100" min="10" max="1000">
+                            </div>
+                            <div class="input-row">
+                                <span class="input-label">Auth (per hour)</span>
+                                <input type="number" class="input-field" id="rateAuth" value="10" min="3" max="50">
+                            </div>
+                            <div class="input-row">
+                                <span class="input-label">Tools (per min)</span>
+                                <input type="number" class="input-field" id="rateTools" value="30" min="5" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="saveSettings" style="margin-top: 1rem;">💾 Save All Settings</button>
+            </div>
+
+            <!-- Threat Monitor Tab -->
+            <div class="tab-content" id="threats">
+                <h2 class="section-title"><span class="icon">⚠️</span> Threat Monitor</h2>
+                
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Recent Threats</span>
+                        <button class="btn btn-outline" id="refreshThreats">Refresh</button>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Threat Type</th>
+                                    <th>Path</th>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="threatsTable">
+                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IP Control Tab -->
+            <div class="tab-content" id="ip-control">
+                <h2 class="section-title"><span class="icon">🔒</span> IP Control</h2>
+                
+                <div class="control-panel" style="margin-bottom: 1.5rem;">
+                    <div class="panel-header">
+                        <span class="panel-title">Manual IP Block</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="block-form">
+                            <input type="text" id="blockIP" placeholder="IP Address (e.g., 192.168.1.1)">
+                            <input type="text" id="blockReason" placeholder="Reason">
+                            <input type="number" id="blockDuration" placeholder="Hours" value="24" style="width: 100px;">
+                            <button class="btn btn-danger" id="blockIPBtn">Block IP</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Currently Blocked IPs</span>
+                        <button class="btn btn-outline" id="refreshBlocked">Refresh</button>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Reason</th>
+                                    <th>Blocked At</th>
+                                    <th>Expires</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blockedIPsTable">
+                                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visitor Logs Tab -->
+            <div class="tab-content" id="visitors">
+                <h2 class="section-title"><span class="icon">👥</span> Visitor Logs</h2>
+                
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Recent Visitors</span>
+                        <div>
+                            <label style="margin-right: 1rem; color: var(--text-secondary);">
+                                <input type="checkbox" id="threatsOnly"> Threats Only
+                            </label>
+                            <button class="btn btn-outline" id="refreshVisitors">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>User Agent</th>
+                                    <th>Path</th>
+                                    <th>Method</th>
+                                    <th>Threat</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitorsTable">
+                                <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Tab -->
+            <div class="tab-content" id="emergency">
+                <h2 class="section-title"><span class="icon">🚨</span> Emergency Controls</h2>
+                
+                <div class="control-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Emergency Mode</span>
+                    </div>
+                    <div class="panel-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            When enabled, ALL new visitors will be automatically blocked. Use this during active attacks.
+                        </p>
+                        <button class="emergency-btn" id="emergencyModeBtn">🚨 ACTIVATE EMERGENCY MODE</button>
+                        <div id="emergencyStatus" style="margin-top: 1rem; color: var(--text-secondary);"></div>
+                    </div>
+                </div>
+
+                <div class="control-panel" style="margin-top: 1.5rem;">
+                    <div class="panel-header">
+                        <span class="panel-title">Danger Zone</span>
+                    </div>
+                    <div class="panel-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            Clear all blocked IPs and reset security to defaults.
+                        </p>
+                        <button class="btn btn-danger" id="clearAllBlocks">Clear All Blocked IPs</button>
+                        <button class="btn btn-danger" id="resetSecurity" style="margin-left: 0.5rem;">Reset Security Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let authToken = localStorage.getItem('ownerToken');
+        let settings = {};
+
+        // Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+
+        // Check if already logged in
+        if (authToken) {
+            validateToken();
+        }
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ownerCode = document.getElementById('ownerCode').value;
+            
+            try {
+                const res = await fetch('/api/auth/owner-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ownerCode })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('ownerToken', authToken);
+                    showDashboard();
+                } else {
+                    loginError.textContent = data.error || 'Authentication failed';
+                    loginError.style.display = 'block';
+                }
+            } catch (err) {
+                loginError.textContent = 'Connection error';
+                loginError.style.display = 'block';
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('ownerToken');
+            authToken = null;
+            loginScreen.style.display = 'flex';
+            dashboard.classList.remove('active');
+        });
+
+        // Validate token
+        async function validateToken() {
+            try {
+                const res = await fetch('/api/security/settings', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (res.ok) {
+                    showDashboard();
+                } else {
+                    localStorage.removeItem('ownerToken');
+                    authToken = null;
+                }
+            } catch (err) {
+                console.error('Token validation failed');
+            }
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            loginScreen.style.display = 'none';
+            dashboard.classList.add('active');
+            loadAllData();
+            startAutoRefresh();
+        }
+
+        // Load all data
+        async function loadAllData() {
+            await Promise.all([
+                loadStats(),
+                loadSettings(),
+                loadBlockedIPs(),
+                loadThreats(),
+                loadVisitors()
+            ]);
+        }
+
+        // API helper
+        async function api(endpoint, options = {}) {
+            const res = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return res;
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const res = await api('/api/security/realtime-stats');
+                const data = await res.json();
+                
+                document.getElementById('visitors1h').textContent = data.stats.visitors1h;
+                document.getElementById('threats1h').textContent = data.stats.threats1h;
+                document.getElementById('blockedIPs').textContent = data.stats.totalBlocked;
+                document.getElementById('failedLogins').textContent = data.stats.failedLogins1h;
+                document.getElementById('uniqueIPs').textContent = data.stats.uniqueIPs1h;
+                document.getElementById('securityLevel').textContent = data.settings?.level || 'MAX';
+            } catch (err) {
+                console.error('Failed to load stats');
+            }
+        }
+
+        // Load settings
+        async function loadSettings() {
+            try {
+                const res = await api('/api/security/settings');
+                const data = await res.json();
+                settings = data.settings;
+                
+                // Update toggles
+                document.getElementById('toggleEnabled').checked = settings.enabled;
+                document.getElementById('toggleAutoBlock').checked = settings.autoBlock;
+                document.getElementById('toggleBotDetection').checked = settings.botDetection;
+                document.getElementById('toggleRateLimit').checked = settings.rateLimitEnabled;
+                document.getElementById('toggleSql').checked = settings.threatDetection?.sqlInjection;
+                document.getElementById('toggleXss').checked = settings.threatDetection?.xss;
+                document.getElementById('togglePathTraversal').checked = settings.threatDetection?.pathTraversal;
+                document.getElementById('toggleCmdInjection').checked = settings.threatDetection?.commandInjection;
+                
+                // Update inputs
+                document.getElementById('autoBlockThreshold').value = settings.autoBlockThreshold;
+                document.getElementById('blockDuration').value = settings.blockDuration;
+                document.getElementById('rateApi').value = settings.rateLimitApi;
+                document.getElementById('rateAuth').value = settings.rateLimitAuth;
+                document.getElementById('rateTools').value = settings.rateLimitTools;
+
+                // Update status badges
+                updateStatusBadges();
+            } catch (err) {
+                console.error('Failed to load settings');
+            }
+        }
+
+        // Update status badges
+        function updateStatusBadges() {
+            document.getElementById('protectionStatus').textContent = settings.enabled ? 'ACTIVE' : 'DISABLED';
+            document.getElementById('protectionStatus').className = `badge ${settings.enabled ? 'badge-success' : 'badge-danger'}`;
+            
+            document.getElementById('autoBlockStatus').textContent = settings.autoBlock ? 'ENABLED' : 'DISABLED';
+            document.getElementById('autoBlockStatus').className = `badge ${settings.autoBlock ? 'badge-success' : 'badge-danger'}`;
+            
+            document.getElementById('botDetectionStatus').textContent = settings.botDetection ? 'ACTIVE' : 'DISABLED';
+            document.getElementById('botDetectionStatus').className = `badge ${settings.botDetection ? 'badge-success' : 'badge-danger'}`;
+            
+            document.getElementById('rateLimitStatus').textContent = settings.rateLimitEnabled ? 'ACTIVE' : 'DISABLED';
+            document.getElementById('rateLimitStatus').className = `badge ${settings.rateLimitEnabled ? 'badge-success' : 'badge-danger'}`;
+
+            // Emergency banner
+            if (settings.emergencyMode) {
+                document.getElementById('emergencyBanner').style.display = 'block';
+            }
+        }
+
+        // Load blocked IPs
+        async function loadBlockedIPs() {
+            try {
+                const res = await api('/api/security/blocked-ips');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('blockedIPsTable');
+                tbody.innerHTML = data.blockedIPs.map(ip => `
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono', monospace;">${ip.ip_address}</td>
+                        <td>${ip.reason}</td>
+                        <td>${new Date(ip.blocked_at).toLocaleString()}</td>
+                        <td>${ip.expires_at ? new Date(ip.expires_at).toLocaleString() : 'Permanent'}</td>
+                        <td><button class="btn btn-outline" onclick="unblockIP('${ip.ip_address}')">Unblock</button></td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No blocked IPs</td></tr>';
+            } catch (err) {
+                console.error('Failed to load blocked IPs');
+            }
+        }
+
+        // Load threats
+        async function loadThreats() {
+            try {
+                const res = await api('/api/security/threats');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('threatsTable');
+                tbody.innerHTML = data.threats.slice(0, 50).map(t => `
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono', monospace;">${t.ip_address}</td>
+                        <td><span class="badge badge-danger">${t.threat_type}</span></td>
+                        <td>${t.path}</td>
+                        <td>${new Date(t.timestamp).toLocaleString()}</td>
+                        <td><button class="btn btn-danger" onclick="blockIPNow('${t.ip_address}', '${t.threat_type}')">Block</button></td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No threats detected</td></tr>';
+            } catch (err) {
+                console.error('Failed to load threats');
+            }
+        }
+
+        // Load visitors
+        async function loadVisitors() {
+            try {
+                const threatsOnly = document.getElementById('threatsOnly').checked;
+                const res = await api(`/api/security/visitors?limit=100&threatsOnly=${threatsOnly}`);
+                const data = await res.json();
+                
+                const tbody = document.getElementById('visitorsTable');
+                tbody.innerHTML = data.visitors.slice(0, 100).map(v => `
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono', monospace;">${v.ip_address}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${v.user_agent?.substring(0, 50) || '-'}</td>
+                        <td>${v.path}</td>
+                        <td>${v.method}</td>
+                        <td>${v.is_threat ? `<span class="badge badge-danger">${v.threat_type}</span>` : '<span class="badge badge-success">None</span>'}</td>
+                        <td>${new Date(v.timestamp).toLocaleString()}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No visitors</td></tr>';
+            } catch (err) {
+                console.error('Failed to load visitors');
+            }
+        }
+
+        // Block IP
+        async function blockIPNow(ip, reason) {
+            try {
+                const res = await api('/api/security/block-ip', {
+                    method: 'POST',
+                    body: JSON.stringify({ ip, reason: `Manual block: ${reason}`, durationHours: 24 })
+                });
+                
+                if (res.ok) {
+                    loadBlockedIPs();
+                    loadStats();
+                }
+            } catch (err) {
+                console.error('Failed to block IP');
+            }
+        }
+
+        // Unblock IP
+        async function unblockIP(ip) {
+            try {
+                const res = await api(`/api/security/block-ip/${ip}`, { method: 'DELETE' });
+                
+                if (res.ok) {
+                    loadBlockedIPs();
+                    loadStats();
+                }
+            } catch (err) {
+                console.error('Failed to unblock IP');
+            }
+        }
+
+        // Save settings
+        document.getElementById('saveSettings')?.addEventListener('click', async () => {
+            const newSettings = {
+                enabled: document.getElementById('toggleEnabled').checked,
+                autoBlock: document.getElementById('toggleAutoBlock').checked,
+                botDetection: document.getElementById('toggleBotDetection').checked,
+                rateLimitEnabled: document.getElementById('toggleRateLimit').checked,
+                autoBlockThreshold: parseInt(document.getElementById('autoBlockThreshold').value),
+                blockDuration: parseInt(document.getElementById('blockDuration').value),
+                rateLimitApi: parseInt(document.getElementById('rateApi').value),
+                rateLimitAuth: parseInt(document.getElementById('rateAuth').value),
+                rateLimitTools: parseInt(document.getElementById('rateTools').value),
+                threatDetection: {
+                    sqlInjection: document.getElementById('toggleSql').checked,
+                    xss: document.getElementById('toggleXss').checked,
+                    pathTraversal: document.getElementById('togglePathTraversal').checked,
+                    commandInjection: document.getElementById('toggleCmdInjection').checked
+                }
+            };
+
+            try {
+                const res = await api('/api/security/settings', {
+                    method: 'PUT',
+                    body: JSON.stringify(newSettings)
+                });
+                
+                if (res.ok) {
+                    alert('Settings saved successfully!');
+                    loadSettings();
+                }
+            } catch (err) {
+                alert('Failed to save settings');
+            }
+        });
+
+        // Emergency mode
+        document.getElementById('emergencyModeBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('emergencyModeBtn');
+            const activate = !btn.classList.contains('active');
+            
+            try {
+                const res = await api('/api/security/emergency-mode', {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled: activate })
+                });
+                
+                if (res.ok) {
+                    if (activate) {
+                        btn.classList.add('active');
+                        btn.textContent = '✓ DEACTIVATE EMERGENCY MODE';
+                        document.getElementById('emergencyBanner').style.display = 'block';
+                        document.getElementById('emergencyStatus').innerHTML = '<span style="color: var(--error-color);">🚨 EMERGENCY MODE ACTIVE</span>';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.textContent = '🚨 ACTIVATE EMERGENCY MODE';
+                        document.getElementById('emergencyBanner').style.display = 'none';
+                        document.getElementById('emergencyStatus').innerHTML = '<span style="color: var(--success-color);">✓ Emergency mode deactivated</span>';
+                    }
+                }
+            } catch (err) {
+                alert('Failed to toggle emergency mode');
+            }
+        });
+
+        // Tab navigation
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Refresh buttons
+        document.getElementById('refreshStats')?.addEventListener('click', loadStats);
+        document.getElementById('refreshBlocked')?.addEventListener('click', loadBlockedIPs);
+        document.getElementById('refreshThreats')?.addEventListener('click', loadThreats);
+        document.getElementById('refreshVisitors')?.addEventListener('click', loadVisitors);
+        document.getElementById('threatsOnly')?.addEventListener('change', loadVisitors);
+
+        // Block IP form
+        document.getElementById('blockIPBtn')?.addEventListener('click', async () => {
+            const ip = document.getElementById('blockIP').value;
+            const reason = document.getElementById('blockReason').value || 'Manual block';
+            const duration = parseInt(document.getElementById('blockDuration').value) || 24;
+            
+            if (!ip) return alert('Enter an IP address');
+            
+            await blockIPNow(ip, reason);
+            document.getElementById('blockIP').value = '';
+            document.getElementById('blockReason').value = '';
+        });
+
+        // Clear logs
+        document.getElementById('clearLogs')?.addEventListener('click', async () => {
+            if (!confirm('Clear logs older than 30 days?')) return;
+            
+            try {
+                await api('/api/security/logs', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ daysOld: 30 })
+                });
+                loadVisitors();
+            } catch (err) {
+                console.error('Failed to clear logs');
+            }
+        });
+
+        // Auto refresh every 30 seconds
+        function startAutoRefresh() {
+            setInterval(loadStats, 30000);
+        }
+
+        // Make functions global
+        window.blockIPNow = blockIPNow;
+        window.unblockIP = unblockIP;
+    </script>
+</body>
+</html>
