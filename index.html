@@ -646,14 +646,20 @@
                 const parts = key.split('-');
                 if (parts.length !== 7 || parts[0] !== 'TRUMA') return false;
                 const sig = parts.slice(1).join('');
-                return sig.length === 24 && /^[A-Z0-9]+$/.test(sig);
+                // Accept 24 character alphanumeric signature
+                return sig.length === 24 && /^[A-Z0-9]+$/i.test(sig);
             }
 
             function checkLicense() {
                 const license = getLicense();
-                if (!license || !verifyFormat(license.key)) return false;
-                const expiry = new Date(license.expires);
-                return expiry > new Date();
+                if (!license) return false;
+                if (!verifyFormat(license.key)) return false;
+                // Check expiry if exists
+                if (license.expires) {
+                    const expiry = new Date(license.expires);
+                    if (expiry < new Date()) return false;
+                }
+                return true;
             }
 
             function showError(msg) {
