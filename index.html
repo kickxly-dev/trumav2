@@ -642,12 +642,18 @@
             }
 
             function verifyFormat(key) {
-                if (!key) return false;
+                if (!key || typeof key !== 'string') return false;
+                key = key.toUpperCase().trim();
                 const parts = key.split('-');
-                if (parts.length !== 7 || parts[0] !== 'TRUMA') return false;
-                const sig = parts.slice(1).join('');
-                // Accept 24 character alphanumeric signature
-                return sig.length === 24 && /^[A-Z0-9]+$/i.test(sig);
+                // Must have TRUMA prefix and 6 groups of 4 chars
+                if (parts.length !== 7) return false;
+                if (parts[0] !== 'TRUMA') return false;
+                // Check each group is 4 alphanumeric chars
+                for (let i = 1; i < 7; i++) {
+                    if (!parts[i] || parts[i].length !== 4) return false;
+                    if (!/^[A-Z0-9]{4}$/i.test(parts[i])) return false;
+                }
+                return true;
             }
 
             function checkLicense() {
