@@ -24,7 +24,8 @@
             <div class="nav-links">
                 <a href="#downloads" class="nav-link">Downloads</a>
                 <a href="#network-tools" class="nav-link">Network</a>
-                <a href="#security-tools" class="nav-link">Security</a>
+                <a href="#osint-tools" class="nav-link">OSINT</a>
+                <a href="#dev-tools" class="nav-link">Dev Tools</a>
                 <a href="#encoder-tools" class="nav-link">Encoders</a>
                 <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
                 <a href="https://discord.gg/XXZ47tqayk" target="_blank" rel="noopener noreferrer" class="nav-link discord-link" style="background:#5865F2;color:#fff;padding:0.5rem 1rem;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;text-decoration:none;">💬 Discord</a>
@@ -585,6 +586,166 @@
                         <span class="feature-tag">ASCII</span>
                     </div>
                     <button class="card-button" data-tool="binary-converter">Launch Tool</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- OSINT Tools -->
+        <section id="osint-tools" class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">OSINT Tools</h2>
+                <p class="section-subtitle">Open source intelligence gathering utilities</p>
+            </div>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Email OSINT</h3>
+                        <div class="card-icon">📧</div>
+                    </div>
+                    <p class="card-description">Gather intelligence on email addresses - breaches, social media, and more.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Breach Check</span>
+                        <span class="feature-tag">Social Profiles</span>
+                        <span class="feature-tag">Domain Info</span>
+                    </div>
+                    <button class="card-button" data-tool="email-osint">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Username OSINT</h3>
+                        <div class="card-icon">👤</div>
+                    </div>
+                    <p class="card-description">Search for usernames across multiple platforms and social networks.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Multi-Platform</span>
+                        <span class="feature-tag">Social Media</span>
+                        <span class="feature-tag">Profile Finder</span>
+                    </div>
+                    <button class="card-button" data-tool="username-osint">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Phone OSINT</h3>
+                        <div class="card-icon">📱</div>
+                    </div>
+                    <p class="card-description">Analyze phone numbers for carrier, location, and line type information.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Carrier Lookup</span>
+                        <span class="feature-tag">Line Type</span>
+                        <span class="feature-tag">Location</span>
+                    </div>
+                    <button class="card-button" data-tool="phone-osint">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Domain OSINT</h3>
+                        <div class="card-icon">🌐</div>
+                    </div>
+                    <p class="card-description">Comprehensive domain intelligence - WHOIS, DNS, SSL, and reputation.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">WHOIS Data</span>
+                        <span class="feature-tag">DNS Records</span>
+                        <span class="feature-tag">SSL Info</span>
+                    </div>
+                    <button class="card-button" data-tool="domain-osint">Launch Tool</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developer Tools -->
+        <section id="dev-tools" class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">Developer Tools</h2>
+                <p class="section-subtitle">Essential utilities for developers</p>
+            </div>
+            
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">UUID Generator</h3>
+                        <div class="card-icon">UUID</div>
+                    </div>
+                    <p class="card-description">Generate unique identifiers (UUID v4) for database keys and session IDs.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">UUID v4</span>
+                        <span class="feature-tag">Bulk Generate</span>
+                        <span class="feature-tag">Copy All</span>
+                    </div>
+                    <button class="card-button" data-tool="uuid-generator">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Unix Timestamp</h3>
+                        <div class="card-icon">TS</div>
+                    </div>
+                    <p class="card-description">Convert between Unix timestamps and human-readable dates.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Current Time</span>
+                        <span class="feature-tag">Date Convert</span>
+                        <span class="feature-tag">Multiple Formats</span>
+                    </div>
+                    <button class="card-button" data-tool="timestamp-converter">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Color Picker</h3>
+                        <div class="card-icon">🎨</div>
+                    </div>
+                    <p class="card-description">Pick colors and convert between HEX, RGB, HSL formats.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">HEX</span>
+                        <span class="feature-tag">RGB</span>
+                        <span class="feature-tag">HSL</span>
+                    </div>
+                    <button class="card-button" data-tool="color-picker">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lorem Ipsum</h3>
+                        <div class="card-icon">📝</div>
+                    </div>
+                    <p class="card-description">Generate placeholder text for design mockups and testing.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Paragraphs</span>
+                        <span class="feature-tag">Words</span>
+                        <span class="feature-tag">Sentences</span>
+                    </div>
+                    <button class="card-button" data-tool="lorem-ipsum">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Diff Checker</h3>
+                        <div class="card-icon">Diff</div>
+                    </div>
+                    <p class="card-description">Compare two texts and highlight the differences.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">Side-by-Side</span>
+                        <span class="feature-tag">Highlight</span>
+                        <span class="feature-tag">Line Numbers</span>
+                    </div>
+                    <button class="card-button" data-tool="diff-checker">Launch Tool</button>
+                </div>
+
+                <div class="tool-card">
+                    <div class="card-header">
+                        <h3 class="card-title">QR Generator</h3>
+                        <div class="card-icon">QR</div>
+                    </div>
+                    <p class="card-description">Generate QR codes for URLs, text, WiFi, and more.</p>
+                    <div class="card-features">
+                        <span class="feature-tag">URL</span>
+                        <span class="feature-tag">Text</span>
+                        <span class="feature-tag">Download PNG</span>
+                    </div>
+                    <button class="card-button" data-tool="qr-generator">Launch Tool</button>
                 </div>
             </div>
         </section>
