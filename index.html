@@ -612,5 +612,110 @@
     </footer>
 
     <script src="script.js"></script>
+    
+    <!-- License Gate -->
+    <div id="licenseGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;">
+        <div style="background:#111;border:1px solid #dc143c;border-radius:16px;padding:3rem;max-width:450px;width:90%;text-align:center;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#dc143c,#ff4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem;">TRAUMA</div>
+            <p style="color:#888;font-size:0.9rem;margin-bottom:2rem;">License required to access TRAUMA Suite</p>
+            <input type="text" id="gateLicenseKey" placeholder="TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" style="width:100%;padding:1rem;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:0.9rem;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;" maxlength="34">
+            <div id="gateError" style="color:#ff4444;font-size:0.8rem;margin-bottom:1rem;display:none;"></div>
+            <button id="gateSubmit" style="width:100%;padding:1rem;background:linear-gradient(135deg,#dc143c,#8b0000);border:none;border-radius:8px;color:#fff;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;text-transform:uppercase;">Unlock Access</button>
+            <p style="color:#555;font-size:0.75rem;margin-top:1.5rem;">One license works for all TRAUMA tools</p>
+        </div>
+    </div>
+
+    <script>
+        // License Gate System
+        (function() {
+            const LICENSE_KEY = 'trauma_license';
+            const gate = document.getElementById('licenseGate');
+            const input = document.getElementById('gateLicenseKey');
+            const btn = document.getElementById('gateSubmit');
+            const error = document.getElementById('gateError');
+
+            function getLicense() {
+                try {
+                    const data = localStorage.getItem(LICENSE_KEY);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) { return null; }
+            }
+
+            function verifyFormat(key) {
+                if (!key) return false;
+                const parts = key.split('-');
+                if (parts.length !== 7 || parts[0] !== 'TRUMA') return false;
+                const sig = parts.slice(1).join('');
+                return sig.length === 24 && /^[A-Z0-9]+$/.test(sig);
+            }
+
+            function checkLicense() {
+                const license = getLicense();
+                if (!license || !verifyFormat(license.key)) return false;
+                const expiry = new Date(license.expires);
+                return expiry > new Date();
+            }
+
+            function showError(msg) {
+                error.textContent = msg;
+                error.style.display = 'block';
+            }
+
+            function hideError() {
+                error.style.display = 'none';
+            }
+
+            // Check if already licensed
+            if (checkLicense()) {
+                gate.style.display = 'none';
+            }
+
+            // Format input
+            input.addEventListener('input', (e) => {
+                let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (v.length > 5) v = 'TRUMA-' + v.substring(5);
+                if (v.startsWith('TRUMA-')) {
+                    const parts = ['TRUMA'];
+                    const rest = v.substring(6);
+                    for (let i = 0; i < rest.length && i < 24; i += 4) parts.push(rest.substring(i, i + 4));
+                    v = parts.join('-');
+                }
+                e.target.value = v;
+            });
+
+            // Submit
+            btn.addEventListener('click', () => {
+                hideError();
+                const key = input.value.trim().toUpperCase();
+                
+                if (!key) {
+                    showError('Please enter a license key');
+                    return;
+                }
+
+                if (!verifyFormat(key)) {
+                    showError('Invalid license format');
+                    return;
+                }
+
+                // Save license
+                const now = new Date();
+                const expiry = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
+                localStorage.setItem(LICENSE_KEY, JSON.stringify({
+                    key: key,
+                    user: 'Licensed User',
+                    created: now.toISOString(),
+                    expires: expiry.toISOString()
+                }));
+
+                gate.style.display = 'none';
+            });
+
+            // Enter key
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') btn.click();
+            });
+        })();
+    </script>
 </body>
 </html>
