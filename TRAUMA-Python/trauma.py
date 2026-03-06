@@ -33,6 +33,13 @@ from typing import List, Dict, Optional, Tuple, Any
 from collections import deque
 import itertools
 
+# Import unified license system
+try:
+    from license import check_license, activate_license, get_license_info
+    HAS_LICENSE = True
+except ImportError:
+    HAS_LICENSE = False
+
 # Try to import optional modules
 try:
     import requests
@@ -3152,12 +3159,34 @@ def main():
     except:
         pass
     
-    # License verification
-    if not LicenseManager.check_activation():
-        if not LicenseManager.prompt_for_key():
-            print(f"\n{c.RED}License verification failed. Exiting...{c.RESET}\n")
-            time.sleep(2)
-            sys.exit(1)
+    # Unified license verification
+    if HAS_LICENSE:
+        result = check_license()
+        if not result.get('valid'):
+            print(f"\n{c.RED}{'='*50}{c.RESET}")
+            print(f"{c.RED}  TRAUMA LICENSE REQUIRED{c.RESET}")
+            print(f"{c.RED}{'='*50}{c.RESET}")
+            print(f"{c.DIM}  One license works for all TRAUMA tools{c.RESET}\n")
+            
+            key = input(f"{c.CYAN}Enter license key: {c.RESET}").strip()
+            if key:
+                result = activate_license(key)
+                if result.get('success'):
+                    print(f"\n{c.GREEN}✓ License activated successfully!{c.RESET}")
+                    print(f"{c.GREEN}  Welcome to TRAUMA Security Toolkit{c.RESET}\n")
+                    time.sleep(1)
+                else:
+                    print(f"\n{c.RED}✗ {result.get('error', 'Activation failed')}{c.RESET}")
+                    print(f"{c.RED}  Exiting...{c.RESET}\n")
+                    time.sleep(2)
+                    sys.exit(1)
+            else:
+                print(f"\n{c.RED}No license provided. Exiting...{c.RESET}\n")
+                time.sleep(2)
+                sys.exit(1)
+    else:
+        # Fallback if license module not found
+        print(f"{c.YELLOW}Warning: License module not found{c.RESET}")
     
     # Check dependencies
     if not HAS_RICH:
