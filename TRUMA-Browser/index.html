@@ -7,6 +7,59 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- License Gate -->
+    <div id="license-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a0a,#1a1a1a);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;">
+      <div style="background:#111;border:1px solid #dc143c;border-radius:16px;padding:3rem;max-width:450px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(220,20,60,0.3);">
+        <div style="font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#dc143c,#ff4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem;">TRUMA</div>
+        <div style="font-size:1rem;color:#666;margin-bottom:2rem;">BROWSER</div>
+        <p style="color:#888;font-size:0.9rem;margin-bottom:2rem;">License required to use TRUMA Browser</p>
+        <input type="text" id="license-input" placeholder="TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" style="width:100%;padding:1rem;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-family:monospace;font-size:0.9rem;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;outline:none;" maxlength="35">
+        <div id="license-error" style="color:#ff4444;font-size:0.8rem;margin-bottom:1rem;display:none;"></div>
+        <button id="license-submit" style="width:100%;padding:1rem;background:linear-gradient(135deg,#dc143c,#8b0000);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;text-transform:uppercase;transition:transform 0.2s;">Unlock Browser</button>
+        <p style="color:#555;font-size:0.75rem;margin-top:1.5rem;">One license works for all TRAUMA tools</p>
+      </div>
+    </div>
+
+    <script>
+      (function() {
+        const KEY = 'truma_browser_license';
+        const gate = document.getElementById('license-gate');
+        const input = document.getElementById('license-input');
+        const btn = document.getElementById('license-submit');
+        const err = document.getElementById('license-error');
+        
+        function verify(k) {
+          return /^TRUMA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(k);
+        }
+        
+        function check() {
+          try {
+            const d = localStorage.getItem(KEY);
+            if (!d) return false;
+            const lic = JSON.parse(d);
+            if (!verify(lic.key)) return false;
+            if (lic.expires && new Date(lic.expires) < new Date()) return false;
+            return true;
+          } catch { return false; }
+        }
+        
+        if (check()) gate.style.display = 'none';
+        
+        btn.onclick = () => {
+          err.style.display = 'none';
+          const key = input.value.trim().toUpperCase();
+          if (!key) { err.textContent = 'Please enter a license key'; err.style.display = 'block'; return; }
+          if (!verify(key)) { err.textContent = 'Invalid license format'; err.style.display = 'block'; return; }
+          const now = new Date();
+          const expiry = new Date(now.getTime() + 365*24*60*60*1000);
+          localStorage.setItem(KEY, JSON.stringify({key:key,user:'Licensed',created:now.toISOString(),expires:expiry.toISOString()}));
+          gate.style.display = 'none';
+        };
+        
+        input.onkeypress = e => { if (e.key === 'Enter') btn.click(); };
+      })();
+    </script>
+
     <div id="welcome-screen">
       <div class="welcome-glow"></div>
       <div class="welcome-content">
