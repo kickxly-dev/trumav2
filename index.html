@@ -676,17 +676,25 @@
                 gate.style.display = 'none';
             }
 
-            // Format input
+            // Format input - only format if not already valid
             input.addEventListener('input', (e) => {
-                let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                if (v.length > 5) v = 'TRUMA-' + v.substring(5);
-                if (v.startsWith('TRUMA-')) {
-                    const parts = ['TRUMA'];
-                    const rest = v.substring(6);
-                    for (let i = 0; i < rest.length && i < 24; i += 4) parts.push(rest.substring(i, i + 4));
-                    v = parts.join('-');
+                let v = e.target.value.toUpperCase();
+                // If already valid format, leave it
+                if (/^TRUMA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(v)) {
+                    return;
                 }
-                e.target.value = v;
+                // Otherwise strip and reformat
+                v = v.replace(/[^A-Z0-9]/g, '');
+                if (v.startsWith('TRUMA')) {
+                    const rest = v.substring(5);
+                    const parts = ['TRUMA'];
+                    for (let i = 0; i < rest.length && i < 24; i += 4) {
+                        parts.push(rest.substring(i, i + 4));
+                    }
+                    e.target.value = parts.join('-');
+                } else {
+                    e.target.value = v;
+                }
             });
 
             // Submit
