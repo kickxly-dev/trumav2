@@ -1,0 +1,58 @@
+{
+  "email": "kickxly0@gmail.com",
+  "timestamp": "2026-03-06T02:39:17.356Z",
+  "data": {
+    "valid": true,
+    "disposable": false,
+    "role": false,
+    "mx": [
+      {
+        "exchange": "alt2.gmail-smtp-in.l.google.com",
+        "priority": 20,
+        "type": "MX"
+      },
+      {
+        "exchange": "gmail-smtp-in.l.google.com",
+        "priority": 5,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt1.gmail-smtp-in.l.google.com",
+        "priority": 10,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt4.gmail-smtp-in.l.google.com",
+        "priority": 40,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt3.gmail-smtp-in.l.google.com",
+        "priority": 30,
+        "type": "MX"
+      }
+    ],
+    "provider": "Google",
+    "spf": true,
+    "dmarc": false,
+    "smtp": true
+  },
+  "breach": {
+    "domainBreaches": [],
+    "exposed": false
+  },
+  "social": {
+    "gravatar": "https://gravatar.com/avatar/448602f4356e3f07698f538a6d7c9418",
+    "patterns": [
+      "\"kickxly0@gmail.com\" site:facebook.com",
+      "\"kickxly0@gmail.com\" site:twitter.com",
+      "\"kickxly0@gmail.com\" site:linkedin.com",
+      "\"kickxly0@gmail.com\" site:github.com",
+      "\"kickxly0\" site:instagram.com"
+    ]
+  },
+  "risk": {
+    "score": 0,
+    "level": "LOW"
+  }
+}

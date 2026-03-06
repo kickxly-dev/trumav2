@@ -1,0 +1,526 @@
+{
+  "username": "cappingforclout",
+  "timestamp": "2026-03-06T22:21:13.707Z",
+  "platforms": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "GitLab",
+      "url": "https://gitlab.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bitbucket",
+      "url": "https://bitbucket.org/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dev.to",
+      "url": "https://dev.to/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Codecademy",
+      "url": "https://codecademy.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Replit",
+      "url": "https://replit.com/@cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com/users/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "HackerNews",
+      "url": "https://news.ycombinator.com/user?id=cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "SourceForge",
+      "url": "https://sourceforge.net/u/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Launchpad",
+      "url": "https://launchpad.net/~cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Gitee",
+      "url": "https://gitee.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Codeforces",
+      "url": "https://codeforces.com/profile/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "LeetCode",
+      "url": "https://leetcode.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "HackerRank",
+      "url": "https://hackerrank.com/cappingforclout",
+      "category": "dev",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Twitter/X",
+      "url": "https://twitter.com/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Instagram",
+      "url": "https://instagram.com/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Facebook",
+      "url": "https://facebook.com/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "TikTok",
+      "url": "https://tiktok.com/@cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Snapchat",
+      "url": "https://snapchat.com/add/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Reddit",
+      "url": "https://reddit.com/user/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Pinterest",
+      "url": "https://pinterest.com/cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Tumblr",
+      "url": "https://cappingforclout.tumblr.com",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Mastodon",
+      "url": "https://mastodon.social/@cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Threads",
+      "url": "https://threads.net/@cappingforclout",
+      "category": "social",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Discord",
+      "url": "https://discord.com/users/cappingforclout",
+      "category": "social",
+      "status": "FOUND"
+    },
+    {
+      "name": "LinkedIn",
+      "url": "https://linkedin.com/in/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Xing",
+      "url": "https://xing.com/profile/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "AngelList",
+      "url": "https://wellfound.com/u/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Crunchbase",
+      "url": "https://crunchbase.com/person/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Glassdoor",
+      "url": "https://glassdoor.com/profile/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "F6s",
+      "url": "https://f6s.com/cappingforclout",
+      "category": "pro",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "YouTube",
+      "url": "https://youtube.com/@cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Vimeo",
+      "url": "https://vimeo.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Twitch",
+      "url": "https://twitch.tv/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dailymotion",
+      "url": "https://dailymotion.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "SoundCloud",
+      "url": "https://soundcloud.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Spotify",
+      "url": "https://open.spotify.com/user/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bandcamp",
+      "url": "https://bandcamp.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Mixcloud",
+      "url": "https://mixcloud.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Dribbble",
+      "url": "https://dribbble.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Behance",
+      "url": "https://behance.net/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "DeviantArt",
+      "url": "https://cappingforclout.deviantart.com",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "ArtStation",
+      "url": "https://artstation.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Flickr",
+      "url": "https://flickr.com/people/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "500px",
+      "url": "https://500px.com/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Unsplash",
+      "url": "https://unsplash.com/@cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Pexels",
+      "url": "https://pexels.com/@cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Medium",
+      "url": "https://medium.com/@cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Substack",
+      "url": "https://cappingforclout.substack.com",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Wattpad",
+      "url": "https://wattpad.com/user/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Fanfiction",
+      "url": "https://fanfiction.net/~cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Archive of Our Own",
+      "url": "https://archiveofourown.org/users/cappingforclout",
+      "category": "creative",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Steam",
+      "url": "https://steamcommunity.com/id/cappingforclout",
+      "category": "gaming",
+      "status": "FOUND"
+    },
+    {
+      "name": "Xbox",
+      "url": "https://xboxgamertag.com/search/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "PlayStation",
+      "url": "https://psnprofiles.com/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Nintendo",
+      "url": "https://nintendo.com/us/switch/friends/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Epic Games",
+      "url": "https://fortnitetracker.com/profile/all/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Riot Games",
+      "url": "https://op.gg/summoners/na/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Roblox",
+      "url": "https://roblox.com/user.aspx?username=cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Minecraft",
+      "url": "https://namemc.com/profile/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Chess.com",
+      "url": "https://chess.com/member/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Lichess",
+      "url": "https://lichess.org/@/cappingforclout",
+      "category": "gaming",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Keybase",
+      "url": "https://keybase.io/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Gravatar",
+      "url": "https://gravatar.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "About.me",
+      "url": "https://about.me/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Linktree",
+      "url": "https://linktr.ee/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Bio.link",
+      "url": "https://bio.link/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Carrd",
+      "url": "https://cappingforclout.carrd.co",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "ProductHunt",
+      "url": "https://producthunt.com/@cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Slideshare",
+      "url": "https://slideshare.net/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Academia",
+      "url": "https://academia.edu/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "ResearchGate",
+      "url": "https://researchgate.net/profile/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Goodreads",
+      "url": "https://goodreads.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Letterboxd",
+      "url": "https://letterboxd.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Last.fm",
+      "url": "https://last.fm/user/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Strava",
+      "url": "https://strava.com/athletes/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "MyFitnessPal",
+      "url": "https://myfitnesspal.com/profile/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Duolingo",
+      "url": "https://duolingo.com/profile/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Cash App",
+      "url": "https://cash.app/$cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Patreon",
+      "url": "https://patreon.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Ko-fi",
+      "url": "https://ko-fi.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Buy Me a Coffee",
+      "url": "https://buymeacoffee.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "PayPal",
+      "url": "https://paypal.me/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    },
+    {
+      "name": "Venmo",
+      "url": "https://venmo.com/cappingforclout",
+      "category": "other",
+      "status": "NOT FOUND"
+    }
+  ],
+  "variations": [
+    "cappingforclout",
+    "CAPPINGFORCLOUT",
+    "thecappingforclout",
+    "realcappingforclout",
+    "cappingforcloutofficial",
+    "cappingforclout2024",
+    "cappingforclout2025",
+    "iamcappingforclout",
+    "itscappingforclout"
+  ],
+  "analysis": {
+    "length": 15,
+    "hasNumbers": false,
+    "hasSpecial": false
+  }
+}

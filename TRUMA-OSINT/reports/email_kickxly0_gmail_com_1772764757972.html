@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRUMA OSINT Report - kickxly0@gmail.com</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #e0e0e0; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #1a0000 0%, #330000 100%); padding: 30px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #ff3333; }
+    .header h1 { color: #ff4444; font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,68,68,0.5); }
+    .header .subtitle { color: #888; font-size: 1.1em; }
+    .header .target { color: #fff; font-size: 1.3em; margin-top: 15px; padding: 10px 20px; background: rgba(255,68,68,0.1); border-radius: 5px; display: inline-block; }
+    .meta { display: flex; justify-content: center; gap: 30px; margin-top: 15px; color: #666; font-size: 0.9em; }
+    .section { background: #111; border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid #222; }
+    .section h2 { color: #ff4444; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+    .section h2 .icon { font-size: 1.2em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card { background: #1a1a1a; border-radius: 8px; padding: 15px; border: 1px solid #333; }
+    .card h3 { color: #ff6666; margin-bottom: 10px; font-size: 1em; }
+    .stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
+    .stat:last-child { border-bottom: none; }
+    .stat-label { color: #888; }
+    .stat-value { color: #fff; font-weight: bold; }
+    .stat-value.good { color: #00ff00; }
+    .stat-value.bad { color: #ff4444; }
+    .stat-value.warning { color: #ffaa00; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 15px; font-size: 0.85em; margin: 3px; }
+    .tag.good { background: rgba(0,255,0,0.1); color: #00ff00; border: 1px solid rgba(0,255,0,0.3); }
+    .tag.bad { background: rgba(255,0,0,0.1); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
+    .tag.warning { background: rgba(255,170,0,0.1); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+    .tag.info { background: rgba(68,68,255,0.1); color: #4444ff; border: 1px solid rgba(68,68,255,0.3); }
+    .list { list-style: none; }
+    .list li { padding: 8px 12px; margin: 5px 0; background: #1a1a1a; border-radius: 5px; border-left: 3px solid #ff4444; }
+    .list li a { color: #4488ff; text-decoration: none; }
+    .list li a:hover { text-decoration: underline; }
+    .progress-bar { background: #222; border-radius: 10px; height: 20px; overflow: hidden; margin: 10px 0; }
+    .progress-fill { height: 100%; transition: width 0.5s ease; }
+    .progress-fill.low { background: linear-gradient(90deg, #00ff00, #00cc00); }
+    .progress-fill.medium { background: linear-gradient(90deg, #ffaa00, #ff8800); }
+    .progress-fill.high { background: linear-gradient(90deg, #ff4444, #cc0000); }
+    .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 150px; padding: 20px 0; }
+    .chart-bar { width: 40px; background: linear-gradient(180deg, #ff4444 0%, #aa0000 100%); border-radius: 5px 5px 0 0; position: relative; transition: height 0.5s ease; }
+    .chart-bar:hover { background: linear-gradient(180deg, #ff6666 0%, #cc0000 100%); }
+    .chart-bar .label { position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.7em; color: #888; white-space: nowrap; }
+    .chart-bar .value { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 0.8em; color: #fff; }
+    .pie-chart { width: 200px; height: 200px; border-radius: 50%; margin: 20px auto; position: relative; }
+    .pie-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+    .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9em; }
+    .pie-legend-color { width: 15px; height: 15px; border-radius: 3px; }
+    .risk-meter { text-align: center; padding: 30px; }
+    .risk-circle { width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; border: 5px solid; }
+    .risk-circle.low { border-color: #00ff00; color: #00ff00; background: rgba(0,255,0,0.1); }
+    .risk-circle.medium { border-color: #ffaa00; color: #ffaa00; background: rgba(255,170,0,0.1); }
+    .risk-circle.high { border-color: #ff4444; color: #ff4444; background: rgba(255,0,0,0.1); }
+    .risk-circle.critical { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.2); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,0,0,0.4); } 50% { box-shadow: 0 0 0 20px rgba(255,0,0,0); } }
+    .footer { text-align: center; padding: 20px; color: #444; font-size: 0.9em; border-top: 1px solid #222; margin-top: 20px; }
+    .print-btn { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #ff4444; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; }
+    .print-btn:hover { background: #ff6666; }
+    @media print { .print-btn { display: none; } body { background: #fff; color: #000; } .section { border: 1px solid #ccc; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">📄 Export PDF</button>
+  <div class="container">
+    <div class="header">
+      <h1>🔴 TRUMA OSINT</h1>
+      <div class="subtitle">Open Source Intelligence Report</div>
+      <div class="target">kickxly0@gmail.com</div>
+      <div class="meta">
+        <span>📅 3/5/2026, 6:39:17 PM</span>
+        <span>⏱️ 2026-03-06T02:39:17.645Z</span>
+        <span>🔧 v3.0</span>
+      </div>
+    </div>
+    
+    <div class="grid">
+      <div class="section">
+        <h2><span class="icon">📧</span> Email Analysis</h2>
+        <div class="card">
+          <h3>Validation</h3>
+          <div class="stat"><span class="stat-label">Format Valid</span><span class="stat-value good">✓ YES</span></div>
+          <div class="stat"><span class="stat-label">Disposable</span><span class="stat-value good">✓ NO</span></div>
+          <div class="stat"><span class="stat-label">Role Account</span><span class="stat-value">NO</span></div>
+        </div>
+        <div class="card" style="margin-top: 15px;">
+          <h3>DNS Configuration</h3>
+          <div class="stat"><span class="stat-label">MX Records</span><span class="stat-value">5</span></div>
+          <div class="stat"><span class="stat-label">SPF Record</span><span class="stat-value good">✓ YES</span></div>
+          <div class="stat"><span class="stat-label">DMARC</span><span class="stat-value warning">✗ NO</span></div>
+          <div class="stat"><span class="stat-label">SMTP Reachable</span><span class="stat-value good">✓ YES</span></div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2><span class="icon">⚠️</span> Risk Assessment</h2>
+        <div class="risk-meter">
+          <div class="risk-circle low">LOW</div>
+          <div class="progress-bar">
+            <div class="progress-fill low" style="width: 0%"></div>
+          </div>
+          <p style="margin-top: 10px; color: #888;">Risk Score: 0/10</p>
+        </div>
+        
+      </div>
+    </div>
+    
+    
+    
+    
+    <div class="section">
+      <h2><span class="icon">🔍</span> Search Patterns</h2>
+      <ul class="list">
+        <li><code>"kickxly0@gmail.com" site:facebook.com</code></li><li><code>"kickxly0@gmail.com" site:twitter.com</code></li><li><code>"kickxly0@gmail.com" site:linkedin.com</code></li><li><code>"kickxly0@gmail.com" site:github.com</code></li><li><code>"kickxly0" site:instagram.com</code></li>
+      </ul>
+    </div>
+    
+  
+    <div class="footer">
+      Generated by TRUMA OSINT v3.0 | For educational and legal use only
+    </div>
+  </div>
+</body>
+</html>

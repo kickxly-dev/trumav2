@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRAUMA - Admin Portal</title>
+    <title>TRAUMA - License Activation</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +47,7 @@
             border-radius: 16px;
             padding: 3rem;
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             position: relative;
             z-index: 10;
             box-shadow: 0 20px 60px rgba(220, 20, 60, 0.2);
@@ -58,57 +58,36 @@
             margin-bottom: 2rem;
         }
 
-        .auth-title {
+        .auth-logo {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: 800;
-            color: var(--crimson-primary);
-            text-shadow: 0 0 20px rgba(220, 20, 60, 0.5);
+            background: linear-gradient(135deg, #dc143c, #ff4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(220, 20, 60, 0.5);
             margin-bottom: 0.5rem;
         }
 
         .auth-subtitle {
             color: var(--text-secondary);
             font-size: 1rem;
+            margin-bottom: 0.5rem;
         }
 
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 2rem;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 0.25rem;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .auth-tab.active {
-            background: var(--crimson-primary);
-            color: var(--text-primary);
-        }
-
-        .auth-form {
-            display: none;
-        }
-
-        .auth-form.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(220, 20, 60, 0.1);
+            border: 1px solid rgba(220, 20, 60, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #dc143c;
+            margin-top: 1rem;
         }
 
         .form-group {
@@ -126,13 +105,16 @@
 
         .form-input {
             width: 100%;
-            padding: 0.875rem;
+            padding: 1rem;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-primary);
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             transition: all 0.3s ease;
         }
 
@@ -144,6 +126,8 @@
 
         .form-input::placeholder {
             color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: none;
         }
 
         .auth-button {
@@ -164,21 +148,6 @@
             overflow: hidden;
         }
 
-        .auth-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .auth-button:hover::before {
-            left: 100%;
-        }
-
         .auth-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(220, 20, 60, 0.4);
@@ -190,26 +159,62 @@
             transform: none;
         }
 
+        .auth-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
         .auth-error {
             background: rgba(255, 68, 68, 0.1);
             border: 1px solid rgba(255, 68, 68, 0.3);
             color: var(--error-color);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
         }
 
         .auth-success {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            color: var(--success-color);
-            padding: 1rem;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .license-info {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
+            padding: 1rem;
             margin-bottom: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
+        }
+
+        .license-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .license-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .license-info-label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .license-info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .license-info-value.active {
+            color: #00ff88;
+        }
+
+        .license-info-value.expired {
+            color: var(--error-color);
         }
 
         .auth-footer {
@@ -230,6 +235,23 @@
             color: var(--crimson-glow);
         }
 
+        .license-hint {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(220, 20, 60, 0.05);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .license-hint code {
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--crimson-primary);
+        }
+
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -246,23 +268,9 @@
             100% { transform: rotate(360deg); }
         }
 
-        .password-strength {
-            margin-top: 0.5rem;
-            height: 4px;
-            background: var(--bg-secondary);
-            border-radius: 2px;
-            overflow: hidden;
+        .hidden {
+            display: none !important;
         }
-
-        .password-strength-bar {
-            height: 100%;
-            transition: all 0.3s ease;
-            border-radius: 2px;
-        }
-
-        .strength-weak { background: var(--error-color); width: 33%; }
-        .strength-medium { background: var(--warning-color); width: 66%; }
-        .strength-strong { background: var(--success-color); width: 100%; }
     </style>
 </head>
 <body>
@@ -271,74 +279,304 @@
         
         <div class="auth-card">
             <div class="auth-header">
-                <h1 class="auth-title">TRAUMA</h1>
-                <p class="auth-subtitle">Admin Portal - Restricted Access</p>
+                <div class="auth-logo">TRAUMA</div>
+                <p class="auth-subtitle">Unified License Portal</p>
+                <div class="auth-badge">
+                    <span>🔑</span>
+                    <span>ONE LICENSE FOR ALL TOOLS</span>
+                </div>
             </div>
 
-            <div class="auth-tabs">
-                <button class="auth-tab active" id="loginTab">Admin Login</button>
-                <button class="auth-tab" id="signupTab" style="display: none;">Sign Up</button>
+            <!-- Status Display -->
+            <div id="licenseStatus" class="license-info hidden">
+                <div class="license-info-row">
+                    <span class="license-info-label">Status</span>
+                    <span id="statusValue" class="license-info-value">-</span>
+                </div>
+                <div class="license-info-row">
+                    <span class="license-info-label">User</span>
+                    <span id="userValue" class="license-info-value">-</span>
+                </div>
+                <div class="license-info-row">
+                    <span class="license-info-label">Expires</span>
+                    <span id="expiresValue" class="license-info-value">-</span>
+                </div>
             </div>
 
-            <!-- Login Form -->
-            <form id="loginForm" class="auth-form active">
-                <div id="loginError" class="auth-error" style="display: none;"></div>
-                <div id="loginSuccess" class="auth-success" style="display: none;"></div>
-                
+            <!-- Message Display -->
+            <div id="authMessage" class="auth-message hidden"></div>
+
+            <!-- License Form -->
+            <form id="licenseForm">
                 <div class="form-group">
-                    <label class="form-label" for="adminCode">Admin Access Code</label>
-                    <input type="text" id="adminCode" class="form-input" placeholder="Enter admin code (required for admin access)" required>
+                    <label class="form-label" for="licenseKey">TRAUMA License Key</label>
+                    <input type="text" id="licenseKey" class="form-input" 
+                           placeholder="TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                           maxlength="34" autocomplete="off" spellcheck="false">
                 </div>
                 
-                <button type="button" class="auth-button" id="testServerBtn" style="background: var(--bg-secondary); border: 1px solid var(--border-color); margin-bottom: 1rem;">
-                    Test Server Connection
-                </button>
-                
-                <button type="submit" class="auth-button" id="loginButton">
-                    <span id="loginButtonText">Access Admin Panel</span>
+                <button type="submit" class="auth-button" id="activateBtn">
+                    <span id="btnText">Activate License</span>
                 </button>
             </form>
 
-            <!-- Signup Form -->
-            <form id="signupForm" class="auth-form" style="display: none;">
-                <div id="signupError" class="auth-error" style="display: none;"></div>
-                <div id="signupSuccess" class="auth-success" style="display: none;"></div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="signupName">Full Name</label>
-                    <input type="text" id="signupName" class="form-input" placeholder="John Doe" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="signupEmail">Email Address</label>
-                    <input type="email" id="signupEmail" class="form-input" placeholder="admin@trauma-suite.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" class="form-input" placeholder="Create strong password" required>
-                    <div class="password-strength">
-                        <div id="passwordStrengthBar" class="password-strength-bar"></div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="signupConfirmPassword">Confirm Password</label>
-                    <input type="password" id="signupConfirmPassword" class="form-input" placeholder="Confirm your password" required>
-                </div>
-                
-                <button type="submit" class="auth-button" id="signupButton">
-                    <span id="signupButtonText">Create Account</span>
-                </button>
-            </form>
+            <div class="license-hint">
+                <strong>Format:</strong> <code>TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX</code><br>
+                <small>Your license works across all TRAUMA tools: OSINT, Browser, Python Suite, and Web Tools.</small>
+            </div>
 
             <div class="auth-footer">
-                <p><a href="index.html">Back to TRAUMA Suite</a></p>
-                <p style="margin-top: 1rem; color: var(--text-dim); font-size: 0.8rem;">Admin access requires special code</p>
+                <p><a href="index.html">← Back to TRAUMA Suite</a></p>
+                <p style="margin-top: 1rem; color: var(--text-dim); font-size: 0.8rem;">
+                    Need a license? Contact us on Discord
+                </p>
             </div>
         </div>
     </div>
 
-    <script src="auth.js"></script>
+    <script>
+        // TRAUMA Unified License System (Browser Version)
+        const TRAUMA_SECRET = 'TRUMA-OSINT-SECRET-2024-SECURE-KEY-DO-NOT-SHARE';
+        
+        // Storage key
+        const LICENSE_KEY = 'trauma_license';
+
+        // Get stored license
+        function getStoredLicense() {
+            try {
+                const data = localStorage.getItem(LICENSE_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Save license
+        function saveLicense(data) {
+            localStorage.setItem(LICENSE_KEY, JSON.stringify(data));
+        }
+
+        // Clear license
+        function clearLicense() {
+            localStorage.removeItem(LICENSE_KEY);
+        }
+
+        // Verify license format
+        function verifyLicenseFormat(key) {
+            if (!key || typeof key !== 'string') {
+                return { valid: false, error: 'No license key provided' };
+            }
+
+            const parts = key.split('-');
+            if (parts.length !== 7 || parts[0] !== 'TRUMA') {
+                return { valid: false, error: 'Invalid license format' };
+            }
+
+            const signature = parts.slice(1).join('');
+            if (signature.length !== 24 || !/^[A-Z0-9]+$/.test(signature)) {
+                return { valid: false, error: 'Invalid license signature' };
+            }
+
+            return { valid: true };
+        }
+
+        // Check license status
+        function checkLicense() {
+            const license = getStoredLicense();
+            
+            if (!license) {
+                return { valid: false, error: 'No license activated', needsActivation: true };
+            }
+
+            const formatCheck = verifyLicenseFormat(license.key);
+            if (!formatCheck.valid) {
+                return { valid: false, error: 'Invalid stored license' };
+            }
+
+            // Check expiry
+            const expiry = new Date(license.expires);
+            if (expiry < new Date()) {
+                return { valid: false, error: 'License expired', expired: true, expires: license.expires };
+            }
+
+            return {
+                valid: true,
+                user: license.user || 'Licensed User',
+                expires: license.expires,
+                created: license.created
+            };
+        }
+
+        // Activate license
+        function activateLicense(key) {
+            const formatCheck = verifyLicenseFormat(key);
+            if (!formatCheck.valid) {
+                return { success: false, error: formatCheck.error };
+            }
+
+            // Create license data
+            const now = new Date();
+            const expiry = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year
+
+            const licenseData = {
+                key: key,
+                user: 'Licensed User',
+                created: now.toISOString(),
+                expires: expiry.toISOString(),
+                activated: now.getTime()
+            };
+
+            saveLicense(licenseData);
+
+            return {
+                success: true,
+                message: 'License activated successfully!',
+                user: licenseData.user,
+                expires: licenseData.expires
+            };
+        }
+
+        // Deactivate license
+        function deactivateLicense() {
+            clearLicense();
+            return { success: true, message: 'License deactivated' };
+        }
+
+        // UI Functions
+        function showMessage(text, isError = false) {
+            const msgEl = document.getElementById('authMessage');
+            msgEl.textContent = text;
+            msgEl.className = 'auth-message ' + (isError ? 'auth-error' : 'auth-success');
+            msgEl.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            document.getElementById('authMessage').classList.add('hidden');
+        }
+
+        function updateStatusDisplay(result) {
+            const statusEl = document.getElementById('licenseStatus');
+            const statusValue = document.getElementById('statusValue');
+            const userValue = document.getElementById('userValue');
+            const expiresValue = document.getElementById('expiresValue');
+
+            if (result.valid) {
+                statusEl.classList.remove('hidden');
+                statusValue.textContent = '✓ Active';
+                statusValue.className = 'license-info-value active';
+                userValue.textContent = result.user;
+                const expDate = new Date(result.expires);
+                expiresValue.textContent = expDate.toLocaleDateString();
+                expiresValue.className = 'license-info-value';
+            } else if (result.expired) {
+                statusEl.classList.remove('hidden');
+                statusValue.textContent = '✗ Expired';
+                statusValue.className = 'license-info-value expired';
+                userValue.textContent = '-';
+                expiresValue.textContent = new Date(result.expires).toLocaleDateString();
+                expiresValue.className = 'license-info-value expired';
+            } else {
+                statusEl.classList.add('hidden');
+            }
+        }
+
+        function updateButtonText(text, loading = false) {
+            const btn = document.getElementById('btnText');
+            btn.innerHTML = (loading ? '<span class="loading-spinner"></span>' : '') + text;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('licenseForm');
+            const input = document.getElementById('licenseKey');
+            const btn = document.getElementById('activateBtn');
+
+            // Check current license status
+            const status = checkLicense();
+            updateStatusDisplay(status);
+
+            if (status.valid) {
+                updateButtonText('Deactivate License');
+                input.placeholder = 'License active';
+                input.disabled = true;
+            }
+
+            // Form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                hideMessage();
+
+                const currentStatus = checkLicense();
+
+                if (currentStatus.valid) {
+                    // Deactivate
+                    deactivateLicense();
+                    showMessage('License deactivated. You can activate a new one.');
+                    updateStatusDisplay({ valid: false });
+                    updateButtonText('Activate License');
+                    input.disabled = false;
+                    input.value = '';
+                    input.placeholder = 'TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX';
+                } else {
+                    // Activate
+                    const key = input.value.trim().toUpperCase();
+                    
+                    if (!key) {
+                        showMessage('Please enter a license key', true);
+                        return;
+                    }
+
+                    updateButtonText('Activating...', true);
+                    btn.disabled = true;
+
+                    setTimeout(() => {
+                        const result = activateLicense(key);
+                        
+                        if (result.success) {
+                            showMessage(result.message);
+                            updateStatusDisplay(checkLicense());
+                            updateButtonText('Deactivate License');
+                            input.disabled = true;
+                        } else {
+                            showMessage(result.error, true);
+                            updateButtonText('Activate License');
+                        }
+                        
+                        btn.disabled = false;
+                    }, 500);
+                }
+            });
+
+            // Format input
+            input.addEventListener('input', (e) => {
+                let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                
+                // Add dashes
+                if (value.length > 5) {
+                    value = 'TRUMA-' + value.substring(5);
+                }
+                
+                // Format with dashes every 4 chars after TRUMA-
+                if (value.startsWith('TRUMA-')) {
+                    const parts = ['TRUMA'];
+                    const rest = value.substring(6);
+                    for (let i = 0; i < rest.length && i < 24; i += 4) {
+                        parts.push(rest.substring(i, i + 4));
+                    }
+                    value = parts.join('-');
+                }
+                
+                e.target.value = value;
+            });
+        });
+
+        // Export for other pages
+        window.TRAUMALicense = {
+            check: checkLicense,
+            activate: activateLicense,
+            deactivate: deactivateLicense,
+            getStored: getStoredLicense
+        };
+    </script>
 </body>
 </html>

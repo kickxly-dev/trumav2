@@ -1,0 +1,94 @@
+{
+  "email": "kickxly0@gmail.com",
+  "timestamp": "2026-03-06T22:22:14.052Z",
+  "data": {
+    "valid": true,
+    "disposable": false,
+    "role": false,
+    "spamKeyword": false,
+    "localAnalysis": {
+      "hasNumbers": true,
+      "hasSpecial": false,
+      "localLength": 8,
+      "looksRandom": false
+    },
+    "mx": [
+      {
+        "exchange": "alt4.gmail-smtp-in.l.google.com",
+        "priority": 40,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt3.gmail-smtp-in.l.google.com",
+        "priority": 30,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt1.gmail-smtp-in.l.google.com",
+        "priority": 10,
+        "type": "MX"
+      },
+      {
+        "exchange": "gmail-smtp-in.l.google.com",
+        "priority": 5,
+        "type": "MX"
+      },
+      {
+        "exchange": "alt2.gmail-smtp-in.l.google.com",
+        "priority": 20,
+        "type": "MX"
+      }
+    ],
+    "provider": "Google",
+    "enterpriseEmail": true,
+    "spf": true,
+    "dmarc": false,
+    "dkim": false,
+    "smtp": {
+      "port25": true,
+      "port465": false,
+      "port587": false
+    }
+  },
+  "breach": {
+    "domainBreaches": [],
+    "exposed": false,
+    "summary": {
+      "total": 0,
+      "critical": 0,
+      "high": 0
+    }
+  },
+  "social": {
+    "gravatar": "https://gravatar.com/avatar/448602f4356e3f07698f538a6d7c9418",
+    "gravatarProfile": "https://gravatar.com/448602f4356e3f07698f538a6d7c9418",
+    "usernameVariations": [
+      "kickxly0"
+    ],
+    "patterns": [
+      "\"kickxly0@gmail.com\" site:facebook.com",
+      "\"kickxly0@gmail.com\" site:twitter.com",
+      "\"kickxly0@gmail.com\" site:linkedin.com",
+      "\"kickxly0@gmail.com\" site:github.com",
+      "\"kickxly0@gmail.com\" site:instagram.com",
+      "\"kickxly0@gmail.com\" site:reddit.com",
+      "\"kickxly0@gmail.com\" site:pastebin.com",
+      "\"kickxly0@gmail.com\" filetype:pdf",
+      "\"kickxly0@gmail.com\" filetype:doc",
+      "\"kickxly0\" site:facebook.com",
+      "\"kickxly0\" site:twitter.com"
+    ]
+  },
+  "reputation": {
+    "score": 100,
+    "factors": [
+      "No DMARC record (-5)",
+      "Enterprise email provider (+10)"
+    ],
+    "level": "EXCELLENT"
+  },
+  "risk": {
+    "score": 0,
+    "level": "LOW"
+  }
+}
