@@ -634,10 +634,24 @@
             const btn = document.getElementById('gateSubmit');
             const error = document.getElementById('gateError');
 
+            // Security: Prevent right-click and keyboard shortcuts
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('keydown', e => {
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'J') || (e.ctrlKey && e.key === 'u')) {
+                    e.preventDefault();
+                }
+            });
+
+            // Security: Obfuscate function names
+            const _0x1a2b = function() { return localStorage; };
+            const _0x3c4d = function() { return JSON; };
+            const _0x5e6f = function() { return document; };
+
             function getLicense() {
                 try {
-                    const data = localStorage.getItem(LICENSE_KEY);
-                    return data ? JSON.parse(data) : null;
+                    const data = _0x1a2b().getItem(LICENSE_KEY);
+                    return data ? _0x3c4d().parse(data) : null;
                 } catch (e) { return null; }
             }
 
@@ -652,7 +666,6 @@
                 const license = getLicense();
                 if (!license) return false;
                 if (!verifyFormat(license.key)) return false;
-                // Check expiry if exists
                 if (license.expires) {
                     const expiry = new Date(license.expires);
                     if (expiry < new Date()) return false;
@@ -668,6 +681,15 @@
             function hideError() {
                 error.style.display = 'none';
             }
+
+            // Security: Check for dev tools
+            let devtools = function(){};
+            devtools.toString = function() {
+                _0x5e6f().body.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;"><div style="color:#fff;font-family:monospace;">Developer tools detected. Please close them.</div></div>';
+                window.location.reload();
+            };
+            console.log(devtools);
+            console.clear();
 
             // Check if already licensed
             if (checkLicense()) {
