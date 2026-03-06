@@ -707,6 +707,8 @@
             btn.addEventListener('click', () => {
                 hideError();
                 const key = input.value.trim().toUpperCase();
+                console.log('Entered key:', key);
+                console.log('Parts:', key.split('-'));
                 
                 if (!key) {
                     showError('Please enter a license key');
@@ -714,19 +716,24 @@
                 }
 
                 if (!verifyFormat(key)) {
-                    showError('Invalid license format');
+                    console.log('Validation failed for:', key);
+                    showError('Invalid license format. Use: TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX');
                     return;
                 }
 
+                console.log('Validation passed!');
+                
                 // Save license
                 const now = new Date();
                 const expiry = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
-                localStorage.setItem(LICENSE_KEY, JSON.stringify({
+                const licenseData = {
                     key: key,
                     user: 'Licensed User',
                     created: now.toISOString(),
                     expires: expiry.toISOString()
-                }));
+                };
+                console.log('Saving:', licenseData);
+                localStorage.setItem(LICENSE_KEY, JSON.stringify(licenseData));
 
                 gate.style.display = 'none';
             });
