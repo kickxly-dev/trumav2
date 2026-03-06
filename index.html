@@ -682,32 +682,17 @@
                 gate.style.display = 'none';
             }
 
-            // Format input - only format if not already valid
-            input.addEventListener('input', (e) => {
-                let v = e.target.value.toUpperCase();
-                // If already valid format, leave it
-                if (/^TRUMA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(v)) {
-                    return;
-                }
-                // Otherwise strip and reformat
-                v = v.replace(/[^A-Z0-9]/g, '');
-                if (v.startsWith('TRUMA')) {
-                    const rest = v.substring(5);
-                    const parts = ['TRUMA'];
-                    for (let i = 0; i < rest.length && i < 24; i += 4) {
-                        parts.push(rest.substring(i, i + 4));
-                    }
-                    e.target.value = parts.join('-');
-                } else {
-                    e.target.value = v;
-                }
-            });
-
             // Submit
             btn.addEventListener('click', () => {
                 hideError();
-                const key = input.value.trim().toUpperCase();
-                console.log('Entered key:', key);
+                let key = input.value.trim().toUpperCase();
+                
+                // Remove any extra whitespace/dashes issues
+                key = key.replace(/\s+/g, '');
+                
+                console.log('Raw input:', input.value);
+                console.log('Cleaned key:', key);
+                console.log('Key length:', key.length);
                 console.log('Parts:', key.split('-'));
                 
                 if (!key) {
@@ -716,29 +701,24 @@
                 }
 
                 if (!verifyFormat(key)) {
-                    console.log('Validation failed for:', key);
-                    showError('Invalid license format. Use: TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX');
+                    showError('Invalid format. Key must be: TRUMA-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX');
                     return;
                 }
 
-                console.log('Validation passed!');
-                
                 // Save license
                 const now = new Date();
                 const expiry = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
-                const licenseData = {
+                localStorage.setItem(LICENSE_KEY, JSON.stringify({
                     key: key,
                     user: 'Licensed User',
                     created: now.toISOString(),
                     expires: expiry.toISOString()
-                };
-                console.log('Saving:', licenseData);
-                localStorage.setItem(LICENSE_KEY, JSON.stringify(licenseData));
+                }));
 
                 gate.style.display = 'none';
             });
 
-            // Enter key
+            // Enter key support
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') btn.click();
             });
