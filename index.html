@@ -834,6 +834,36 @@
                 return true;
             }
 
+            async function checkLicenseRemote() {
+                const license = getLicense();
+                if (!license || !license.key) return { valid: false };
+                
+                try {
+                    const serverUrl = localStorage.getItem('trauma_license_server') || 'http://localhost:3001';
+                    const response = await fetch(`${serverUrl}/api/license/validate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: license.key, tool: 'web' })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.valid) {
+                        // Update cached license info
+                        localStorage.setItem('trauma_license', JSON.stringify({
+                            ...license,
+                            user: result.user,
+                            expires: result.expires,
+                            daysRemaining: result.daysRemaining,
+                            lastChecked: new Date().toISOString()
+                        }));
+                    }
+                    return result;
+                } catch (e) {
+                    // Server unreachable, use local check
+                    return { valid: checkLicense(), fromLocal: true };
+                }
+            }
+
             function showError(msg) {
                 error.textContent = msg;
                 error.style.display = 'block';

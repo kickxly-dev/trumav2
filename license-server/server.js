@@ -13,6 +13,9 @@ const bcrypt = require('bcrypt');
 const app = express();
 const PORT = process.env.LICENSE_PORT || 3001;
 
+// Config
+const WEBHOOK_URL = process.env.WEBHOOK_URL; // Discord/Slack webhook for notifications
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -94,6 +97,90 @@ function logAnalytics(event, data) {
         ip: data.ip || 'unknown'
     });
     saveData(ANALYTICS_FILE, analytics);
+    
+    // Send webhook notification for important events
+    sendWebhookNotification(event, data);
+}
+
+// Send webhook notifications (Discord/Slack)
+async function sendWebhookNotification(event, data) {
+    if (!WEBHOOK_URL) return;
+    
+    const importantEvents = [
+        'license_generated',
+        'license_revoked',
+        'license_expired',
+        'activation_success',
+        'referral_used',
+        'api_key_generated'
+    ];
+    
+    if (!importantEvents.includes(event)) return;
+    
+    const colors = {
+        license_generated: 0x00ff88,
+        license_revoked: 0xff4444,
+        license_expired: 0xffaa00,
+        activation_success: 0x00ff88,
+        referral_used: 0x0088ff,
+        api_key_generated: 0x9932cc
+    };
+    
+    const titles = {
+        license_generated: '🎫 License Generated',
+        license_revoked: '🚫 License Revoked',
+        license_expired: '⏰ License Expired',
+        activation_success: '✅ License Activated',
+        referral_used: '🎁 Referral Used',
+        api_key_generated: '🔑 API Key Generated'
+    };
+    
+    const embed = {
+        title: titles[event] || `📋 ${event}`,
+        color: colors[event] || 0xdc143c,
+        fields: [],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'TRAUMA License System' }
+    };
+    
+    if (data.user) embed.fields.push({ name: 'User', value: data.user, inline: true });
+    if (data.key) embed.fields.push({ name: 'Key', value: `\`${data.key.substring(0, 19)}...\``, inline: true });
+    if (data.reason) embed.fields.push({ name: 'Reason', value: data.reason, inline: false });
+    if (data.bonusDays) embed.fields.push({ name: 'Bonus Days', value: `${data.bonusDays} days`, inline: true });
+    if (data.createdBy) embed.fields.push({ name: 'By', value: data.createdBy, inline: true });
+    
+    try {
+        const https = require('https');
+        const http = require('http');
+        const protocol = WEBHOOK_URL.startsWith('https') ? https : http;
+        
+        const postData = JSON.stringify({ embeds: [embed] });
+        
+        const url = new URL(WEBHOOK_URL);
+        const options = {
+            hostname: url.hostname,
+            port: url.port || (url.protocol === 'https:' ? 443 : 80),
+            path: url.pathname + url.search,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+        
+        const req = protocol.request(options, (res) => {
+            // Webhook sent successfully
+        });
+        
+        req.on('error', (e) => {
+            console.log('Webhook error:', e.message);
+        });
+        
+        req.write(postData);
+        req.end();
+    } catch (e) {
+        console.log('Webhook error:', e.message);
+    }
 }
 
 // API Key middleware for protected routes

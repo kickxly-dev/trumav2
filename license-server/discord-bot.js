@@ -4,20 +4,24 @@
  */
 
 require('dotenv').config();
-const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionsBitField } = require('discord.js');
 const axios = require('axios');
 
 // Config
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const LICENSE_SERVER = process.env.LICENSE_SERVER || 'http://localhost:3001';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+const WELCOME_CHANNEL_ID = process.env.WELCOME_CHANNEL_ID;
+const LICENSED_ROLE_ID = process.env.LICENSED_ROLE_ID;
 
-// Create client
+// Create client with all needed intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessageReactions
     ]
 });
 
@@ -154,6 +158,61 @@ client.once('ready', () => {
     registerCommands();
 });
 
+// Welcome new members
+client.on('guildMemberAdd', async (member) => {
+    try {
+        const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+        if (!channel) return;
+        
+        const embed = new EmbedBuilder()
+            .setColor(0xdc143c)
+            .setTitle('🎯 Welcome to TRAUMA')
+            .setDescription(`Hey ${member}, welcome to the TRAUMA community!`)
+            .addFields(
+                { name: '🔐 Get Access', value: 'Use `/verify <your-license-key>` to unlock all features', inline: false },
+                { name: '📦 Get a License', value: 'Contact an admin to purchase a license', inline: true },
+                { name: '📚 Documentation', value: 'Check out our guides in the channels', inline: true }
+            )
+            .setThumbnail(member.user.displayAvatarURL())
+            .setFooter({ text: 'TRAUMA Security Suite' })
+            .setTimestamp();
+        
+        await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
+    } catch (e) {
+        console.error('Welcome error:', e.message);
+    }
+});
+
+// Assign role when user verifies license
+async function assignLicensedRole(userId, guild) {
+    if (!LICENSED_ROLE_ID || !guild) return;
+    
+    try {
+        const member = await guild.members.fetch(userId);
+        if (member && !member.roles.cache.has(LICENSED_ROLE_ID)) {
+            await member.roles.add(LICENSED_ROLE_ID);
+            console.log(`✅ Assigned licensed role to ${member.user.tag}`);
+        }
+    } catch (e) {
+        console.error('Role assignment error:', e.message);
+    }
+}
+
+// Remove role when license expires/revoked
+async function removeLicensedRole(userId, guild) {
+    if (!LICENSED_ROLE_ID || !guild) return;
+    
+    try {
+        const member = await guild.members.fetch(userId);
+        if (member && member.roles.cache.has(LICENSED_ROLE_ID)) {
+            await member.roles.remove(LICENSED_ROLE_ID);
+            console.log(`🔴 Removed licensed role from ${member.user.tag}`);
+        }
+    } catch (e) {
+        console.error('Role removal error:', e.message);
+    }
+}
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     
@@ -169,13 +228,17 @@ client.on('interactionCreate', async interaction => {
             if (result.valid) {
                 verifiedUsers.set(user.id, { key, user: result.user, expires: result.expires });
                 
+                // Assign licensed role
+                await assignLicensedRole(user.id, interaction.guild);
+                
                 const embed = new EmbedBuilder()
                     .setColor(0x00ff88)
                     .setTitle('✅ License Verified')
                     .setDescription(`Welcome to TRAUMA, **${result.user}**!`)
                     .addFields(
                         { name: 'Days Remaining', value: `${result.daysRemaining} days`, inline: true },
-                        { name: 'Expires', value: new Date(result.expires).toLocaleDateString(), inline: true }
+                        { name: 'Expires', value: new Date(result.expires).toLocaleDateString(), inline: true },
+                        { name: 'Role', value: 'Licensed role assigned! 🎉', inline: true }
                     )
                     .setFooter({ text: 'TRAUMA License System' })
                     .setTimestamp();

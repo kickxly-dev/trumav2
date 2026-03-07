@@ -145,6 +145,27 @@
       },
       "timestamp": "2026-03-07T02:31:27.822Z",
       "ip": "unknown"
+    },
+    {
+      "event": "activation_success",
+      "data": {
+        "key": "TRUMA-67C4-53D5-1354-5BB2-A896-F1DA",
+        "user": "<@1154526254171684946>",
+        "ip": "::1",
+        "hardwareId": "1154526254171684946"
+      },
+      "timestamp": "2026-03-07T02:31:50.042Z",
+      "ip": "::1"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-67C4-53D5-1354-5BB2-A896-F1DA",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:32:10.767Z",
+      "ip": "unknown"
     }
   ]
 }

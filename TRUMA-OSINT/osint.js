@@ -15,6 +15,11 @@ const APP_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
 
 // License System - with error handling for EXE
 let licenseModule = {};
+let remoteValidator = null;
+try {
+  // Try remote license validator first (preferred)
+  remoteValidator = new (require('../shared-remote-license'))('osint');
+} catch (e) {}
 try {
   // Try shared license first (unified across all TRAUMA tools)
   licenseModule = require('../shared-license');
@@ -2969,7 +2974,27 @@ async function mainMenu() {
 
 // Initialize with license check
 async function init() {
-  const licenseResult = checkLicense();
+  let licenseResult = null;
+  
+  // Try remote validation first
+  if (remoteValidator) {
+    try {
+      const key = getStoredLicenseKey();
+      if (key) {
+        licenseResult = await remoteValidator.validate(key);
+        if (licenseResult.valid) {
+          console.log(chalk.green('\n  ✓ License validated remotely'));
+        }
+      }
+    } catch (e) {
+      console.log(chalk.yellow('  Remote validation unavailable, using local...'));
+    }
+  }
+  
+  // Fallback to local validation
+  if (!licenseResult || !licenseResult.valid) {
+    licenseResult = checkLicense();
+  }
   
   if (!licenseResult.valid) {
     await showLicenseScreen();
@@ -2978,6 +3003,18 @@ async function init() {
   }
   
   await mainMenu();
+}
+
+// Helper to get stored license key
+function getStoredLicenseKey() {
+  try {
+    const keyFile = path.join(APP_DIR, 'license.key');
+    if (fs.existsSync(keyFile)) {
+      const data = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
+      return data.key;
+    }
+  } catch (e) {}
+  return null;
 }
 
 init().catch(console.error);

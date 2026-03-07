@@ -2,6 +2,7 @@
 """
 TRAUMA Unified License System
 One license works across all TRAUMA tools: OSINT, Python, Browser, Web
+Supports remote validation via license server
 """
 
 import os
@@ -9,11 +10,14 @@ import sys
 import json
 import hmac
 import hashlib
+import urllib.request
+import urllib.error
 from datetime import datetime, timedelta
 from pathlib import Path
 
 # Shared secret - SAME across all TRAUMA products
 TRAUMA_SECRET = 'TRUMA-OSINT-SECRET-2024-SECURE-KEY-DO-NOT-SHARE'
+LICENSE_SERVER = os.environ.get('TRAUMA_LICENSE_SERVER', 'http://localhost:3001')
 
 def get_app_dir():
     """Get the application directory"""
@@ -86,7 +90,7 @@ def verify_license_format(key):
     return True
 
 def check_license():
-    """Check if a valid license is activated"""
+    """Check if a valid license is activated - tries remote first, then local"""
     lic_file = get_license_file()
     
     if not lic_file.exists():
@@ -100,13 +104,19 @@ def check_license():
         with open(lic_file, 'r') as f:
             data = json.load(f)
         
-        if not verify_license_format(data.get('key', '')):
+        key = data.get('key', '')
+        if not verify_license_format(key):
             return {
                 'valid': False,
                 'error': 'Invalid license format'
             }
         
-        # Check expiry
+        # Try remote validation first
+        remote_result = validate_remote(key)
+        if remote_result:
+            return remote_result
+        
+        # Fallback to local validation
         if 'expires' in data:
             expiry = datetime.fromisoformat(data['expires'].replace('Z', '+00:00').replace('+00:00', ''))
             if expiry < datetime.now():
@@ -121,13 +131,48 @@ def check_license():
             'valid': True,
             'user': data.get('user', 'Licensed User'),
             'expires': data.get('expires'),
-            'created': data.get('created')
+            'created': data.get('created'),
+            'from_local': True
         }
     except Exception as e:
         return {
             'valid': False,
             'error': f'License file error: {str(e)}'
         }
+
+def validate_remote(key):
+    """Validate license against remote server"""
+    try:
+        url = f"{LICENSE_SERVER}/api/license/validate"
+        data = json.dumps({'key': key, 'tool': 'python'}).encode('utf-8')
+        
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            
+            if result.get('valid'):
+                return {
+                    'valid': True,
+                    'user': result.get('user', 'Licensed User'),
+                    'expires': result.get('expires'),
+                    'days_remaining': result.get('daysRemaining'),
+                    'from_remote': True
+                }
+            else:
+                return {
+                    'valid': False,
+                    'error': result.get('error', 'Remote validation failed')
+                }
+    except urllib.error.URLError:
+        return None  # Server unreachable, use local fallback
+    except Exception:
+        return None
 
 def activate_license(key):
     """Activate a license key"""
