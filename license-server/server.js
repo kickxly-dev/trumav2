@@ -805,6 +805,240 @@ app.post('/api/admin/announcement', requireApiKey, async (req, res) => {
 });
 
 // ============================================================================
+// BULK OPERATIONS
+// ============================================================================
+
+// Bulk generate licenses
+app.post('/api/admin/bulk/generate', requireApiKey, (req, res) => {
+    const { users, expiryDays = 365, features = ['all'] } = req.body;
+    
+    if (!users || !Array.isArray(users) || users.length === 0) {
+        return res.status(400).json({ error: 'Users array required' });
+    }
+    
+    if (users.length > 100) {
+        return res.status(400).json({ error: 'Maximum 100 users at once' });
+    }
+    
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const generated = [];
+    const failed = [];
+    
+    for (const user of users) {
+        try {
+            const licenseData = generateLicenseKey(user, expiryDays);
+            const license = {
+                ...licenseData,
+                features,
+                createdBy: req.apiKey.name,
+                createdAt: new Date().toISOString(),
+                validationCount: 0,
+                activationCount: 0
+            };
+            
+            licenses.licenses.push(license);
+            generated.push({ user, key: license.key });
+        } catch (e) {
+            failed.push({ user, error: e.message });
+        }
+    }
+    
+    saveData(LICENSES_FILE, licenses);
+    
+    logAudit('BULK_GENERATE', {
+        actor: req.apiKey.name,
+        count: generated.length,
+        failed: failed.length,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        generated: generated.length,
+        failed: failed.length,
+        licenses: generated,
+        errors: failed
+    });
+});
+
+// Bulk revoke licenses
+app.post('/api/admin/bulk/revoke', requireApiKey, (req, res) => {
+    const { keys, reason = 'Bulk revocation' } = req.body;
+    
+    if (!keys || !Array.isArray(keys) || keys.length === 0) {
+        return res.status(400).json({ error: 'Keys array required' });
+    }
+    
+    if (keys.length > 100) {
+        return res.status(400).json({ error: 'Maximum 100 keys at once' });
+    }
+    
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const revoked = [];
+    const notFound = [];
+    
+    for (const key of keys) {
+        const license = licenses.licenses.find(l => l.key.toUpperCase() === key?.toUpperCase());
+        
+        if (license) {
+            if (!license.revoked) {
+                license.revoked = true;
+                license.revokedAt = new Date().toISOString();
+                license.revokedBy = req.apiKey.name;
+                license.revokedReason = reason;
+                revoked.push({ key: license.key, user: license.user });
+            }
+        } else {
+            notFound.push(key);
+        }
+    }
+    
+    saveData(LICENSES_FILE, licenses);
+    
+    logAudit('BULK_REVOKE', {
+        actor: req.apiKey.name,
+        count: revoked.length,
+        reason,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        revoked: revoked.length,
+        notFound: notFound.length,
+        licenses: revoked,
+        missing: notFound
+    });
+});
+
+// Bulk extend licenses
+app.post('/api/admin/bulk/extend', requireApiKey, (req, res) => {
+    const { keys, additionalDays = 30 } = req.body;
+    
+    if (!keys || !Array.isArray(keys) || keys.length === 0) {
+        return res.status(400).json({ error: 'Keys array required' });
+    }
+    
+    if (keys.length > 100) {
+        return res.status(400).json({ error: 'Maximum 100 keys at once' });
+    }
+    
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const extended = [];
+    const notFound = [];
+    const alreadyRevoked = [];
+    
+    for (const key of keys) {
+        const license = licenses.licenses.find(l => l.key.toUpperCase() === key?.toUpperCase());
+        
+        if (license) {
+            if (license.revoked) {
+                alreadyRevoked.push({ key: license.key, user: license.user });
+            } else {
+                const currentExpiry = new Date(license.expiry);
+                const newExpiry = new Date(currentExpiry.getTime() + (additionalDays * 24 * 60 * 60 * 1000));
+                license.expiry = newExpiry.toISOString();
+                license.extendedAt = new Date().toISOString();
+                license.extendedBy = req.apiKey.name;
+                license.extensionDays = (license.extensionDays || 0) + additionalDays;
+                extended.push({ 
+                    key: license.key, 
+                    user: license.user,
+                    newExpiry: license.expiry
+                });
+            }
+        } else {
+            notFound.push(key);
+        }
+    }
+    
+    saveData(LICENSES_FILE, licenses);
+    
+    logAudit('BULK_EXTEND', {
+        actor: req.apiKey.name,
+        count: extended.length,
+        additionalDays,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        extended: extended.length,
+        notFound: notFound.length,
+        revoked: alreadyRevoked.length,
+        licenses: extended,
+        missing: notFound,
+        skipped: alreadyRevoked
+    });
+});
+
+// Bulk extend all expiring licenses
+app.post('/api/admin/bulk/extend-expiring', requireApiKey, (req, res) => {
+    const { days = 7, additionalDays = 30 } = req.body;
+    
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const extended = [];
+    
+    for (const license of licenses.licenses) {
+        if (license.revoked) continue;
+        
+        const daysUntilExpiry = Math.ceil((new Date(license.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry <= days && daysUntilExpiry > 0) {
+            const currentExpiry = new Date(license.expiry);
+            const newExpiry = new Date(currentExpiry.getTime() + (additionalDays * 24 * 60 * 60 * 1000));
+            license.expiry = newExpiry.toISOString();
+            license.extendedAt = new Date().toISOString();
+            license.extendedBy = req.apiKey.name;
+            extended.push({ 
+                key: license.key, 
+                user: license.user,
+                newExpiry: license.expiry
+            });
+        }
+    }
+    
+    saveData(LICENSES_FILE, licenses);
+    
+    logAudit('BULK_EXTEND_EXPIRING', {
+        actor: req.apiKey.name,
+        count: extended.length,
+        withinDays: days,
+        additionalDays,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        extended: extended.length,
+        licenses: extended
+    });
+});
+
+// Bulk delete revoked licenses
+app.post('/api/admin/bulk/cleanup', requireApiKey, (req, res) => {
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const originalCount = licenses.licenses.length;
+    
+    licenses.licenses = licenses.licenses.filter(l => !l.revoked);
+    const removedCount = originalCount - licenses.licenses.length;
+    
+    saveData(LICENSES_FILE, licenses);
+    
+    logAudit('BULK_CLEANUP', {
+        actor: req.apiKey.name,
+        removed: removedCount,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        removed: removedCount,
+        remaining: licenses.licenses.length
+    });
+});
+
+// ============================================================================
 // REFERRAL SYSTEM
 // ============================================================================
 

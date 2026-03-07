@@ -163,6 +163,58 @@ const commands = [
                 .setRequired(false)),
     
     new SlashCommandBuilder()
+        .setName('bulkgenerate')
+        .setDescription('Generate multiple licenses at once (Admin only)')
+        .addStringOption(option =>
+            option.setName('users')
+                .setDescription('Comma-separated list of users')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('days')
+                .setDescription('License duration in days')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('bulkrevoke')
+        .setDescription('Revoke multiple licenses at once (Admin only)')
+        .addStringOption(option =>
+            option.setName('keys')
+                .setDescription('Comma-separated list of keys')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('reason')
+                .setDescription('Reason for revocation')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('bulkextend')
+        .setDescription('Extend multiple licenses at once (Admin only)')
+        .addStringOption(option =>
+            option.setName('keys')
+                .setDescription('Comma-separated list of keys')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('days')
+                .setDescription('Days to add')
+                .setRequired(true)),
+    
+    new SlashCommandBuilder()
+        .setName('extendexpiring')
+        .setDescription('Extend all licenses expiring soon (Admin only)')
+        .addIntegerOption(option =>
+            option.setName('withindays')
+                .setDescription('Extend licenses expiring within X days')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('adddays')
+                .setDescription('Days to add')
+                .setRequired(true)),
+    
+    new SlashCommandBuilder()
+        .setName('cleanup')
+        .setDescription('Remove all revoked licenses (Admin only)'),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -923,6 +975,180 @@ client.on('interactionCreate', async interaction => {
                 await interaction.editReply({ embeds: [embed] });
             } else {
                 await interaction.editReply({ content: 'No audit logs found' });
+            }
+            break;
+        }
+        
+        case 'bulkgenerate': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const usersStr = options.getString('users');
+            const days = options.getInteger('days') || 365;
+            const users = usersStr.split(',').map(u => u.trim()).filter(u => u);
+            
+            if (users.length > 100) {
+                await interaction.editReply({ content: '❌ Maximum 100 users at once' });
+                break;
+            }
+            
+            const result = await apiCall('/api/admin/bulk/generate', 'POST', { users, expiryDays: days });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🔑 Bulk Generate Complete')
+                    .addFields(
+                        { name: 'Generated', value: `${result.generated}`, inline: true },
+                        { name: 'Failed', value: `${result.failed}`, inline: true },
+                        { name: 'Duration', value: `${days} days`, inline: true }
+                    )
+                    .setDescription(result.licenses.slice(0, 10).map(l => `**${l.user}**: \`${l.key}\``).join('\n'))
+                    .setFooter({ text: result.licenses.length > 10 ? `Showing 10 of ${result.licenses.length}` : '' })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'bulkrevoke': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const keysStr = options.getString('keys');
+            const reason = options.getString('reason') || 'Bulk revocation';
+            const keys = keysStr.split(',').map(k => k.trim()).filter(k => k);
+            
+            if (keys.length > 100) {
+                await interaction.editReply({ content: '❌ Maximum 100 keys at once' });
+                break;
+            }
+            
+            const result = await apiCall('/api/admin/bulk/revoke', 'POST', { keys, reason });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0xff4444)
+                    .setTitle('🚫 Bulk Revoke Complete')
+                    .addFields(
+                        { name: 'Revoked', value: `${result.revoked}`, inline: true },
+                        { name: 'Not Found', value: `${result.notFound}`, inline: true }
+                    )
+                    .setDescription(`**Reason:** ${reason}`)
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'bulkextend': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const keysStr = options.getString('keys');
+            const days = options.getInteger('days');
+            const keys = keysStr.split(',').map(k => k.trim()).filter(k => k);
+            
+            if (keys.length > 100) {
+                await interaction.editReply({ content: '❌ Maximum 100 keys at once' });
+                break;
+            }
+            
+            const result = await apiCall('/api/admin/bulk/extend', 'POST', { keys, additionalDays: days });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('⏰ Bulk Extend Complete')
+                    .addFields(
+                        { name: 'Extended', value: `${result.extended}`, inline: true },
+                        { name: 'Days Added', value: `${days}`, inline: true },
+                        { name: 'Not Found', value: `${result.notFound}`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'extendexpiring': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const withinDays = options.getInteger('withindays');
+            const addDays = options.getInteger('adddays');
+            
+            const result = await apiCall('/api/admin/bulk/extend-expiring', 'POST', { 
+                days: withinDays, 
+                additionalDays: addDays 
+            });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('⏰ Expiring Licenses Extended')
+                    .addFields(
+                        { name: 'Extended', value: `${result.extended}`, inline: true },
+                        { name: 'Within', value: `${withinDays} days`, inline: true },
+                        { name: 'Added', value: `${addDays} days`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'cleanup': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/bulk/cleanup', 'POST');
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🧹 Cleanup Complete')
+                    .addFields(
+                        { name: 'Removed', value: `${result.removed} revoked licenses`, inline: true },
+                        { name: 'Remaining', value: `${result.remaining} active licenses`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
             }
             break;
         }
