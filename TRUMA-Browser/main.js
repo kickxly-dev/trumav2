@@ -3,7 +3,13 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
+// Import Privacy Manager
+const PrivacyManager = require('./privacy/privacy-manager');
+
 const TEMP_USER_DATA_DIR = path.join(os.tmpdir(), `TRUMA-Browser-${process.pid}`);
+
+// Initialize Privacy Manager
+const privacyManager = new PrivacyManager();
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -88,7 +94,6 @@ function getTrumaHomepageHtml() {
 </html>`;
 }
 
-let adblockLevel = 'basic';
 let homepageShortcuts = [];
 
 let mainWindow = null;
@@ -101,96 +106,6 @@ function sendToUi(channel, payload) {
   } catch (_) {
     // ignore
   }
-}
-
-// Common ad and tracker domains to block
-const BLOCKED_DOMAINS = [
-  'googleadservices.com',
-  'googlesyndication.com',
-  'google-analytics.com',
-  'doubleclick.net',
-  'facebook.com/tr',
-  'facebook.com/analytics',
-  'connect.facebook.net',
-  'adsystem.amazon.com',
-  'amazon-adsystem.com',
-  'ads.yahoo.com',
-  'advertising.yahoo.com',
-  'analytics.yahoo.com',
-  'ads.microsoft.com',
-  'bat.bing.com',
-  'googletagmanager.com',
-  'googletagservices.com',
-  'pagead2.googlesyndication.com',
-  'adsafeprotected.com',
-  'moatads.com',
-  'adsrvr.org',
-  'advertising.com',
-  'adnxs.com',
-  'casalemedia.com',
-  'openx.net',
-  'pubmatic.com',
-  'rubiconproject.com',
-  'lijit.com',
-  'contextweb.com',
-  'criteo.com',
-  'criteo.net',
-  'outbrain.com',
-  'taboola.com',
-  'scorecardresearch.com',
-  'quantserve.com',
-  'googlesyndication.com',
-  'googleads.g.doubleclick.net'
-];
-
-const BLOCKED_PATTERNS = [
-  /\/ads\//,
-  /\/advertisement\//,
-  /\/tracking\//,
-  /analytics\.js$/,
-  /gtm\.js$/,
-  /fbevents\.js$/,
-  /ads\.js$/,
-  /tracker\.js$/,
-  /telemetry/,
-  /beacon/,
-  /pixel\./,
-  /analytics/,
-  /tracking\?/,
-  /collect\?/,
-  /event\?/
-];
-
-function setupAdBlocker(sess) {
-  sess.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
-    if (adblockLevel === 'off') return callback({ cancel: false });
-
-    const url = details.url.toLowerCase();
-    const hostname = new URL(url).hostname;
-    
-    // Check blocked domains
-    for (const blockedDomain of BLOCKED_DOMAINS) {
-      if (hostname.includes(blockedDomain)) {
-        console.log(`[AdBlock] Blocked: ${hostname}`);
-        // Notify renderer of blocked request
-        sendToUi('blocked-request', 'ad');
-        return callback({ cancel: true });
-      }
-    }
-    
-    if (adblockLevel === 'strict') {
-      // Check blocked patterns
-      for (const pattern of BLOCKED_PATTERNS) {
-        if (pattern.test(url)) {
-          console.log(`[AdBlock] Blocked pattern: ${url}`);
-          sendToUi('blocked-request', 'tracker');
-          return callback({ cancel: true });
-        }
-      }
-    }
-    
-    callback({ cancel: false });
-  });
 }
 
 function safeRemoveDir(dirPath) {
@@ -272,9 +187,45 @@ ipcMain.handle('truma-set-homepage-shortcuts', async (_e, shortcuts) => {
 ipcMain.handle('truma-set-adblock-level', async (_e, level) => {
   const v = String(level || '').toLowerCase();
   if (v === 'off' || v === 'basic' || v === 'strict') {
-    adblockLevel = v;
+    privacyManager.updateModuleConfig('trackerBlocking', { level: v });
   }
-  return adblockLevel;
+  return privacyManager.config.trackerBlocking.level;
+});
+
+// Privacy Dashboard IPC handlers
+ipcMain.handle('get-privacy-stats', async () => {
+  return privacyManager.getStats();
+});
+
+ipcMain.handle('toggle-privacy-module', async (_e, module, enabled) => {
+  return privacyManager.toggleModule(module, enabled);
+});
+
+ipcMain.handle('update-privacy-config', async (_e, module, config) => {
+  return privacyManager.updateModuleConfig(module, config);
+});
+
+ipcMain.handle('clear-all-data', async () => {
+  if (privacyManager.modules.sessionProtection) {
+    return await privacyManager.modules.sessionProtection.wipe();
+  }
+  return null;
+});
+
+ipcMain.handle('reset-privacy-stats', async () => {
+  privacyManager.resetStats();
+  return true;
+});
+
+ipcMain.handle('export-privacy-settings', async () => {
+  return privacyManager.config;
+});
+
+ipcMain.handle('handle-permission-response', async (_e, requestId, granted) => {
+  if (privacyManager.modules.permissionProtection) {
+    privacyManager.modules.permissionProtection.handlePermissionResponse(requestId, granted);
+  }
+  return true;
 });
 
 app.whenReady().then(async () => {
@@ -283,8 +234,8 @@ app.whenReady().then(async () => {
 
   const tempSess = session.fromPartition('temp:truma');
   
-  // Setup ad blocker
-  setupAdBlocker(tempSess);
+  // Initialize Privacy Manager
+  await privacyManager.initialize(tempSess, null);
 
   try {
     tempSess.protocol.registerStringProtocol('truma', (request, callback) => {
@@ -293,6 +244,13 @@ app.whenReady().then(async () => {
         // Serve homepage at truma://home
         if (u.hostname === 'home') {
           return callback({ data: getTrumaHomepageHtml(), mimeType: 'text/html' });
+        }
+        
+        // Serve privacy dashboard at truma://privacy
+        if (u.hostname === 'privacy') {
+          const dashboardPath = path.join(__dirname, 'privacy', 'privacy-dashboard.html');
+          const dashboardHtml = fs.readFileSync(dashboardPath, 'utf8');
+          return callback({ data: dashboardHtml, mimeType: 'text/html' });
         }
 
         return callback({
@@ -318,6 +276,9 @@ app.whenReady().then(async () => {
   }
 
   mainWindow = createWindow();
+  
+  // Update privacy manager with main window reference
+  privacyManager.mainWindow = mainWindow;
 
   // Register global keyboard shortcuts
   globalShortcut.register('CommandOrControl+T', () => {
@@ -471,6 +432,9 @@ app.on('web-contents-created', (_event, contents) => {
 app.on('before-quit', async () => {
   // Unregister all shortcuts
   globalShortcut.unregisterAll();
+  
+  // Cleanup privacy manager (auto-wipe session data)
+  await privacyManager.cleanup();
   
   try {
     const tempSess = session.fromPartition('temp:truma');

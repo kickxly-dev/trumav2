@@ -1,0 +1,43 @@
+{
+    "trackerBlocking": {
+        "enabled": true,
+        "level": "strict",
+        "blockThirdPartyCookies": true,
+        "blockThirdPartyScripts": true,
+        "customFilters": []
+    },
+    "fingerprintProtection": {
+        "enabled": true,
+        "canvasNoise": true,
+        "webglNoise": true,
+        "audioNoise": true,
+        "fontProtection": true,
+        "hardwareSpoofing": true
+    },
+    "cookieIsolation": {
+        "enabled": true,
+        "mode": "strict",
+        "containerPrefix": "truma-container"
+    },
+    "dnsPrivacy": {
+        "enabled": true,
+        "mode": "doh",
+        "provider": "cloudflare",
+        "customProvider": null
+    },
+    "permissionProtection": {
+        "enabled": true,
+        "autoBlock": ["camera", "microphone", "location", "notifications", "geolocation"],
+        "promptOnBlock": true
+    },
+    "sessionProtection": {
+        "enabled": true,
+        "autoWipe": true,
+        "wipeOnClose": true,
+        "wipeCookies": true,
+        "wipeCache": true,
+        "wipeLocalStorage": true,
+        "wipeSessionStorage": true,
+        "wipeHistory": true
+    }
+}

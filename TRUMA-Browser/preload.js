@@ -17,5 +17,20 @@ contextBridge.exposeInMainWorld('truma', {
   showDownloadedInFolder: (filePath) => ipcRenderer.invoke('truma-show-downloaded-in-folder', filePath),
   clearDownloadHistory: () => ipcRenderer.invoke('truma-clear-download-history'),
   setHomepageShortcuts: (shortcuts) => ipcRenderer.invoke('truma-set-homepage-shortcuts', shortcuts),
-  setAdblockLevel: (level) => ipcRenderer.invoke('truma-set-adblock-level', level)
+  setAdblockLevel: (level) => ipcRenderer.invoke('truma-set-adblock-level', level),
+  
+  // Privacy Dashboard
+  onPrivacyStatsUpdate: (handler) => {
+    ipcRenderer.on('privacy-stats-update', (_e, stats) => handler(stats));
+  },
+  onPermissionRequest: (handler) => {
+    ipcRenderer.on('permission-request', (_e, request) => handler(request));
+  },
+  getPrivacyStats: () => ipcRenderer.invoke('get-privacy-stats'),
+  togglePrivacyModule: (module, enabled) => ipcRenderer.invoke('toggle-privacy-module', module, enabled),
+  updatePrivacyConfig: (module, config) => ipcRenderer.invoke('update-privacy-config', module, config),
+  clearAllData: () => ipcRenderer.invoke('clear-all-data'),
+  resetPrivacyStats: () => ipcRenderer.invoke('reset-privacy-stats'),
+  exportPrivacySettings: () => ipcRenderer.invoke('export-privacy-settings'),
+  handlePermissionResponse: (requestId, granted) => ipcRenderer.invoke('handle-permission-response', requestId, granted)
 });

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUMA Privacy Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0b0b0b 0%, #1a0a0f 50%, #0b0b0b 100%);
+            color: #f2f2f2;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: #e0002a;
+            text-shadow: 0 0 20px rgba(224, 0, 42, 0.3);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: #8a8a8a;
+            margin-top: 8px;
+            letter-spacing: 0.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(224, 0, 42, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(224, 0, 42, 0.5);
+            background: rgba(224, 0, 42, 0.05);
+        }
+
+        .stat-card .icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 900;
+            color: #00c864;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #8a8a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 5px;
+        }
+
+        .modules-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 15px;
+            color: #f2f2f2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #e0002a;
+            border-radius: 2px;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .module-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .module-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .module-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(224, 0, 42, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .module-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .module-status {
+            font-size: 12px;
+            color: #8a8a8a;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: #666;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: rgba(0, 200, 100, 0.3);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+            background: #00c864;
+        }
+
+        .module-content {
+            padding: 0 20px 20px;
+            display: none;
+        }
+
+        .module-content.active {
+            display: block;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            color: #bdbdbd;
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, input[type="text"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #f2f2f2;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: #e0002a;
+        }
+
+        select option {
+            background: #1a1a1a;
+        }
+
+        .mini-toggle {
+            width: 40px;
+            height: 22px;
+        }
+
+        .mini-toggle .toggle-slider:before {
+            height: 16px;
+            width: 16px;
+        }
+
+        .mini-toggle input:checked + .toggle-slider:before {
+            transform: translateX(18px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #b00020, #e0002a);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(224, 0, 42, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f2f2f2;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: rgba(255, 50, 50, 0.2);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            color: #ff5050;
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 50, 50, 0.3);
+        }
+
+        .permission-prompt {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(224, 0, 42, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 350px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .permission-prompt .prompt-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .permission-prompt .prompt-message {
+            font-size: 13px;
+            color: #8a8a8a;
+            margin-bottom: 15px;
+        }
+
+        .permission-prompt .prompt-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .protection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 200, 100, 0.1);
+            border: 1px solid rgba(0, 200, 100, 0.2);
+            color: #00c864;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .protection-badge.warning {
+            background: rgba(255, 180, 0, 0.1);
+            border-color: rgba(255, 180, 0, 0.2);
+            color: #ffb400;
+        }
+
+        .protection-badge.danger {
+            background: rgba(255, 50, 50, 0.1);
+            border-color: rgba(255, 50, 50, 0.2);
+            color: #ff5050;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ PRIVACY DASHBOARD</h1>
+            <div class="subtitle">Protection Status & Controls</div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">🚫</div>
+                <div class="value" id="trackers-blocked">0</div>
+                <div class="label">Trackers Blocked</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🍪</div>
+                <div class="value" id="cookies-blocked">0</div>
+                <div class="label">Cookies Blocked</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">👆</div>
+                <div class="value" id="fingerprints-prevented">0</div>
+                <div class="label">Fingerprints Prevented</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🔒</div>
+                <div class="value" id="permissions-blocked">0</div>
+                <div class="label">Permissions Blocked</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🌐</div>
+                <div class="value" id="dns-encrypted">0</div>
+                <div class="label">DNS Queries Encrypted</div>
+            </div>
+        </div>
+
+        <!-- Protection Status -->
+        <div class="modules-section">
+            <div class="section-title">Protection Modules</div>
+
+            <!-- Tracker Blocking -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">🛡️</div>
+                        <div>
+                            <div class="module-name">Tracker Blocking</div>
+                            <div class="module-status">Blocks ads, trackers, and analytics</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="tracker-blocking-toggle" checked onchange="toggleModuleSetting('trackerBlocking', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Blocking Level</span>
+                        <select id="tracker-level" onchange="updateModuleConfig('trackerBlocking', {level: this.value})">
+                            <option value="off">Off</option>
+                            <option value="basic">Basic</option>
+                            <option value="strict" selected>Strict</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Block Third-Party Cookies</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('trackerBlocking', {blockThirdPartyCookies: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Block Third-Party Scripts</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('trackerBlocking', {blockThirdPartyScripts: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fingerprint Protection -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">👆</div>
+                        <div>
+                            <div class="module-name">Anti-Fingerprinting</div>
+                            <div class="module-status">Reduces browser fingerprinting</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="fingerprint-toggle" checked onchange="toggleModuleSetting('fingerprintProtection', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Canvas Noise</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('fingerprintProtection', {canvasNoise: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">WebGL Noise</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('fingerprintProtection', {webglNoise: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Audio Noise</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('fingerprintProtection', {audioNoise: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Hardware Spoofing</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('fingerprintProtection', {hardwareSpoofing: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cookie Isolation -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">🍪</div>
+                        <div>
+                            <div class="module-name">Cookie Isolation</div>
+                            <div class="module-status">Isolates cookies per site</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="cookie-toggle" checked onchange="toggleModuleSetting('cookieIsolation', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Isolation Mode</span>
+                        <select onchange="updateModuleConfig('cookieIsolation', {mode: this.value})">
+                            <option value="off">Off</option>
+                            <option value="relaxed">Relaxed</option>
+                            <option value="strict" selected>Strict</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNS Privacy -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">🌐</div>
+                        <div>
+                            <div class="module-name">DNS Privacy</div>
+                            <div class="module-status">Encrypted DNS lookups</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="dns-toggle" checked onchange="toggleModuleSetting('dnsPrivacy', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">DNS Mode</span>
+                        <select onchange="updateModuleConfig('dnsPrivacy', {mode: this.value})">
+                            <option value="off">Off (System DNS)</option>
+                            <option value="doh" selected>DNS over HTTPS</option>
+                            <option value="dot">DNS over TLS</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">DNS Provider</span>
+                        <select onchange="updateModuleConfig('dnsPrivacy', {provider: this.value})">
+                            <option value="cloudflare" selected>Cloudflare (1.1.1.1)</option>
+                            <option value="google">Google (8.8.8.8)</option>
+                            <option value="quad9">Quad9 (9.9.9.9)</option>
+                            <option value="nextdns">NextDNS</option>
+                            <option value="adguard">AdGuard</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permission Protection -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">🔐</div>
+                        <div>
+                            <div class="module-name">Permission Protection</div>
+                            <div class="module-status">Blocks sensitive permissions</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="permission-toggle" checked onchange="toggleModuleSetting('permissionProtection', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Prompt on Block</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('permissionProtection', {promptOnBlock: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Blocked Permissions</span>
+                        <span style="color: #8a8a8a; font-size: 12px;">Camera, Microphone, Location, Notifications</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Protection -->
+            <div class="module-card">
+                <div class="module-header" onclick="toggleModule(this)">
+                    <div class="module-info">
+                        <div class="module-icon">🧹</div>
+                        <div>
+                            <div class="module-name">Session Auto-Wipe</div>
+                            <div class="module-status">Clears data on browser close</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="session-toggle" checked onchange="toggleModuleSetting('sessionProtection', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="module-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Clear Cookies</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('sessionProtection', {wipeCookies: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Clear Cache</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('sessionProtection', {wipeCache: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Clear Local Storage</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('sessionProtection', {wipeLocalStorage: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Clear History</span>
+                        <label class="toggle-switch mini-toggle">
+                            <input type="checkbox" checked onchange="updateModuleConfig('sessionProtection', {wipeHistory: this.checked})">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="clearAllData()">🧹 Clear All Data Now</button>
+            <button class="btn btn-secondary" onclick="resetStats()">📊 Reset Statistics</button>
+            <button class="btn btn-secondary" onclick="exportSettings()">💾 Export Settings</button>
+        </div>
+    </div>
+
+    <!-- Permission Prompt -->
+    <div class="permission-prompt" id="permission-prompt">
+        <div class="prompt-title" id="prompt-title">Permission Request</div>
+        <div class="prompt-message" id="prompt-message">This site wants to access your camera.</div>
+        <div class="prompt-actions">
+            <button class="btn btn-secondary" onclick="denyPermission()">Block</button>
+            <button class="btn btn-primary" onclick="allowPermission()">Allow</button>
+        </div>
+    </div>
+
+    <script>
+        // Current permission request
+        let currentPermissionRequest = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Listen for stats updates
+            window.truma.onPrivacyStatsUpdate((stats) => {
+                updateStats(stats);
+            });
+
+            // Listen for permission requests
+            window.truma.onPermissionRequest((request) => {
+                showPermissionPrompt(request);
+            });
+
+            // Load current stats
+            loadStats();
+        });
+
+        function updateStats(stats) {
+            document.getElementById('trackers-blocked').textContent = stats.trackersBlocked || 0;
+            document.getElementById('cookies-blocked').textContent = stats.cookiesBlocked || 0;
+            document.getElementById('fingerprints-prevented').textContent = stats.fingerprintsPrevented || 0;
+            document.getElementById('permissions-blocked').textContent = stats.permissionsBlocked || 0;
+            document.getElementById('dns-encrypted').textContent = stats.dnsQueriesEncrypted || 0;
+        }
+
+        function loadStats() {
+            window.truma.getPrivacyStats().then(stats => {
+                if (stats) updateStats(stats);
+            });
+        }
+
+        function toggleModule(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+        }
+
+        function toggleModuleSetting(module, enabled) {
+            window.truma.togglePrivacyModule(module, enabled);
+        }
+
+        function updateModuleConfig(module, config) {
+            window.truma.updatePrivacyConfig(module, config);
+        }
+
+        function clearAllData() {
+            window.truma.clearAllData();
+        }
+
+        function resetStats() {
+            window.truma.resetPrivacyStats();
+            updateStats({
+                trackersBlocked: 0,
+                cookiesBlocked: 0,
+                fingerprintsPrevented: 0,
+                permissionsBlocked: 0,
+                dnsQueriesEncrypted: 0
+            });
+        }
+
+        function exportSettings() {
+            window.truma.exportPrivacySettings().then(settings => {
+                const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'truma-privacy-settings.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function showPermissionPrompt(request) {
+            currentPermissionRequest = request;
+            document.getElementById('prompt-title').textContent = `Permission: ${request.permission}`;
+            document.getElementById('prompt-message').textContent = request.message;
+            document.getElementById('permission-prompt').style.display = 'block';
+        }
+
+        function allowPermission() {
+            if (currentPermissionRequest) {
+                window.truma.handlePermissionResponse(currentPermissionRequest.id, true);
+                currentPermissionRequest = null;
+            }
+            document.getElementById('permission-prompt').style.display = 'none';
+        }
+
+        function denyPermission() {
+            if (currentPermissionRequest) {
+                window.truma.handlePermissionResponse(currentPermissionRequest.id, false);
+                currentPermissionRequest = null;
+            }
+            document.getElementById('permission-prompt').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

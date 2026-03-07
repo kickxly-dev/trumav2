@@ -134,6 +134,17 @@
       "timestamp": "2026-03-07T23:05:06.206Z",
       "actor": "admin",
       "ip": "::1"
+    },
+    {
+      "action": "BULK_CLEANUP",
+      "details": {
+        "actor": "admin",
+        "removed": 2,
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T23:27:44.990Z",
+      "actor": "admin",
+      "ip": "::1"
     }
   ]
 }

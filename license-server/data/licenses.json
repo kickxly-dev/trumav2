@@ -78,24 +78,6 @@
       "activationCount": 0
     },
     {
-      "key": "TRUMA-DCA0-D388-43FF-3ABB-43E7-1A49",
-      "user": "<@1154526254171684946>",
-      "timestamp": 1772852724118,
-      "expiry": "2026-03-08T03:05:24.118Z",
-      "created": "2026-03-07T03:05:24.118Z",
-      "features": [
-        "all"
-      ],
-      "poolId": "203ed9fee69fdac7",
-      "claimed": true,
-      "claimedBy": "<@1154526254171684946>",
-      "claimedAt": "2026-03-07T03:05:51.085Z",
-      "revoked": true,
-      "revokedAt": "2026-03-07T22:57:11.636Z",
-      "revokedBy": "admin",
-      "revokedReason": "extra"
-    },
-    {
       "key": "TRUMA-4514-369B-8A73-D508-53E1-B335",
       "user": "pool-203ed9fee69fdac7-1",
       "timestamp": 1772852724120,
@@ -1480,25 +1462,6 @@
       "claimed": false,
       "claimedBy": null,
       "claimedAt": null
-    },
-    {
-      "key": "TRUMA-B433-EA03-302B-D59C-9758-E8C8",
-      "user": "cappingforclout",
-      "timestamp": 1772924691471,
-      "expiry": "2027-03-07T23:04:51.471Z",
-      "created": "2026-03-07T23:04:51.471Z",
-      "features": [
-        "all"
-      ],
-      "referralCode": null,
-      "createdBy": "admin",
-      "createdAt": "2026-03-07T23:04:51.478Z",
-      "validationCount": 0,
-      "activationCount": 0,
-      "revoked": true,
-      "revokedAt": "2026-03-07T23:05:06.203Z",
-      "revokedBy": "admin",
-      "revokedReason": "extra"
     }
   ]
 }
