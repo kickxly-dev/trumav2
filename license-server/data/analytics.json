@@ -395,6 +395,17 @@
       },
       "timestamp": "2026-03-07T03:00:52.265Z",
       "ip": "::1"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-DCA0-D388-43FF-3ABB-43E7-1A49",
+        "user": "<@1154526254171684946>",
+        "reason": "extra",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T22:57:11.664Z",
+      "ip": "unknown"
     }
   ]
 }

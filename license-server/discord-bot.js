@@ -219,6 +219,66 @@ const commands = [
         .setDescription('Send admin control panel to channel (Admin only)'),
     
     new SlashCommandBuilder()
+        .setName('say')
+        .setDescription('Make bot send a message (Admin only)')
+        .addStringOption(option =>
+            option.setName('message')
+                .setDescription('Message to send')
+                .setRequired(true))
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Channel to send to (default: current)')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('embed')
+        .setDescription('Make bot send an embed message (Admin only)')
+        .addStringOption(option =>
+            option.setName('title')
+                .setDescription('Embed title')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('description')
+                .setDescription('Embed description')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('color')
+                .setDescription('Hex color (e.g. dc143c)')
+                .setRequired(false))
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Channel to send to')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('edit')
+        .setDescription('Edit a bot message (Admin only)')
+        .addStringOption(option =>
+            option.setName('messageid')
+                .setDescription('Message ID to edit')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('newmessage')
+                .setDescription('New message content')
+                .setRequired(true))
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Channel the message is in')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('delete')
+        .setDescription('Delete a bot message (Admin only)')
+        .addStringOption(option =>
+            option.setName('messageid')
+                .setDescription('Message ID to delete')
+                .setRequired(true))
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Channel the message is in')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -1247,6 +1307,102 @@ client.on('interactionCreate', async interaction => {
                 });
                 
                 await interaction.reply({ content: '✅ Admin panel sent to channel', ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'say': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const message = options.getString('message');
+            const targetChannel = options.getChannel('channel') || interaction.channel;
+            
+            try {
+                await targetChannel.send(message);
+                await interaction.reply({ content: `✅ Message sent to ${targetChannel}`, ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'embed': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const title = options.getString('title');
+            const description = options.getString('description');
+            const colorHex = options.getString('color') || 'dc143c';
+            const targetChannel = options.getChannel('channel') || interaction.channel;
+            
+            try {
+                const colorInt = parseInt(colorHex.replace('#', ''), 16);
+                const embed = new EmbedBuilder()
+                    .setColor(colorInt)
+                    .setTitle(title)
+                    .setDescription(description)
+                    .setTimestamp();
+                
+                await targetChannel.send({ embeds: [embed] });
+                await interaction.reply({ content: `✅ Embed sent to ${targetChannel}`, ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'edit': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const messageId = options.getString('messageid');
+            const newMessage = options.getString('newmessage');
+            const targetChannel = options.getChannel('channel') || interaction.channel;
+            
+            try {
+                const message = await targetChannel.messages.fetch(messageId);
+                
+                if (message.author.id !== client.user.id) {
+                    await interaction.reply({ content: '❌ Can only edit bot messages', ephemeral: true });
+                    break;
+                }
+                
+                await message.edit(newMessage);
+                await interaction.reply({ content: '✅ Message edited', ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'delete': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const messageId = options.getString('messageid');
+            const targetChannel = options.getChannel('channel') || interaction.channel;
+            
+            try {
+                const message = await targetChannel.messages.fetch(messageId);
+                
+                if (message.author.id !== client.user.id) {
+                    await interaction.reply({ content: '❌ Can only delete bot messages', ephemeral: true });
+                    break;
+                }
+                
+                await message.delete();
+                await interaction.reply({ content: '✅ Message deleted', ephemeral: true });
             } catch (e) {
                 await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
             }

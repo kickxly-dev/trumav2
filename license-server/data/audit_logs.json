@@ -84,6 +84,30 @@
       "timestamp": "2026-03-07T03:21:13.374Z",
       "actor": "admin",
       "ip": "::1"
+    },
+    {
+      "action": "BULK_CLEANUP",
+      "details": {
+        "actor": "admin",
+        "removed": 10,
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T22:54:45.778Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "LICENSE_REVOKED",
+      "details": {
+        "actor": "admin",
+        "key": "TRUMA-DCA0-D388-43FF-3ABB-43E7-1A49",
+        "user": "<@1154526254171684946>",
+        "reason": "extra",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T22:57:11.665Z",
+      "actor": "admin",
+      "ip": "::1"
     }
   ]
 }
