@@ -317,7 +317,9 @@ app.post('/api/admin/license/generate', requireApiKey, (req, res) => {
         if (!fs.existsSync(OSINT_LICENSES_DIR)) {
             fs.mkdirSync(OSINT_LICENSES_DIR, { recursive: true });
         }
-        const osintLicenseFile = path.join(OSINT_LICENSES_DIR, `${user}_${license.timestamp}.json`);
+        // Sanitize username for filename (remove special chars like <@...>)
+        const safeName = user.replace(/[<>@#$/\\:*?"|]/g, '').substring(0, 30) || 'user';
+        const osintLicenseFile = path.join(OSINT_LICENSES_DIR, `${safeName}_${license.timestamp}.json`);
         fs.writeFileSync(osintLicenseFile, JSON.stringify(license, null, 2));
     } catch (e) {
         console.log('Warning: Could not sync to OSINT licenses folder:', e.message);

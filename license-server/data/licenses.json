@@ -14,7 +14,77 @@
       "createdAt": "2026-03-07T02:04:21.484Z",
       "validationCount": 2,
       "activationCount": 0,
-      "lastValidation": "2026-03-07T02:09:20.020Z"
+      "lastValidation": "2026-03-07T02:09:20.020Z",
+      "revoked": true,
+      "revokedAt": "2026-03-07T02:21:13.375Z",
+      "revokedBy": "admin",
+      "revokedReason": "No reason provided"
+    },
+    {
+      "key": "TRUMA-F352-A92E-2508-2EFF-39E3-9A20",
+      "user": "<@1135282302562357289>",
+      "timestamp": 1772849648339,
+      "expiry": "2028-11-30T02:14:08.339Z",
+      "created": "2026-03-07T02:14:08.339Z",
+      "features": [
+        "all"
+      ],
+      "referralCode": null,
+      "createdBy": "admin",
+      "createdAt": "2026-03-07T02:14:08.339Z",
+      "validationCount": 1,
+      "activationCount": 0,
+      "lastValidation": "2026-03-07T02:14:31.672Z",
+      "revoked": true,
+      "revokedAt": "2026-03-07T02:21:09.561Z",
+      "revokedBy": "admin",
+      "revokedReason": "No reason provided"
+    },
+    {
+      "key": "TRUMA-9CFB-1079-0DAF-7A6F-7244-BC1A",
+      "user": "<@1361097248208851126>",
+      "timestamp": 1772849930827,
+      "expiry": "2026-03-08T02:18:50.827Z",
+      "created": "2026-03-07T02:18:50.827Z",
+      "features": [
+        "all"
+      ],
+      "referralCode": null,
+      "createdBy": "admin",
+      "createdAt": "2026-03-07T02:18:50.827Z",
+      "validationCount": 0,
+      "activationCount": 0
+    },
+    {
+      "key": "TRUMA-15AF-F194-A670-F932-16DC-67E4",
+      "user": "<@1154526254171684946>",
+      "timestamp": 1772850027190,
+      "expiry": "2026-03-08T02:20:27.190Z",
+      "created": "2026-03-07T02:20:27.190Z",
+      "features": [
+        "all"
+      ],
+      "referralCode": null,
+      "createdBy": "admin",
+      "createdAt": "2026-03-07T02:20:27.191Z",
+      "validationCount": 1,
+      "activationCount": 0,
+      "lastValidation": "2026-03-07T02:20:42.203Z"
+    },
+    {
+      "key": "TRUMA-E34F-9056-2662-4DF6-6404-6D62",
+      "user": "<@1154526254171684946>",
+      "timestamp": 1772850271185,
+      "expiry": "2026-03-08T02:24:31.185Z",
+      "created": "2026-03-07T02:24:31.185Z",
+      "features": [
+        "all"
+      ],
+      "referralCode": null,
+      "createdBy": "admin",
+      "createdAt": "2026-03-07T02:24:31.185Z",
+      "validationCount": 0,
+      "activationCount": 0
     }
   ]
 }

@@ -42,12 +42,21 @@ function getActiveLicense() {
 }
 
 function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  return date.toISOString().substring(0, 19).replace('T', ' ');
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toISOString().substring(0, 19).replace('T', ' ');
+  } catch {
+    return 'Invalid Date';
+  }
 }
 
 function isExpired(expires) {
-  return new Date(expires) < new Date();
+  try {
+    return new Date(expires) < new Date();
+  } catch {
+    return true;
+  }
 }
 
 function showLicenseList() {
@@ -67,13 +76,14 @@ function showLicenseList() {
     console.log(`${c.r}║                                                                                                     ${c.r}║${c.reset}`);
     
     licenses.forEach((lic, i) => {
-      const expired = isExpired(lic.expires);
+      const expires = lic.expiry || lic.expires; // Support both field names
+      const expired = isExpired(expires);
       const isActive = active && active.key === lic.key;
       const status = isActive ? `${c.g}● ACTIVE${c.reset}` : expired ? `${c.r}● EXPIRED${c.reset}` : `${c.y}● INACTIVE${c.reset}`;
       const statusPlain = isActive ? 'ACTIVE' : expired ? 'EXPIRED' : 'INACTIVE';
       
       console.log(`${c.r}║  ${c.bold}[${i + 1}]${c.reset} ${lic.user.padEnd(20)} ${status} ${c.dim}${lic.key.substring(0, 19)}...${c.reset}         ${c.r}║${c.reset}`);
-      console.log(`${c.r}║      ${c.dim}Created: ${formatDate(lic.created)}  |  Expires: ${formatDate(lic.expires)}${c.reset}            ${c.r}║${c.reset}`);
+      console.log(`${c.r}║      ${c.dim}Created: ${formatDate(lic.created)}  |  Expires: ${formatDate(expires)}${c.reset}            ${c.r}║${c.reset}`);
       console.log(`${c.r}║                                                                                                     ${c.r}║${c.reset}`);
     });
   }
@@ -92,7 +102,8 @@ function activateLicense(key) {
     return false;
   }
   
-  if (isExpired(lic.expires)) {
+  const expires = lic.expiry || lic.expires;
+  if (isExpired(expires)) {
     console.log(`\n  ${c.r}✗ This license has expired${c.reset}`);
     return false;
   }
@@ -101,7 +112,7 @@ function activateLicense(key) {
     key: lic.key,
     payload: lic.payload,
     created: lic.created,
-    expires: lic.expires,
+    expires: expires,
     user: lic.user,
     activated: new Date().toISOString()
   };
@@ -109,7 +120,7 @@ function activateLicense(key) {
   fs.writeFileSync(LICENSE_FILE, JSON.stringify(activeData, null, 2));
   console.log(`\n  ${c.g}✓ License activated for: ${lic.user}${c.reset}`);
   console.log(`  ${c.dim}Key: ${lic.key}${c.reset}`);
-  console.log(`  ${c.dim}Expires: ${formatDate(lic.expires)}${c.reset}`);
+  console.log(`  ${c.dim}Expires: ${formatDate(expires)}${c.reset}`);
   return true;
 }
 
