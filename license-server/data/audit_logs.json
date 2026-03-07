@@ -24,6 +24,66 @@
       "timestamp": "2026-03-07T03:05:51.087Z",
       "actor": "<@1154526254171684946>",
       "ip": "::1"
+    },
+    {
+      "action": "ANNOUNCEMENT_SENT",
+      "details": {
+        "actor": "admin",
+        "channelId": "1474262528480510015",
+        "title": "wsg",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:19:30.803Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "ANNOUNCEMENT_SENT",
+      "details": {
+        "actor": "admin",
+        "channelId": "1474261285511364813",
+        "title": "wsg",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:19:53.845Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "ANNOUNCEMENT_SENT",
+      "details": {
+        "actor": "admin",
+        "channelId": "1474261285511364813",
+        "title": "wsg",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:20:06.853Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "ANNOUNCEMENT_SENT",
+      "details": {
+        "actor": "admin",
+        "channelId": "1474261285511364813",
+        "title": "shut up nigga ",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:20:45.859Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "POOL_DELETED",
+      "details": {
+        "actor": "admin",
+        "poolId": "203ed9fee69fdac7",
+        "poolName": "uwu",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:21:13.374Z",
+      "actor": "admin",
+      "ip": "::1"
     }
   ]
 }
