@@ -54,7 +54,7 @@ function showLicenseList() {
   console.clear();
   
   console.log(`\n${c.r}╔═══════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-  console.log(`${c.r}║  ${c.bold}${c.y}LICENSE MANAGEMENT - ALL LICENSES${c.reset}                                                                 ${c.r}║${c.reset}`);
+  console.log(`${c.r}║  ${c.bold}${c.y}LICENSE MANAGEMENT - ALL LICENSES by dada cappinforclout ${c.reset}                                                                 ${c.r}║${c.reset}`);
   console.log(`${c.r}╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣${c.reset}`);
   
   const licenses = getAllLicenses();

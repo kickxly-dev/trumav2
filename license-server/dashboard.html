@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAUMA Analytics Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0a;
+            --card: #111;
+            --border: #222;
+            --text: #fff;
+            --muted: #666;
+            --crimson: #dc143c;
+            --green: #00ff88;
+            --blue: #0088ff;
+            --yellow: #ffaa00;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--crimson), #8b0000);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        .logo span { font-weight: 400; opacity: 0.7; }
+        .api-key {
+            background: rgba(0,0,0,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .stat-card.validations .value { color: var(--green); }
+        .stat-card.activations .value { color: var(--blue); }
+        .stat-card.failed .value { color: var(--crimson); }
+        .stat-card.generated .value { color: var(--yellow); }
+        
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .licenses-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .licenses-table th, .licenses-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .licenses-table th {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .licenses-table tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-active { background: rgba(0,255,136,0.2); color: var(--green); }
+        .status-revoked { background: rgba(220,20,60,0.2); color: var(--crimson); }
+        .status-expired { background: rgba(255,170,0,0.2); color: var(--yellow); }
+        
+        .events-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .event-item .event-type {
+            font-weight: 600;
+        }
+        .event-item .event-time {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        .event-success { border-left: 3px solid var(--green); }
+        .event-fail { border-left: 3px solid var(--crimson); }
+        .event-info { border-left: 3px solid var(--blue); }
+        
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: scale(1.02); }
+        .btn-primary { background: var(--crimson); color: white; }
+        .btn-secondary { background: var(--border); color: white; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--crimson);
+        }
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-left: 0.5rem;
+        }
+        .refresh-btn:hover { color: var(--text); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">TRAUMA <span>ANALYTICS</span></div>
+        <div class="api-key" id="apiKey">Loading...</div>
+    </header>
+    
+    <div class="container">
+        <div class="actions">
+            <button class="btn btn-primary" onclick="showGenerateModal()">+ Generate License</button>
+            <button class="btn btn-secondary" onclick="showApiKeyModal()">🔑 API Keys</button>
+            <button class="btn btn-secondary" onclick="showReferralModal()">🎁 Referral Code</button>
+            <button class="refresh-btn" onclick="loadAll()" title="Refresh">⟳</button>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card validations">
+                <h3>Validations</h3>
+                <div class="value" id="statValidations">-</div>
+            </div>
+            <div class="stat-card activations">
+                <h3>Activations</h3>
+                <div class="value" id="statActivations">-</div>
+            </div>
+            <div class="stat-card failed">
+                <h3>Failed</h3>
+                <div class="value" id="statFailed">-</div>
+            </div>
+            <div class="stat-card generated">
+                <h3>Generated</h3>
+                <div class="value" id="statGenerated">-</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Licenses <span id="licenseCount" style="color: var(--muted); font-weight: 400;"></span></h2>
+            <table class="licenses-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Key</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Validations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="licensesBody">
+                    <tr><td colspan="6" style="text-align: center; color: var(--muted);">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Recent Events</h2>
+            <div class="events-list" id="eventsList">
+                <div style="text-align: center; color: var(--muted);">Loading...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="generateModal">
+        <div class="modal-content">
+            <h3>Generate License</h3>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="genUser" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Expiry Days</label>
+                <input type="number" id="genDays" value="365" placeholder="365">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="generateLicense()">Generate</button>
+                <button class="btn btn-secondary" onclick="closeModal('generateModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="apiKeyModal">
+        <div class="modal-content">
+            <h3>Generate API Key</h3>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="apiKeyName" placeholder="Key name">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="generateApiKey()">Generate</button>
+                <button class="btn btn-secondary" onclick="closeModal('apiKeyModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="referralModal">
+        <div class="modal-content">
+            <h3>Create Referral Code</h3>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="refName" placeholder="Referral name">
+            </div>
+            <div class="form-group">
+                <label>Bonus Days</label>
+                <input type="number" id="refBonus" value="30" placeholder="30">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="createReferral()">Create</button>
+                <button class="btn btn-secondary" onclick="closeModal('referralModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let API_KEY = localStorage.getItem('trauma_admin_key') || '';
+        
+        async function api(endpoint, method = 'GET', body = null) {
+            const opts = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': API_KEY
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(`${API_BASE}${endpoint}`, opts);
+            return res.json();
+        }
+        
+        async function loadStats() {
+            const data = await api('/api/admin/analytics');
+            if (data.stats) {
+                document.getElementById('statValidations').textContent = data.stats.validations;
+                document.getElementById('statActivations').textContent = data.stats.activations;
+                document.getElementById('statFailed').textContent = data.stats.failedValidations;
+                document.getElementById('statGenerated').textContent = data.stats.licensesGenerated;
+            }
+        }
+        
+        async function loadLicenses() {
+            const data = await api('/api/admin/licenses');
+            if (data.licenses) {
+                document.getElementById('licenseCount').textContent = `(${data.licenses.length} total)`;
+                const tbody = document.getElementById('licensesBody');
+                tbody.innerHTML = data.licenses.slice(0, 20).map(l => {
+                    const expired = new Date(l.expiry) < new Date();
+                    const status = l.revoked ? 'revoked' : expired ? 'expired' : 'active';
+                    const statusClass = `status-${status}`;
+                    return `
+                        <tr>
+                            <td>${l.user}</td>
+                            <td style="font-family: monospace; font-size: 0.8rem;">${l.key.substring(0, 20)}...</td>
+                            <td><span class="status-badge ${statusClass}">${status.toUpperCase()}</span></td>
+                            <td>${new Date(l.expiry).toLocaleDateString()}</td>
+                            <td>${l.validationCount || 0}</td>
+                            <td>
+                                ${!l.revoked ? `<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="revokeLicense('${l.key}')">Revoke</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+        
+        async function loadEvents() {
+            const data = await api('/api/admin/analytics');
+            if (data.events) {
+                const list = document.getElementById('eventsList');
+                list.innerHTML = data.events.slice(-50).reverse().map(e => {
+                    const typeClass = e.event.includes('success') ? 'event-success' : 
+                                      e.event.includes('failed') ? 'event-fail' : 'event-info';
+                    return `
+                        <div class="event-item ${typeClass}">
+                            <div>
+                                <span class="event-type">${e.event}</span>
+                                <span style="color: var(--muted); margin-left: 0.5rem; font-size: 0.8rem;">
+                                    ${e.data.user || e.data.key || ''}
+                                </span>
+                            </div>
+                            <span class="event-time">${new Date(e.timestamp).toLocaleString()}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function loadAll() {
+            loadStats();
+            loadLicenses();
+            loadEvents();
+        }
+        
+        function showGenerateModal() {
+            document.getElementById('generateModal').classList.add('active');
+        }
+        
+        function showApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.add('active');
+        }
+        
+        function showReferralModal() {
+            document.getElementById('referralModal').classList.add('active');
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        async function generateLicense() {
+            const user = document.getElementById('genUser').value;
+            const days = parseInt(document.getElementById('genDays').value) || 365;
+            if (!user) return alert('Username required');
+            
+            const result = await api('/api/admin/license/generate', 'POST', { user, expiryDays: days });
+            if (result.success) {
+                alert(`License generated: ${result.license.key}`);
+                closeModal('generateModal');
+                loadAll();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        }
+        
+        async function revokeLicense(key) {
+            if (!confirm('Revoke this license?')) return;
+            const result = await api('/api/admin/license/revoke', 'POST', { key });
+            if (result.success) {
+                alert('License revoked');
+                loadAll();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        }
+        
+        async function generateApiKey() {
+            const name = document.getElementById('apiKeyName').value;
+            if (!name) return alert('Name required');
+            
+            const result = await api('/api/admin/apikey/generate', 'POST', { name });
+            if (result.success) {
+                alert(`API Key: ${result.apiKey.key}\nSave this securely!`);
+                closeModal('apiKeyModal');
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        }
+        
+        async function createReferral() {
+            const name = document.getElementById('refName').value;
+            const bonus = parseInt(document.getElementById('refBonus').value) || 30;
+            if (!name) return alert('Name required');
+            
+            const result = await api('/api/referral/create', 'POST', { name, bonusDays: bonus });
+            if (result.success) {
+                alert(`Referral Code: ${result.referral.code}\nBonus: ${bonus} days`);
+                closeModal('referralModal');
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        }
+        
+        if (!API_KEY) {
+            API_KEY = prompt('Enter your Admin API Key:');
+            if (API_KEY) {
+                localStorage.setItem('trauma_admin_key', API_KEY);
+            }
+        }
+        
+        document.getElementById('apiKey').textContent = API_KEY ? `Key: ${API_KEY.substring(0, 8)}...` : 'No API Key';
+        loadAll();
+        setInterval(loadAll, 30000);
+    </script>
+</body>
+</html>

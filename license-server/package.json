@@ -1,0 +1,21 @@
+{
+  "name": "trauma-license-server",
+  "version": "1.0.0",
+  "description": "TRAUMA Unified License Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "bot": "node discord-bot.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
+    "discord.js": "^14.14.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
