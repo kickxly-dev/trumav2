@@ -215,6 +215,10 @@ const commands = [
         .setDescription('Remove all revoked licenses (Admin only)'),
     
     new SlashCommandBuilder()
+        .setName('adminpanel')
+        .setDescription('Send admin control panel to channel (Admin only)'),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -1149,6 +1153,531 @@ client.on('interactionCreate', async interaction => {
                 await interaction.editReply({ embeds: [embed] });
             } else {
                 await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'adminpanel': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const ADMIN_CHANNEL_ID = '1479975115486789775';
+            
+            try {
+                const channel = await client.channels.fetch(ADMIN_CHANNEL_ID);
+                if (!channel) {
+                    await interaction.reply({ content: '❌ Admin channel not found', ephemeral: true });
+                    break;
+                }
+                
+                const panelEmbed = new EmbedBuilder()
+                    .setColor(0xdc143c)
+                    .setTitle('🛡️ TRAUMA Admin Control Panel')
+                    .setDescription('Quick access to admin controls. Click a button below.')
+                    .addFields(
+                        { name: '🔑 License Management', value: 'Generate, revoke, extend licenses', inline: true },
+                        { name: '📦 Pools', value: 'Create and manage license pools', inline: true },
+                        { name: '📊 Stats', value: 'View system statistics', inline: true }
+                    )
+                    .setFooter({ text: 'Admin Only • TRAUMA License System' })
+                    .setTimestamp();
+                
+                const row1 = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('admin_generate')
+                            .setLabel('Generate License')
+                            .setStyle(ButtonStyle.Success)
+                            .setEmoji('🔑'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_revoke')
+                            .setLabel('Revoke License')
+                            .setStyle(ButtonStyle.Danger)
+                            .setEmoji('🚫'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_extend')
+                            .setLabel('Extend License')
+                            .setStyle(ButtonStyle.Primary)
+                            .setEmoji('⏰')
+                    );
+                
+                const row2 = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('admin_pool')
+                            .setLabel('Create Pool')
+                            .setStyle(ButtonStyle.Success)
+                            .setEmoji('📦'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_stats')
+                            .setLabel('View Stats')
+                            .setStyle(ButtonStyle.Primary)
+                            .setEmoji('📊'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_list')
+                            .setLabel('List Licenses')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setEmoji('📋')
+                    );
+                
+                const row3 = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('admin_bulkgen')
+                            .setLabel('Bulk Generate')
+                            .setStyle(ButtonStyle.Success)
+                            .setEmoji('⚡'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_extendexpiring')
+                            .setLabel('Extend Expiring')
+                            .setStyle(ButtonStyle.Primary)
+                            .setEmoji('⏳'),
+                        new ButtonBuilder()
+                            .setCustomId('admin_cleanup')
+                            .setLabel('Cleanup Revoked')
+                            .setStyle(ButtonStyle.Danger)
+                            .setEmoji('🧹')
+                    );
+                
+                await channel.send({ 
+                    embeds: [panelEmbed], 
+                    components: [row1, row2, row3] 
+                });
+                
+                await interaction.reply({ content: '✅ Admin panel sent to channel', ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+    }
+});
+
+// Handle button interactions for admin panel
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+    
+    const { customId, user } = interaction;
+    
+    // All admin panel buttons require admin check
+    if (customId.startsWith('admin_') && !isAdmin(user.id)) {
+        await interaction.reply({ content: '❌ Admin only', ephemeral: true });
+        return;
+    }
+    
+    switch (customId) {
+        case 'admin_generate': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_generate')
+                .setTitle('Generate License');
+            
+            const user_input = new TextInputBuilder()
+                .setCustomId('gen_user')
+                .setLabel('User (Discord ID or name)')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const days_input = new TextInputBuilder()
+                .setCustomId('gen_days')
+                .setLabel('Duration (days)')
+                .setStyle(TextInputStyle.Short)
+                .setValue('365')
+                .setRequired(true);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(user_input),
+                new ActionRowBuilder().addComponents(days_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_revoke': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_revoke')
+                .setTitle('Revoke License');
+            
+            const key_input = new TextInputBuilder()
+                .setCustomId('revoke_key')
+                .setLabel('License Key')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const reason_input = new TextInputBuilder()
+                .setCustomId('revoke_reason')
+                .setLabel('Reason')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(false);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(key_input),
+                new ActionRowBuilder().addComponents(reason_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_extend': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_extend')
+                .setTitle('Extend License');
+            
+            const key_input = new TextInputBuilder()
+                .setCustomId('extend_key')
+                .setLabel('License Key')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const days_input = new TextInputBuilder()
+                .setCustomId('extend_days')
+                .setLabel('Days to Add')
+                .setStyle(TextInputStyle.Short)
+                .setValue('30')
+                .setRequired(true);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(key_input),
+                new ActionRowBuilder().addComponents(days_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_pool': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_pool')
+                .setTitle('Create License Pool');
+            
+            const name_input = new TextInputBuilder()
+                .setCustomId('pool_name')
+                .setLabel('Pool Name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true);
+            
+            const count_input = new TextInputBuilder()
+                .setCustomId('pool_count')
+                .setLabel('Number of Keys (1-100)')
+                .setStyle(TextInputStyle.Short)
+                .setValue('10')
+                .setRequired(true);
+            
+            const days_input = new TextInputBuilder()
+                .setCustomId('pool_days')
+                .setLabel('Duration (days)')
+                .setStyle(TextInputStyle.Short)
+                .setValue('365')
+                .setRequired(true);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(name_input),
+                new ActionRowBuilder().addComponents(count_input),
+                new ActionRowBuilder().addComponents(days_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_stats': {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/licenses');
+            
+            if (result.licenses) {
+                const active = result.licenses.filter(l => !l.revoked).length;
+                const expired = result.licenses.filter(l => !l.revoked && new Date(l.expiry) < new Date()).length;
+                
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('📊 License Statistics')
+                    .addFields(
+                        { name: 'Total', value: `${result.licenses.length}`, inline: true },
+                        { name: 'Active', value: `${active}`, inline: true },
+                        { name: 'Expired', value: `${expired}`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: '❌ Failed to load stats' });
+            }
+            break;
+        }
+        
+        case 'admin_list': {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/licenses');
+            
+            if (result.licenses) {
+                const list = result.licenses.slice(0, 10).map(l => 
+                    `**${l.user}**: \`${l.key.substring(0, 19)}...\` ${l.revoked ? '❌' : '✅'}`
+                ).join('\n');
+                
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('📋 Recent Licenses')
+                    .setDescription(list || 'No licenses')
+                    .setFooter({ text: `Showing 10 of ${result.licenses.length}` })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: '❌ Failed to load licenses' });
+            }
+            break;
+        }
+        
+        case 'admin_bulkgen': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_bulkgen')
+                .setTitle('Bulk Generate Licenses');
+            
+            const users_input = new TextInputBuilder()
+                .setCustomId('bulk_users')
+                .setLabel('Users (comma-separated)')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true);
+            
+            const days_input = new TextInputBuilder()
+                .setCustomId('bulk_days')
+                .setLabel('Duration (days)')
+                .setStyle(TextInputStyle.Short)
+                .setValue('365')
+                .setRequired(true);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(users_input),
+                new ActionRowBuilder().addComponents(days_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_extendexpiring': {
+            const modal = new ModalBuilder()
+                .setCustomId('modal_extendexpiring')
+                .setTitle('Extend Expiring Licenses');
+            
+            const within_input = new TextInputBuilder()
+                .setCustomId('expiring_within')
+                .setLabel('Expiring within (days)')
+                .setStyle(TextInputStyle.Short)
+                .setValue('7')
+                .setRequired(true);
+            
+            const add_input = new TextInputBuilder()
+                .setCustomId('expiring_add')
+                .setLabel('Days to add')
+                .setStyle(TextInputStyle.Short)
+                .setValue('30')
+                .setRequired(true);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(within_input),
+                new ActionRowBuilder().addComponents(add_input)
+            );
+            
+            await interaction.showModal(modal);
+            break;
+        }
+        
+        case 'admin_cleanup': {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/bulk/cleanup', 'POST');
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🧹 Cleanup Complete')
+                    .addFields(
+                        { name: 'Removed', value: `${result.removed} revoked licenses`, inline: true },
+                        { name: 'Remaining', value: `${result.remaining} active licenses`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: '❌ Cleanup failed' });
+            }
+            break;
+        }
+    }
+});
+
+// Handle modal submissions
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isModalSubmit()) return;
+    
+    const { customId, user } = interaction;
+    
+    // All admin modals require admin check
+    if (customId.startsWith('modal_') && !isAdmin(user.id)) {
+        await interaction.reply({ content: '❌ Admin only', ephemeral: true });
+        return;
+    }
+    
+    switch (customId) {
+        case 'modal_generate': {
+            const targetUser = interaction.fields.getTextInputValue('gen_user');
+            const days = parseInt(interaction.fields.getTextInputValue('gen_days'));
+            
+            const result = await apiCall('/api/admin/license/generate', 'POST', { 
+                user: targetUser, 
+                expiryDays: days 
+            });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🔑 License Generated')
+                    .addFields(
+                        { name: 'User', value: targetUser, inline: true },
+                        { name: 'Key', value: `\`${result.license.key}\``, inline: false },
+                        { name: 'Expires', value: new Date(result.license.expiry).toLocaleDateString(), inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'modal_revoke': {
+            const key = interaction.fields.getTextInputValue('revoke_key');
+            const reason = interaction.fields.getTextInputValue('revoke_reason') || 'No reason provided';
+            
+            const result = await apiCall('/api/admin/license/revoke', 'POST', { key, reason });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0xff4444)
+                    .setTitle('🚫 License Revoked')
+                    .addFields(
+                        { name: 'Key', value: `\`${key.substring(0, 19)}...\``, inline: true },
+                        { name: 'Reason', value: reason, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'modal_extend': {
+            const key = interaction.fields.getTextInputValue('extend_key');
+            const days = parseInt(interaction.fields.getTextInputValue('extend_days'));
+            
+            const result = await apiCall('/api/admin/license/extend', 'POST', { key, additionalDays: days });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('⏰ License Extended')
+                    .addFields(
+                        { name: 'Key', value: `\`${key.substring(0, 19)}...\``, inline: true },
+                        { name: 'Days Added', value: `${days}`, inline: true },
+                        { name: 'New Expiry', value: new Date(result.license.expiry).toLocaleDateString(), inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'modal_pool': {
+            const name = interaction.fields.getTextInputValue('pool_name');
+            const count = parseInt(interaction.fields.getTextInputValue('pool_count'));
+            const days = parseInt(interaction.fields.getTextInputValue('pool_days'));
+            
+            const result = await apiCall('/api/admin/pool/create', 'POST', { 
+                name, 
+                count, 
+                expiryDays: days 
+            });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('📦 Pool Created')
+                    .addFields(
+                        { name: 'Name', value: name, inline: true },
+                        { name: 'Pool ID', value: `\`${result.pool.id}\``, inline: true },
+                        { name: 'Keys', value: `${count}`, inline: true }
+                    )
+                    .setDescription(`Users can claim with \`/claimpool ${result.pool.id}\``)
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'modal_bulkgen': {
+            const usersStr = interaction.fields.getTextInputValue('bulk_users');
+            const days = parseInt(interaction.fields.getTextInputValue('bulk_days'));
+            const users = usersStr.split(',').map(u => u.trim()).filter(u => u);
+            
+            const result = await apiCall('/api/admin/bulk/generate', 'POST', { 
+                users, 
+                expiryDays: days 
+            });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🔑 Bulk Generate Complete')
+                    .addFields(
+                        { name: 'Generated', value: `${result.generated}`, inline: true },
+                        { name: 'Failed', value: `${result.failed}`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'modal_extendexpiring': {
+            const withinDays = parseInt(interaction.fields.getTextInputValue('expiring_within'));
+            const addDays = parseInt(interaction.fields.getTextInputValue('expiring_add'));
+            
+            const result = await apiCall('/api/admin/bulk/extend-expiring', 'POST', { 
+                days: withinDays, 
+                additionalDays: addDays 
+            });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('⏰ Expiring Licenses Extended')
+                    .addFields(
+                        { name: 'Extended', value: `${result.extended}`, inline: true },
+                        { name: 'Days Added', value: `${addDays}`, inline: true }
+                    )
+                    .setTimestamp();
+                
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                await interaction.reply({ content: `❌ Error: ${result.error}`, ephemeral: true });
             }
             break;
         }
