@@ -762,6 +762,48 @@ app.get('/api/admin/analytics', requireApiKey, (req, res) => {
     res.json({ stats, events: analytics.events.slice(-100) });
 });
 
+// Send announcement to Discord channel
+app.post('/api/admin/announcement', requireApiKey, async (req, res) => {
+    const { channelId, title, message, color = '#dc143c' } = req.body;
+    
+    if (!channelId || !title || !message) {
+        return res.status(400).json({ error: 'Channel ID, title, and message required' });
+    }
+    
+    try {
+        // Get Discord client
+        const client = require('./discord-bot');
+        
+        const channel = await client.channels.fetch(channelId);
+        if (!channel) {
+            return res.status(404).json({ error: 'Channel not found' });
+        }
+        
+        const { EmbedBuilder } = require('discord.js');
+        const colorInt = parseInt(color.replace('#', ''), 16);
+        
+        const embed = new EmbedBuilder()
+            .setColor(colorInt)
+            .setTitle(title)
+            .setDescription(message)
+            .setFooter({ text: 'TRAUMA License System' })
+            .setTimestamp();
+        
+        await channel.send({ embeds: [embed] });
+        
+        logAudit('ANNOUNCEMENT_SENT', {
+            actor: req.apiKey.name,
+            channelId,
+            title,
+            ip: req.ip
+        });
+        
+        res.json({ success: true, message: 'Announcement sent' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to send announcement: ' + e.message });
+    }
+});
+
 // ============================================================================
 // REFERRAL SYSTEM
 // ============================================================================

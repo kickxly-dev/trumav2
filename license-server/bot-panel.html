@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAUMA Bot Control Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0a;
+            --card: #111;
+            --border: #222;
+            --text: #fff;
+            --muted: #666;
+            --crimson: #dc143c;
+            --green: #00ff88;
+            --blue: #0088ff;
+            --yellow: #ffaa00;
+            --red: #ff4444;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--crimson), #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: var(--border); }
+        .nav-item.active { background: var(--crimson); }
+        .main {
+            margin-left: 260px;
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 1.8rem; }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--green);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .status-badge.offline {
+            background: rgba(255, 68, 68, 0.1);
+            border-color: var(--red);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+        .status-badge.offline .status-dot { background: var(--red); }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--crimson);
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--crimson);
+        }
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--crimson), #8b0000);
+            border: none;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(220, 20, 60, 0.4);
+        }
+        .btn-secondary {
+            background: var(--border);
+        }
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        .btn-danger {
+            background: var(--red);
+        }
+        .btn-success {
+            background: var(--green);
+            color: #000;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .table th {
+            color: var(--muted);
+            font-weight: normal;
+            font-size: 0.85rem;
+        }
+        .table tr:hover { background: rgba(255,255,255,0.02); }
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-active { background: rgba(0, 255, 136, 0.2); color: var(--green); }
+        .tag-expired { background: rgba(255, 170, 0, 0.2); color: var(--yellow); }
+        .tag-revoked { background: rgba(255, 68, 68, 0.2); color: var(--red); }
+        .section { display: none; }
+        .section.active { display: block; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: var(--card);
+            border: 1px solid var(--green);
+            border-radius: 8px;
+            display: none;
+        }
+        .toast.error { border-color: var(--red); }
+        .toast.show { display: block; }
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .log-entry {
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .log-entry .time {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        .log-entry .action {
+            color: var(--crimson);
+            font-weight: 600;
+        }
+        .pool-card {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .pool-progress {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .pool-progress-bar {
+            height: 100%;
+            background: var(--green);
+            transition: width 0.3s;
+        }
+        .announcement-preview {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .embed-preview {
+            border-left: 4px solid var(--crimson);
+            padding-left: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">🤖 TRAUMA Bot</div>
+        <nav>
+            <div class="nav-item active" onclick="showSection('dashboard')">
+                <span>📊</span> Dashboard
+            </div>
+            <div class="nav-item" onclick="showSection('licenses')">
+                <span>🔑</span> Licenses
+            </div>
+            <div class="nav-item" onclick="showSection('pools')">
+                <span>📦</span> Pools
+            </div>
+            <div class="nav-item" onclick="showSection('audit')">
+                <span>📋</span> Audit Logs
+            </div>
+            <div class="nav-item" onclick="showSection('announcements')">
+                <span>📢</span> Announcements
+            </div>
+            <div class="nav-item" onclick="showSection('settings')">
+                <span>⚙️</span> Settings
+            </div>
+        </nav>
+    </div>
+
+    <div class="main">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section active">
+            <div class="header">
+                <h1>Dashboard</h1>
+                <div class="status-badge" id="bot-status">
+                    <div class="status-dot"></div>
+                    <span>Bot Online</span>
+                </div>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>📈 Statistics</h2>
+                    <div class="stat-grid">
+                        <div class="stat">
+                            <div class="stat-value" id="total-licenses">0</div>
+                            <div class="stat-label">Total Licenses</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="active-licenses">0</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="total-pools">0</div>
+                            <div class="stat-label">Pools</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="total-validations">0</div>
+                            <div class="stat-label">Validations</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>⚡ Quick Actions</h2>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn btn-small" onclick="showSection('licenses'); showGenerateForm()">Generate License</button>
+                        <button class="btn btn-small btn-secondary" onclick="showSection('pools'); showCreatePoolForm()">Create Pool</button>
+                        <button class="btn btn-small btn-secondary" onclick="showSection('announcements')">Send Announcement</button>
+                    </div>
+                </div>
+                
+                <div class="card" style="grid-column: 1 / -1;">
+                    <h2>🕐 Recent Activity</h2>
+                    <div id="recent-activity"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Licenses Section -->
+        <div id="licenses" class="section">
+            <div class="header">
+                <h1>Licenses</h1>
+                <button class="btn" onclick="showGenerateForm()">+ Generate</button>
+            </div>
+            
+            <!-- Generate Form -->
+            <div id="generate-form" class="card" style="display: none; margin-bottom: 20px;">
+                <h2>🔑 Generate New License</h2>
+                <div class="form-group">
+                    <label>User (Discord ID or name)</label>
+                    <input type="text" id="gen-user" placeholder="123456789 or username">
+                </div>
+                <div class="form-group">
+                    <label>Duration (days)</label>
+                    <input type="number" id="gen-days" value="365">
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn" onclick="generateLicense()">Generate</button>
+                    <button class="btn btn-secondary" onclick="hideGenerateForm()">Cancel</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>All Licenses</h2>
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Key</th>
+                                <th>Status</th>
+                                <th>Expires</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="licenses-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pools Section -->
+        <div id="pools" class="section">
+            <div class="header">
+                <h1>License Pools</h1>
+                <button class="btn" onclick="showCreatePoolForm()">+ Create Pool</button>
+            </div>
+            
+            <!-- Create Pool Form -->
+            <div id="pool-form" class="card" style="display: none; margin-bottom: 20px;">
+                <h2>📦 Create License Pool</h2>
+                <div class="form-group">
+                    <label>Pool Name</label>
+                    <input type="text" id="pool-name" placeholder="Giveaway 2024">
+                </div>
+                <div class="form-group">
+                    <label>Number of Keys</label>
+                    <input type="number" id="pool-count" value="10" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Duration (days)</label>
+                    <input type="number" id="pool-days" value="365">
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn" onclick="createPool()">Create Pool</button>
+                    <button class="btn btn-secondary" onclick="hidePoolForm()">Cancel</button>
+                </div>
+            </div>
+            
+            <div id="pools-list"></div>
+        </div>
+
+        <!-- Audit Logs Section -->
+        <div id="audit" class="section">
+            <div class="header">
+                <h1>Audit Logs</h1>
+                <button class="btn btn-secondary btn-small" onclick="loadAuditLogs()">Refresh</button>
+            </div>
+            
+            <div class="card">
+                <div id="audit-logs"></div>
+            </div>
+        </div>
+
+        <!-- Announcements Section -->
+        <div id="announcements" class="section">
+            <div class="header">
+                <h1>Announcements</h1>
+            </div>
+            
+            <div class="card">
+                <h2>📢 Send Discord Announcement</h2>
+                <div class="form-group">
+                    <label>Channel ID</label>
+                    <input type="text" id="announce-channel" placeholder="123456789">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="announce-title" placeholder="Important Update">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="announce-message" rows="4" placeholder="Enter your announcement..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Color (hex)</label>
+                    <input type="text" id="announce-color" value="#dc143c">
+                </div>
+                <button class="btn" onclick="sendAnnouncement()">Send Announcement</button>
+                
+                <div class="announcement-preview">
+                    <h3 style="margin-bottom: 12px;">Preview</h3>
+                    <div class="embed-preview">
+                        <div style="font-size: 1.1rem; font-weight: bold;" id="preview-title">Title</div>
+                        <div style="margin-top: 8px;" id="preview-message">Message preview...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="section">
+            <div class="header">
+                <h1>Settings</h1>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>🔑 API Key</h2>
+                    <div class="form-group">
+                        <label>Your API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter API key">
+                    </div>
+                    <button class="btn btn-small" onclick="saveApiKey()">Save</button>
+                </div>
+                
+                <div class="card">
+                    <h2>🔧 Bot Configuration</h2>
+                    <div class="form-group">
+                        <label>License Server URL</label>
+                        <input type="text" id="server-url" value="http://localhost:3001">
+                    </div>
+                    <button class="btn btn-small" onclick="saveSettings()">Save Settings</button>
+                </div>
+                
+                <div class="card">
+                    <h2>📊 Data Management</h2>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-small" onclick="exportData()">Export All Data</button>
+                        <button class="btn btn-secondary btn-small" onclick="document.getElementById('import-file').click()">Import Data</button>
+                        <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importData(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const SERVER_URL = localStorage.getItem('trauma_server_url') || 'http://localhost:3001';
+        let API_KEY = localStorage.getItem('trauma_api_key') || '';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('server-url').value = SERVER_URL;
+            document.getElementById('api-key').value = API_KEY;
+            
+            if (!API_KEY) {
+                showSection('settings');
+                showToast('Please enter your API key to continue', true);
+            } else {
+                loadDashboard();
+            }
+        });
+        
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.closest('.nav-item')?.classList.add('active');
+            
+            // Load data for section
+            if (sectionId === 'dashboard') loadDashboard();
+            if (sectionId === 'licenses') loadLicenses();
+            if (sectionId === 'pools') loadPools();
+            if (sectionId === 'audit') loadAuditLogs();
+        }
+        
+        // API calls
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const res = await fetch(`${SERVER_URL}${endpoint}`, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': API_KEY
+                    },
+                    body: body ? JSON.stringify(body) : null
+                });
+                return await res.json();
+            } catch (e) {
+                return { error: e.message };
+            }
+        }
+        
+        // Dashboard
+        async function loadDashboard() {
+            const licenses = await apiCall('/api/admin/licenses');
+            const pools = await apiCall('/api/admin/pools');
+            const audit = await apiCall('/api/admin/audit?limit=5');
+            
+            if (licenses.licenses) {
+                const active = licenses.licenses.filter(l => !l.revoked).length;
+                document.getElementById('total-licenses').textContent = licenses.licenses.length;
+                document.getElementById('active-licenses').textContent = active;
+            }
+            
+            if (pools.pools) {
+                document.getElementById('total-pools').textContent = pools.pools.length;
+            }
+            
+            if (audit.logs) {
+                document.getElementById('total-validations').textContent = audit.total || 0;
+                
+                document.getElementById('recent-activity').innerHTML = audit.logs.slice(-5).reverse().map(log => `
+                    <div class="log-entry">
+                        <span class="action">${log.action}</span>
+                        <span> by ${log.details.actor}</span>
+                        <div class="time">${new Date(log.timestamp).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Licenses
+        async function loadLicenses() {
+            const result = await apiCall('/api/admin/licenses');
+            
+            if (result.licenses) {
+                document.getElementById('licenses-table').innerHTML = result.licenses.map(l => {
+                    const expired = new Date(l.expiry) < new Date();
+                    const status = l.revoked ? 'revoked' : expired ? 'expired' : 'active';
+                    return `
+                        <tr>
+                            <td>${l.user}</td>
+                            <td><code>${l.key.substring(0, 19)}...</code></td>
+                            <td><span class="tag tag-${status}">${status.toUpperCase()}</span></td>
+                            <td>${new Date(l.expiry).toLocaleDateString()}</td>
+                            <td class="actions">
+                                ${!l.revoked ? `<button class="btn btn-small btn-danger" onclick="revokeLicense('${l.key}')">Revoke</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function showGenerateForm() {
+            document.getElementById('generate-form').style.display = 'block';
+        }
+        
+        function hideGenerateForm() {
+            document.getElementById('generate-form').style.display = 'none';
+        }
+        
+        async function generateLicense() {
+            const user = document.getElementById('gen-user').value;
+            const days = document.getElementById('gen-days').value;
+            
+            if (!user) {
+                showToast('Please enter a user', true);
+                return;
+            }
+            
+            const result = await apiCall('/api/admin/license/generate', 'POST', { user, expiryDays: parseInt(days) });
+            
+            if (result.success) {
+                showToast(`License generated: ${result.license.key}`);
+                hideGenerateForm();
+                loadLicenses();
+            } else {
+                showToast(result.error || 'Failed to generate license', true);
+            }
+        }
+        
+        async function revokeLicense(key) {
+            if (!confirm('Are you sure you want to revoke this license?')) return;
+            
+            const result = await apiCall('/api/admin/license/revoke', 'POST', { key });
+            
+            if (result.success) {
+                showToast('License revoked');
+                loadLicenses();
+            } else {
+                showToast(result.error || 'Failed to revoke', true);
+            }
+        }
+        
+        // Pools
+        async function loadPools() {
+            const result = await apiCall('/api/admin/pools');
+            
+            if (result.pools) {
+                document.getElementById('pools-list').innerHTML = result.pools.map(p => `
+                    <div class="card pool-card">
+                        <div class="pool-header">
+                            <div>
+                                <strong>${p.name}</strong>
+                                <div style="color: var(--muted); font-size: 0.8rem;">ID: ${p.id}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div>${p.claimed}/${p.total} claimed</div>
+                                <div style="color: var(--muted); font-size: 0.8rem;">${p.remaining} remaining</div>
+                            </div>
+                        </div>
+                        <div class="pool-progress">
+                            <div class="pool-progress-bar" style="width: ${(p.claimed / p.total) * 100}%"></div>
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 8px;">
+                            <button class="btn btn-small btn-secondary" onclick="copyPoolId('${p.id}')">Copy ID</button>
+                            <button class="btn btn-small btn-danger" onclick="deletePool('${p.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('') || '<p>No pools created yet</p>';
+            }
+        }
+        
+        function showCreatePoolForm() {
+            document.getElementById('pool-form').style.display = 'block';
+        }
+        
+        function hidePoolForm() {
+            document.getElementById('pool-form').style.display = 'none';
+        }
+        
+        async function createPool() {
+            const name = document.getElementById('pool-name').value;
+            const count = document.getElementById('pool-count').value;
+            const days = document.getElementById('pool-days').value;
+            
+            if (!name) {
+                showToast('Please enter a pool name', true);
+                return;
+            }
+            
+            const result = await apiCall('/api/admin/pool/create', 'POST', {
+                name,
+                count: parseInt(count),
+                expiryDays: parseInt(days)
+            });
+            
+            if (result.success) {
+                showToast(`Pool created with ${count} keys`);
+                hidePoolForm();
+                loadPools();
+            } else {
+                showToast(result.error || 'Failed to create pool', true);
+            }
+        }
+        
+        function copyPoolId(id) {
+            navigator.clipboard.writeText(id);
+            showToast('Pool ID copied!');
+        }
+        
+        async function deletePool(id) {
+            if (!confirm('Delete this pool? Unclaimed keys will be lost.')) return;
+            
+            const result = await apiCall(`/api/admin/pool/${id}`, 'DELETE');
+            
+            if (result.success) {
+                showToast('Pool deleted');
+                loadPools();
+            } else {
+                showToast(result.error || 'Failed to delete', true);
+            }
+        }
+        
+        // Audit Logs
+        async function loadAuditLogs() {
+            const result = await apiCall('/api/admin/audit?limit=50');
+            
+            if (result.logs) {
+                document.getElementById('audit-logs').innerHTML = result.logs.slice().reverse().map(log => `
+                    <div class="log-entry">
+                        <span class="action">${log.action}</span>
+                        <span> by <strong>${log.details.actor}</strong></span>
+                        ${log.details.key ? `<span> | Key: <code>${log.details.key.substring(0, 19)}...</code></span>` : ''}
+                        ${log.details.user ? `<span> | User: ${log.details.user}</span>` : ''}
+                        <div class="time">${new Date(log.timestamp).toLocaleString()}</div>
+                    </div>
+                `).join('') || '<p>No audit logs yet</p>';
+            }
+        }
+        
+        // Announcements
+        async function sendAnnouncement() {
+            const channel = document.getElementById('announce-channel').value;
+            const title = document.getElementById('announce-title').value;
+            const message = document.getElementById('announce-message').value;
+            const color = document.getElementById('announce-color').value;
+            
+            if (!channel || !title || !message) {
+                showToast('Please fill all fields', true);
+                return;
+            }
+            
+            const result = await apiCall('/api/admin/announcement', 'POST', {
+                channelId: channel,
+                title,
+                message,
+                color
+            });
+            
+            if (result.success) {
+                showToast('Announcement sent!');
+            } else {
+                showToast(result.error || 'Failed to send announcement', true);
+            }
+        }
+        
+        // Live preview
+        document.getElementById('announce-title')?.addEventListener('input', (e) => {
+            document.getElementById('preview-title').textContent = e.target.value || 'Title';
+        });
+        document.getElementById('announce-message')?.addEventListener('input', (e) => {
+            document.getElementById('preview-message').textContent = e.target.value || 'Message preview...';
+        });
+        
+        // Settings
+        function saveApiKey() {
+            API_KEY = document.getElementById('api-key').value;
+            localStorage.setItem('trauma_api_key', API_KEY);
+            showToast('API key saved');
+        }
+        
+        function saveSettings() {
+            const url = document.getElementById('server-url').value;
+            localStorage.setItem('trauma_server_url', url);
+            showToast('Settings saved');
+        }
+        
+        async function exportData() {
+            const licenses = await apiCall('/api/admin/licenses');
+            const pools = await apiCall('/api/admin/pools');
+            const audit = await apiCall('/api/admin/audit');
+            
+            const data = { licenses, pools, audit, exported: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `trauma-export-${Date.now()}.json`;
+            a.click();
+            showToast('Data exported');
+        }
+        
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    showToast('Import feature coming soon');
+                } catch (err) {
+                    showToast('Invalid file format', true);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // Toast
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (isError ? ' error' : '');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
