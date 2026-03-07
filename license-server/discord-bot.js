@@ -107,6 +107,26 @@ const commands = [
                 .setRequired(true)),
     
     new SlashCommandBuilder()
+        .setName('mystats')
+        .setDescription('Get your license stats via DM'),
+    
+    new SlashCommandBuilder()
+        .setName('ticket')
+        .setDescription('Create a support ticket')
+        .addStringOption(option =>
+            option.setName('subject')
+                .setDescription('What do you need help with?')
+                .setRequired(true)),
+    
+    new SlashCommandBuilder()
+        .setName('checkreminders')
+        .setDescription('Check expiring licenses (Admin only)'),
+    
+    new SlashCommandBuilder()
+        .setName('sendreminders')
+        .setDescription('Send renewal reminder DMs (Admin only)'),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -510,17 +530,205 @@ client.on('interactionCreate', async interaction => {
                 .addFields(
                     { name: '/verify <key>', value: 'Verify your TRAUMA license' },
                     { name: '/status', value: 'Check your license status' },
+                    { name: '/mystats', value: 'Get your license stats via DM' },
                     { name: '/extend <code> <key>', value: 'Extend license with referral code' },
+                    { name: '/ticket <subject>', value: 'Create a support ticket' },
                     { name: '/generate <user> [days]', value: 'Generate license (Admin)' },
                     { name: '/revoke <key>', value: 'Revoke license (Admin)' },
                     { name: '/list [limit]', value: 'List licenses (Admin)' },
                     { name: '/stats', value: 'Server statistics (Admin)' },
-                    { name: '/referral <name> [bonus]', value: 'Create referral (Admin)' }
+                    { name: '/referral <name> [bonus]', value: 'Create referral (Admin)' },
+                    { name: '/checkreminders', value: 'Check expiring licenses (Admin)' }
                 )
                 .setFooter({ text: 'One license works for all TRAUMA tools' })
                 .setTimestamp();
             
             await interaction.reply({ embeds: [embed], ephemeral: true });
+            break;
+        }
+        
+        case 'mystats': {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const verified = verifiedUsers.get(user.id);
+            if (!verified) {
+                await interaction.editReply({ content: '❌ Use `/verify` first to link your license' });
+                break;
+            }
+            
+            const result = await apiCall('/api/license/validate', 'POST', { key: verified.key });
+            
+            if (result.valid) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('📊 Your License Stats')
+                    .addFields(
+                        { name: 'User', value: result.user, inline: true },
+                        { name: 'Days Remaining', value: `${result.daysRemaining} days`, inline: true },
+                        { name: 'Expires', value: new Date(result.expires).toLocaleDateString(), inline: true },
+                        { name: 'Features', value: result.features?.join(', ') || 'all', inline: true }
+                    )
+                    .setFooter({ text: 'TRAUMA License System' })
+                    .setTimestamp();
+                
+                // Try to DM the user
+                try {
+                    const dmChannel = await user.createDM();
+                    await dmChannel.send({ embeds: [embed] });
+                    await interaction.editReply({ content: '✅ Stats sent to your DMs!' });
+                } catch (e) {
+                    // Fallback to reply if DM fails
+                    await interaction.editReply({ embeds: [embed] });
+                }
+            } else {
+                await interaction.editReply({ content: `❌ ${result.error || 'License invalid'}` });
+            }
+            break;
+        }
+        
+        case 'ticket': {
+            const subject = options.getString('subject');
+            
+            // Create ticket channel
+            const guild = interaction.guild;
+            const categoryId = process.env.TICKET_CATEGORY_ID;
+            
+            try {
+                const channel = await guild.channels.create({
+                    name: `ticket-${user.username}`,
+                    type: 0, // Text channel
+                    parent: categoryId || null,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            deny: ['ViewChannel']
+                        },
+                        {
+                            id: user.id,
+                            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+                        },
+                        ...process.env.ADMIN_IDS.split(',').map(adminId => ({
+                            id: adminId,
+                            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageChannels']
+                        }))
+                    ]
+                });
+                
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('🎫 Support Ticket Created')
+                    .setDescription(`Ticket created by ${user}`)
+                    .addFields(
+                        { name: 'Subject', value: subject },
+                        { name: 'Instructions', value: 'Describe your issue and an admin will assist you shortly.\nUse `/closeticket` when resolved.' }
+                    )
+                    .setFooter({ text: 'TRAUMA Support' })
+                    .setTimestamp();
+                
+                await channel.send({ content: `<@${user.id}>`, embeds: [embed] });
+                
+                await interaction.reply({ 
+                    content: `✅ Ticket created: ${channel}`, 
+                    ephemeral: true 
+                });
+            } catch (e) {
+                await interaction.reply({ 
+                    content: `❌ Failed to create ticket: ${e.message}`, 
+                    ephemeral: true 
+                });
+            }
+            break;
+        }
+        
+        case 'checkreminders': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/licenses', 'GET');
+            const licenses = result.licenses || [];
+            
+            const expiring7Days = licenses.filter(l => {
+                if (l.revoked) return false;
+                const days = Math.ceil((new Date(l.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                return days > 0 && days <= 7;
+            });
+            
+            const expiring30Days = licenses.filter(l => {
+                if (l.revoked) return false;
+                const days = Math.ceil((new Date(l.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                return days > 7 && days <= 30;
+            });
+            
+            const embed = new EmbedBuilder()
+                .setColor(0xffaa00)
+                .setTitle('⏰ License Renewal Reminders')
+                .addFields(
+                    { name: '🔴 Expiring in 7 days', value: expiring7Days.length > 0 ? 
+                        expiring7Days.map(l => `${l.user} (${Math.ceil((new Date(l.expiry) - new Date()) / (1000 * 60 * 60 * 24))}d)`).join('\n') : 
+                        'None', inline: false },
+                    { name: '🟡 Expiring in 30 days', value: expiring30Days.length > 0 ? 
+                        expiring30Days.map(l => `${l.user} (${Math.ceil((new Date(l.expiry) - new Date()) / (1000 * 60 * 60 * 24))}d)`).join('\n') : 
+                        'None', inline: false }
+                )
+                .setFooter({ text: 'Send reminders with /sendreminders' })
+                .setTimestamp();
+            
+            await interaction.editReply({ embeds: [embed] });
+            break;
+        }
+        
+        case 'sendreminders': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/licenses', 'GET');
+            const licenses = result.licenses || [];
+            let sent = 0;
+            
+            for (const license of licenses) {
+                if (license.revoked) continue;
+                
+                const days = Math.ceil((new Date(license.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                
+                if (days <= 7 && days > 0) {
+                    // Try to find user by stored Discord ID or username
+                    try {
+                        // Extract Discord ID if stored
+                        const discordId = license.user.match(/<@(\d+)>/)?.[1];
+                        if (discordId) {
+                            const targetUser = await client.users.fetch(discordId);
+                            if (targetUser) {
+                                const dmEmbed = new EmbedBuilder()
+                                    .setColor(0xff4444)
+                                    .setTitle('⚠️ License Expiring Soon!')
+                                    .setDescription(`Your TRAUMA license expires in **${days} days**!`)
+                                    .addFields(
+                                        { name: 'Key', value: `\`${license.key.substring(0, 19)}...\`` },
+                                        { name: 'Expires', value: new Date(license.expiry).toLocaleDateString() },
+                                        { name: 'Renew', value: 'Contact an admin to renew your license' }
+                                    )
+                                    .setFooter({ text: 'TRAUMA License System' })
+                                    .setTimestamp();
+                                
+                                await targetUser.send({ embeds: [dmEmbed] });
+                                sent++;
+                            }
+                        }
+                    } catch (e) {
+                        // User not found or DMs disabled
+                    }
+                }
+            }
+            
+            await interaction.editReply({ content: `✅ Sent ${sent} renewal reminder DMs` });
             break;
         }
     }
