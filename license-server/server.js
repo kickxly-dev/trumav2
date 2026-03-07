@@ -30,6 +30,8 @@ const LICENSES_FILE = path.join(DATA_DIR, 'licenses.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
 const API_KEYS_FILE = path.join(DATA_DIR, 'api_keys.json');
 const REFERRALS_FILE = path.join(DATA_DIR, 'referrals.json');
+const AUDIT_LOG_FILE = path.join(DATA_DIR, 'audit_logs.json');
+const LICENSE_POOLS_FILE = path.join(DATA_DIR, 'license_pools.json');
 
 // TRUMA-OSINT licenses directory (for CLI tool compatibility)
 const OSINT_LICENSES_DIR = path.join(__dirname, '..', 'TRUMA-OSINT', 'licenses');
@@ -45,14 +47,29 @@ function loadData(file, defaultData = {}) {
         if (fs.existsSync(file)) {
             return JSON.parse(fs.readFileSync(file, 'utf8'));
         }
-    } catch (e) {
-        console.error(`Error loading ${file}:`, e.message);
-    }
-    return defaultData;
+    } catch (e) {}
+    return { ...defaultData };
 }
 
 function saveData(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// Audit logging
+function logAudit(action, details) {
+    const audit = loadData(AUDIT_LOG_FILE, { logs: [] });
+    audit.logs.push({
+        action,
+        details,
+        timestamp: new Date().toISOString(),
+        actor: details.actor || 'system',
+        ip: details.ip || 'unknown'
+    });
+    // Keep last 1000 logs
+    if (audit.logs.length > 1000) {
+        audit.logs = audit.logs.slice(-1000);
+    }
+    saveData(AUDIT_LOG_FILE, audit);
 }
 
 function generateSignature(user, timestamp, expiry) {
@@ -430,6 +447,15 @@ app.post('/api/admin/license/generate', requireApiKey, (req, res) => {
     
     logAnalytics('license_generated', { key: license.key, user, expiryDays, createdBy: req.apiKey.name });
     
+    // Audit log
+    logAudit('LICENSE_GENERATED', {
+        actor: req.apiKey.name,
+        key: license.key,
+        user,
+        expiryDays,
+        ip: req.ip
+    });
+    
     res.json({ success: true, license });
 });
 
@@ -472,6 +498,15 @@ app.post('/api/admin/license/revoke', requireApiKey, (req, res) => {
     
     logAnalytics('license_revoked', { key, user: license.user, reason, revokedBy: req.apiKey.name });
     
+    // Audit log
+    logAudit('LICENSE_REVOKED', {
+        actor: req.apiKey.name,
+        key,
+        user: license.user,
+        reason,
+        ip: req.ip
+    });
+    
     res.json({ success: true, message: 'License revoked' });
 });
 
@@ -504,7 +539,211 @@ app.post('/api/admin/apikey/generate', requireApiKey, (req, res) => {
     
     logAnalytics('api_key_generated', { name, permissions });
     
+    logAudit('API_KEY_GENERATED', {
+        actor: req.apiKey.name,
+        keyName: name,
+        permissions,
+        ip: req.ip
+    });
+    
     res.json({ success: true, apiKey });
+});
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+// Get audit logs
+app.get('/api/admin/audit', requireApiKey, (req, res) => {
+    const audit = loadData(AUDIT_LOG_FILE, { logs: [] });
+    const limit = parseInt(req.query.limit) || 100;
+    const logs = audit.logs.slice(-limit);
+    res.json({ logs, total: audit.logs.length });
+});
+
+// ============================================================================
+// LICENSE POOLS
+// ============================================================================
+
+// Create a license pool (batch of keys)
+app.post('/api/admin/pool/create', requireApiKey, (req, res) => {
+    const { name, count = 10, expiryDays = 365, features = ['all'] } = req.body;
+    
+    if (!name) {
+        return res.status(400).json({ error: 'Pool name required' });
+    }
+    
+    if (count < 1 || count > 100) {
+        return res.status(400).json({ error: 'Count must be between 1 and 100' });
+    }
+    
+    const pools = loadData(LICENSE_POOLS_FILE, { pools: [] });
+    
+    const pool = {
+        id: crypto.randomBytes(8).toString('hex'),
+        name,
+        keys: [],
+        total: count,
+        claimed: 0,
+        features,
+        expiryDays,
+        createdAt: new Date().toISOString(),
+        createdBy: req.apiKey.name
+    };
+    
+    // Generate keys for the pool
+    for (let i = 0; i < count; i++) {
+        const licenseData = generateLicenseKey(`pool-${pool.id}-${i}`, expiryDays);
+        const license = {
+            ...licenseData,
+            features,
+            poolId: pool.id,
+            claimed: false,
+            claimedBy: null,
+            claimedAt: null
+        };
+        
+        pool.keys.push(license);
+        
+        // Also add to main licenses
+        const licenses = loadData(LICENSES_FILE, { licenses: [] });
+        licenses.licenses.push(license);
+        saveData(LICENSES_FILE, licenses);
+    }
+    
+    pools.pools.push(pool);
+    saveData(LICENSE_POOLS_FILE, pools);
+    
+    logAudit('POOL_CREATED', {
+        actor: req.apiKey.name,
+        poolId: pool.id,
+        poolName: name,
+        keyCount: count,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        pool: {
+            id: pool.id,
+            name: pool.name,
+            total: pool.total,
+            keys: pool.keys.map(k => k.key) // Return just the keys
+        }
+    });
+});
+
+// List all pools
+app.get('/api/admin/pools', requireApiKey, (req, res) => {
+    const pools = loadData(LICENSE_POOLS_FILE, { pools: [] });
+    res.json({ 
+        pools: pools.pools.map(p => ({
+            id: p.id,
+            name: p.name,
+            total: p.total,
+            claimed: p.claimed,
+            remaining: p.total - p.claimed,
+            createdAt: p.createdAt,
+            createdBy: p.createdBy
+        }))
+    });
+});
+
+// Get pool details
+app.get('/api/admin/pool/:id', requireApiKey, (req, res) => {
+    const pools = loadData(LICENSE_POOLS_FILE, { pools: [] });
+    const pool = pools.pools.find(p => p.id === req.params.id);
+    
+    if (!pool) {
+        return res.status(404).json({ error: 'Pool not found' });
+    }
+    
+    res.json({ pool });
+});
+
+// Claim a key from pool (public endpoint with pool ID)
+app.post('/api/pool/claim', (req, res) => {
+    const { poolId, user } = req.body;
+    
+    if (!poolId || !user) {
+        return res.status(400).json({ error: 'Pool ID and username required' });
+    }
+    
+    const pools = loadData(LICENSE_POOLS_FILE, { pools: [] });
+    const pool = pools.pools.find(p => p.id === poolId);
+    
+    if (!pool) {
+        return res.status(404).json({ error: 'Pool not found' });
+    }
+    
+    // Find an unclaimed key
+    const unclaimedKey = pool.keys.find(k => !k.claimed);
+    
+    if (!unclaimedKey) {
+        return res.status(400).json({ error: 'No keys remaining in pool' });
+    }
+    
+    // Claim the key
+    unclaimedKey.claimed = true;
+    unclaimedKey.claimedBy = user;
+    unclaimedKey.claimedAt = new Date().toISOString();
+    unclaimedKey.user = user;
+    pool.claimed++;
+    
+    saveData(LICENSE_POOLS_FILE, pools);
+    
+    // Update main licenses too
+    const licenses = loadData(LICENSES_FILE, { licenses: [] });
+    const license = licenses.licenses.find(l => l.key === unclaimedKey.key);
+    if (license) {
+        license.user = user;
+        license.claimed = true;
+        license.claimedBy = user;
+        license.claimedAt = unclaimedKey.claimedAt;
+        saveData(LICENSES_FILE, licenses);
+    }
+    
+    logAudit('POOL_KEY_CLAIMED', {
+        actor: user,
+        poolId,
+        key: unclaimedKey.key,
+        ip: req.ip
+    });
+    
+    res.json({ 
+        success: true, 
+        license: {
+            key: unclaimedKey.key,
+            user,
+            expires: unclaimedKey.expiry,
+            features: unclaimedKey.features
+        }
+    });
+});
+
+// Delete a pool
+app.delete('/api/admin/pool/:id', requireApiKey, (req, res) => {
+    const pools = loadData(LICENSE_POOLS_FILE, { pools: [] });
+    const poolIndex = pools.pools.findIndex(p => p.id === req.params.id);
+    
+    if (poolIndex === -1) {
+        return res.status(404).json({ error: 'Pool not found' });
+    }
+    
+    const pool = pools.pools[poolIndex];
+    
+    // Remove pool
+    pools.pools.splice(poolIndex, 1);
+    saveData(LICENSE_POOLS_FILE, pools);
+    
+    logAudit('POOL_DELETED', {
+        actor: req.apiKey.name,
+        poolId: pool.id,
+        poolName: pool.name,
+        ip: req.ip
+    });
+    
+    res.json({ success: true, message: 'Pool deleted' });
 });
 
 // Get analytics

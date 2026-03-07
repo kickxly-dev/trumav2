@@ -127,6 +127,42 @@ const commands = [
         .setDescription('Send renewal reminder DMs (Admin only)'),
     
     new SlashCommandBuilder()
+        .setName('createpool')
+        .setDescription('Create a license pool (Admin only)')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Pool name')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('count')
+                .setDescription('Number of keys (1-100)')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('days')
+                .setDescription('License duration in days')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('listpools')
+        .setDescription('List all license pools (Admin only)'),
+    
+    new SlashCommandBuilder()
+        .setName('claimpool')
+        .setDescription('Claim a license from a pool')
+        .addStringOption(option =>
+            option.setName('poolid')
+                .setDescription('Pool ID')
+                .setRequired(true)),
+    
+    new SlashCommandBuilder()
+        .setName('auditlog')
+        .setDescription('View recent audit logs (Admin only)')
+        .addIntegerOption(option =>
+            option.setName('limit')
+                .setDescription('Number of logs to show')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -371,6 +407,32 @@ client.on('interactionCreate', async interaction => {
                     .setTimestamp();
                 
                 await interaction.editReply({ embeds: [embed] });
+                
+                // Try to DM the user who received the key
+                try {
+                    // Extract Discord ID from username if it's a mention
+                    const discordId = username.match(/<@!?(\d+)>/)?.[1] || username;
+                    const targetUser = await client.users.fetch(discordId).catch(() => null);
+                    
+                    if (targetUser) {
+                        const dmEmbed = new EmbedBuilder()
+                            .setColor(0x00ff88)
+                            .setTitle('🎫 Your TRAUMA License Key')
+                            .setDescription('You have been issued a TRAUMA license!')
+                            .addFields(
+                                { name: 'License Key', value: `\`${result.license.key}\``, inline: false },
+                                { name: 'Expires', value: new Date(result.license.expiry).toLocaleDateString(), inline: true },
+                                { name: 'Days', value: `${days} days`, inline: true },
+                                { name: 'How to Use', value: 'Use `/verify` with this key in Discord to activate your license', inline: false }
+                            )
+                            .setFooter({ text: 'TRAUMA License System - Keep this key safe!' })
+                            .setTimestamp();
+                        
+                        await targetUser.send({ embeds: [dmEmbed] });
+                    }
+                } catch (e) {
+                    // DM failed, but key was generated successfully
+                }
             } else {
                 await interaction.editReply({ content: `❌ Error: ${result.error}` });
             }
@@ -729,6 +791,139 @@ client.on('interactionCreate', async interaction => {
             }
             
             await interaction.editReply({ content: `✅ Sent ${sent} renewal reminder DMs` });
+            break;
+        }
+        
+        case 'createpool': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const name = options.getString('name');
+            const count = options.getInteger('count');
+            const days = options.getInteger('days') || 365;
+            
+            const result = await apiCall('/api/admin/pool/create', 'POST', { name, count, expiryDays: days });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('📦 License Pool Created')
+                    .addFields(
+                        { name: 'Pool Name', value: name, inline: true },
+                        { name: 'Pool ID', value: `\`${result.pool.id}\``, inline: true },
+                        { name: 'Keys Generated', value: `${count}`, inline: true },
+                        { name: 'Duration', value: `${days} days`, inline: true }
+                    )
+                    .setDescription('Share the Pool ID for users to claim keys with `/claimpool`')
+                    .setFooter({ text: 'TRAUMA License System' })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'listpools': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/admin/pools', 'GET');
+            
+            if (result.pools && result.pools.length > 0) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x0088ff)
+                    .setTitle('📦 License Pools')
+                    .addFields(
+                        result.pools.map(p => ({
+                            name: p.name,
+                            value: `ID: \`${p.id}\`\nClaimed: ${p.claimed}/${p.total}\nRemaining: ${p.remaining}`,
+                            inline: true
+                        }))
+                    )
+                    .setFooter({ text: 'TRAUMA License System' })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: 'No pools found. Create one with `/createpool`' });
+            }
+            break;
+        }
+        
+        case 'claimpool': {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const poolId = options.getString('poolid');
+            
+            const result = await apiCall('/api/pool/claim', 'POST', { poolId, user: `<@${user.id}>` });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('🎫 License Claimed!')
+                    .addFields(
+                        { name: 'License Key', value: `\`${result.license.key}\``, inline: false },
+                        { name: 'Expires', value: new Date(result.license.expires).toLocaleDateString(), inline: true },
+                        { name: 'Features', value: result.license.features.join(', '), inline: true }
+                    )
+                    .setDescription('Use `/verify` with this key to activate your license')
+                    .setFooter({ text: 'TRAUMA License System - Keep this key safe!' })
+                    .setTimestamp();
+                
+                // DM the user their key
+                try {
+                    const dmChannel = await user.createDM();
+                    await dmChannel.send({ embeds: [embed] });
+                    await interaction.editReply({ content: '✅ License key sent to your DMs!' });
+                } catch (e) {
+                    await interaction.editReply({ embeds: [embed] });
+                }
+            } else {
+                await interaction.editReply({ content: `❌ Error: ${result.error}` });
+            }
+            break;
+        }
+        
+        case 'auditlog': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            await interaction.deferReply({ ephemeral: true });
+            
+            const limit = options.getInteger('limit') || 20;
+            
+            const result = await apiCall(`/api/admin/audit?limit=${limit}`, 'GET');
+            
+            if (result.logs && result.logs.length > 0) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x9932cc)
+                    .setTitle('📋 Audit Log')
+                    .addFields(
+                        result.logs.slice(-10).reverse().map(log => ({
+                            name: log.action,
+                            value: `By: ${log.details.actor}\n${log.details.key ? `Key: \`${log.details.key.substring(0, 19)}...\`` : ''}\n${log.details.user ? `User: ${log.details.user}` : ''}`,
+                            inline: false
+                        }))
+                    )
+                    .setFooter({ text: `Showing last 10 of ${result.total} logs` })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({ content: 'No audit logs found' });
+            }
             break;
         }
     }

@@ -198,6 +198,203 @@
       },
       "timestamp": "2026-03-07T02:43:14.243Z",
       "ip": "::1"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-C533-3027-841B-E4F1-0D66-301E",
+        "user": "<@1154526254171684946>",
+        "expiryDays": 365,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:47:39.153Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-C533-3027-841B-E4F1-0D66-301E",
+        "user": "<@1154526254171684946>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:47:48.477Z",
+      "ip": "::1"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-C533-3027-841B-E4F1-0D66-301E",
+        "user": "<@1154526254171684946>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:47:57.300Z",
+      "ip": "::1"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-CF67-6B76-A7CD-8342-D182-E7B6",
+        "user": "<@1154526254171684946>",
+        "expiryDays": 365,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:52:07.371Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-CF67-6B76-A7CD-8342-D182-E7B6",
+        "user": "<@1154526254171684946>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:52:17.696Z",
+      "ip": "::1"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-CF67-6B76-A7CD-8342-D182-E7B6",
+        "user": "<@1154526254171684946>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:52:27.219Z",
+      "ip": "::1"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-9CFB-1079-0DAF-7A6F-7244-BC1A",
+        "user": "<@1361097248208851126>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:01.854Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-15AF-F194-A670-F932-16DC-67E4",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:04.689Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-F3D5-6AE6-775A-FF87-F3BB-785B",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:09.684Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-B0BF-A1DE-45CC-59B4-AD19-D515",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:13.301Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-C533-3027-841B-E4F1-0D66-301E",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:18.749Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-CF67-6B76-A7CD-8342-D182-E7B6",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:53:24.206Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-B363-587A-A39B-AD8B-B77E-D9D7",
+        "user": "<@1154526254171684946>",
+        "expiryDays": 999,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:54:42.940Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-2152-86AA-AE52-9842-0846-0259",
+        "user": "<@1205950749243342879>",
+        "expiryDays": 999,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:55:08.030Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-2152-86AA-AE52-9842-0846-0259",
+        "user": "<@1205950749243342879>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:55:25.480Z",
+      "ip": "::1"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-D8D0-061C-72D1-4DDF-7159-812A",
+        "user": "<@1361097248208851126>",
+        "expiryDays": 999,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:56:17.221Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-E978-6E87-86E3-EC44-507A-6176",
+        "user": "<@1135282302562357289>",
+        "expiryDays": 365,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:57:05.644Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-C8F9-2461-70CC-613B-A4F1-53C4",
+        "user": "<@1332540290338394215>",
+        "expiryDays": 365,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:57:18.186Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-E978-6E87-86E3-EC44-507A-6176",
+        "user": "<@1135282302562357289>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:00:52.265Z",
+      "ip": "::1"
     }
   ]
 }
