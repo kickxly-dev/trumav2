@@ -1,0 +1,15 @@
+{
+  "keys": [
+    {
+      "key": "1b7835eff84a95e80f0ae8dac0739d551e2af95e91f8698aa9e714dd90f18b64",
+      "name": "admin",
+      "permissions": [
+        "read",
+        "write",
+        "admin"
+      ],
+      "active": true,
+      "createdAt": "2026-03-07T02:00:50.601Z"
+    }
+  ]
+}

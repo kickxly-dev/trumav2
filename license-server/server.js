@@ -16,6 +16,7 @@ const PORT = process.env.LICENSE_PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); // Serve static files
 
 // Secret key - must match all TRAUMA tools
 const SECRET_KEY = 'TRUMA-OSINT-SECRET-2024-SECURE-KEY-DO-NOT-SHARE';
@@ -26,6 +27,9 @@ const LICENSES_FILE = path.join(DATA_DIR, 'licenses.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
 const API_KEYS_FILE = path.join(DATA_DIR, 'api_keys.json');
 const REFERRALS_FILE = path.join(DATA_DIR, 'referrals.json');
+
+// TRUMA-OSINT licenses directory (for CLI tool compatibility)
+const OSINT_LICENSES_DIR = path.join(__dirname, '..', 'TRUMA-OSINT', 'licenses');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -303,9 +307,21 @@ app.post('/api/admin/license/generate', requireApiKey, (req, res) => {
         activationCount: 0
     };
     
+    // Save to license server database
     const licenses = loadData(LICENSES_FILE, { licenses: [] });
     licenses.licenses.push(license);
     saveData(LICENSES_FILE, licenses);
+    
+    // Also save to TRUMA-OSINT licenses folder for CLI compatibility
+    try {
+        if (!fs.existsSync(OSINT_LICENSES_DIR)) {
+            fs.mkdirSync(OSINT_LICENSES_DIR, { recursive: true });
+        }
+        const osintLicenseFile = path.join(OSINT_LICENSES_DIR, `${user}_${license.timestamp}.json`);
+        fs.writeFileSync(osintLicenseFile, JSON.stringify(license, null, 2));
+    } catch (e) {
+        console.log('Warning: Could not sync to OSINT licenses folder:', e.message);
+    }
     
     logAnalytics('license_generated', { key: license.key, user, expiryDays, createdBy: req.apiKey.name });
     

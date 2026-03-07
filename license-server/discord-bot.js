@@ -3,13 +3,14 @@
  * License verification and management via Discord
  */
 
+require('dotenv').config();
 const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const axios = require('axios');
 
 // Config
-const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN || 'YOUR_BOT_TOKEN';
+const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const LICENSE_SERVER = process.env.LICENSE_SERVER || 'http://localhost:3001';
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
 
 // Create client
 const client = new Client({
