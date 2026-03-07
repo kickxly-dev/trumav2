@@ -35,6 +35,14 @@ const commands = [
                 .setRequired(true)),
     
     new SlashCommandBuilder()
+        .setName('activate')
+        .setDescription('Activate a license (Admin only)')
+        .addStringOption(option =>
+            option.setName('key')
+                .setDescription('License key to activate')
+                .setRequired(true)),
+    
+    new SlashCommandBuilder()
         .setName('status')
         .setDescription('Check your license status'),
     
@@ -178,6 +186,43 @@ client.on('interactionCreate', async interaction => {
                     .setColor(0xff4444)
                     .setTitle('❌ License Invalid')
                     .setDescription(result.error || 'License verification failed')
+                    .setFooter({ text: 'TRAUMA License System' });
+                
+                await interaction.editReply({ embeds: [embed] });
+            }
+            break;
+        }
+        
+        case 'activate': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                return;
+            }
+            
+            const key = options.getString('key');
+            await interaction.deferReply({ ephemeral: true });
+            
+            const result = await apiCall('/api/license/activate', 'POST', { key, hardwareId: user.id });
+            
+            if (result.success) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x00ff88)
+                    .setTitle('✅ License Activated')
+                    .setDescription(`License activated for **${result.user}**`)
+                    .addFields(
+                        { name: 'Key', value: `\`${key}\``, inline: false },
+                        { name: 'Days Remaining', value: `${result.daysRemaining} days`, inline: true },
+                        { name: 'Expires', value: new Date(result.expires).toLocaleDateString(), inline: true }
+                    )
+                    .setFooter({ text: 'Now shows as ACTIVE in license manager' })
+                    .setTimestamp();
+                
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                const embed = new EmbedBuilder()
+                    .setColor(0xff4444)
+                    .setTitle('❌ Activation Failed')
+                    .setDescription(result.error || 'Activation failed')
                     .setFooter({ text: 'TRAUMA License System' });
                 
                 await interaction.editReply({ embeds: [embed] });

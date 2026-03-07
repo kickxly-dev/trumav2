@@ -216,6 +216,22 @@ app.post('/api/license/activate', (req, res) => {
     license.activationCount = (license.activationCount || 0) + 1;
     saveData(LICENSES_FILE, licenses);
     
+    // Also write to TRUMA-OSINT license.key file for CLI manager
+    try {
+        const OSINT_LICENSE_FILE = path.join(__dirname, '..', 'TRUMA-OSINT', 'license.key');
+        const activeData = {
+            key: license.key,
+            user: license.user,
+            created: license.created,
+            expires: license.expiry,
+            activated: new Date().toISOString(),
+            hardwareId: hardwareId || null
+        };
+        fs.writeFileSync(OSINT_LICENSE_FILE, JSON.stringify(activeData, null, 2));
+    } catch (e) {
+        console.log('Warning: Could not sync to OSINT license.key:', e.message);
+    }
+    
     logAnalytics('activation_success', { key, user: license.user, ip, tool, hardwareId });
     
     res.json({
@@ -347,6 +363,25 @@ app.post('/api/admin/license/revoke', requireApiKey, (req, res) => {
     license.revokedReason = reason || 'No reason provided';
     
     saveData(LICENSES_FILE, licenses);
+    
+    // Also delete from TRUMA-OSINT licenses folder
+    try {
+        if (fs.existsSync(OSINT_LICENSES_DIR)) {
+            const files = fs.readdirSync(OSINT_LICENSES_DIR).filter(f => f.endsWith('.json'));
+            for (const file of files) {
+                const filePath = path.join(OSINT_LICENSES_DIR, file);
+                try {
+                    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                    if (data.key && data.key.toUpperCase() === key.toUpperCase()) {
+                        fs.unlinkSync(filePath);
+                        break;
+                    }
+                } catch (e) {}
+            }
+        }
+    } catch (e) {
+        console.log('Warning: Could not delete from OSINT licenses folder:', e.message);
+    }
     
     logAnalytics('license_revoked', { key, user: license.user, reason, revokedBy: req.apiKey.name });
     

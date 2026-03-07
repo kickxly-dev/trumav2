@@ -114,6 +114,37 @@
       },
       "timestamp": "2026-03-07T02:24:31.188Z",
       "ip": "unknown"
+    },
+    {
+      "event": "validation_success",
+      "data": {
+        "key": "TRUMA-E34F-9056-2662-4DF6-6404-6D62",
+        "user": "<@1154526254171684946>",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T02:26:35.601Z",
+      "ip": "::1"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-E34F-9056-2662-4DF6-6404-6D62",
+        "user": "<@1154526254171684946>",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:26:52.838Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-67C4-53D5-1354-5BB2-A896-F1DA",
+        "user": "<@1154526254171684946>",
+        "expiryDays": 1,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T02:31:27.822Z",
+      "ip": "unknown"
     }
   ]
 }
