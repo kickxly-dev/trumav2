@@ -1,0 +1,29 @@
+{
+  "logs": [
+    {
+      "action": "POOL_CREATED",
+      "details": {
+        "actor": "admin",
+        "poolId": "203ed9fee69fdac7",
+        "poolName": "uwu",
+        "keyCount": 100,
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:05:24.195Z",
+      "actor": "admin",
+      "ip": "::1"
+    },
+    {
+      "action": "POOL_KEY_CLAIMED",
+      "details": {
+        "actor": "<@1154526254171684946>",
+        "poolId": "203ed9fee69fdac7",
+        "key": "TRUMA-DCA0-D388-43FF-3ABB-43E7-1A49",
+        "ip": "::1"
+      },
+      "timestamp": "2026-03-07T03:05:51.087Z",
+      "actor": "<@1154526254171684946>",
+      "ip": "::1"
+    }
+  ]
+}

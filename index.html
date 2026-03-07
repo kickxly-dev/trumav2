@@ -918,7 +918,428 @@
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') btn.click();
             });
+            
+            // Tool button handlers
+            document.querySelectorAll('.card-button').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tool = btn.dataset.tool;
+                    await launchTool(tool, btn);
+                });
+            });
         })();
+        
+        // Tool implementations
+        async function launchTool(tool, btn) {
+            const originalText = btn.textContent;
+            btn.textContent = 'Loading...';
+            btn.disabled = true;
+            
+            try {
+                let result;
+                switch(tool) {
+                    case 'ip-lookup':
+                        result = await ipLookup();
+                        break;
+                    case 'ping-tester':
+                        result = await pingTest();
+                        break;
+                    case 'dns-lookup':
+                        result = await dnsLookup();
+                        break;
+                    case 'whois-lookup':
+                        result = await whoisLookup();
+                        break;
+                    case 'base64':
+                        result = await base64Tool();
+                        break;
+                    case 'hash-generator':
+                        result = await hashGenerator();
+                        break;
+                    case 'json-formatter':
+                        result = await jsonFormatter();
+                        break;
+                    case 'password-checker':
+                        result = await passwordChecker();
+                        break;
+                    case 'url-encoder':
+                        result = await urlEncoder();
+                        break;
+                    case 'jwt-decoder':
+                        result = await jwtDecoder();
+                        break;
+                    case 'uuid-generator':
+                        result = await uuidGenerator();
+                        break;
+                    case 'timestamp-converter':
+                        result = await timestampConverter();
+                        break;
+                    case 'color-picker':
+                        result = await colorPicker();
+                        break;
+                    case 'username-osint':
+                        result = await usernameSearch();
+                        break;
+                    case 'phone-osint':
+                        result = await phoneLookup();
+                        break;
+                    case 'domain-osint':
+                        result = await domainLookup();
+                        break;
+                    case 'subdomain-finder':
+                        result = await subdomainFinder();
+                        break;
+                    case 'headers-analyzer':
+                        result = await headersAnalyzer();
+                        break;
+                    case 'mac-lookup':
+                        result = await macLookup();
+                        break;
+                    case 'ssl-checker':
+                        result = await sslChecker();
+                        break;
+                    default:
+                        result = { error: 'Tool not implemented yet' };
+                }
+                
+                if (result.html) {
+                    showModal(result.title || tool, result.html);
+                } else if (result.error) {
+                    alert(result.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+        
+        // Modal for tool results
+        function showModal(title, content) {
+            const existing = document.getElementById('tool-modal');
+            if (existing) existing.remove();
+            
+            const modal = document.createElement('div');
+            modal.id = 'tool-modal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:#111;border:1px solid #333;border-radius:12px;max-width:700px;width:90%;max-height:80vh;overflow:auto;padding:24px;position:relative;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#666;font-size:24px;cursor:pointer;">&times;</button>
+                    <h2 style="color:#dc143c;margin-bottom:16px;">${title}</h2>
+                    <div style="color:#fff;">${content}</div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        }
+        
+        // Tool implementations
+        async function ipLookup() {
+            const ip = prompt('Enter IP address (leave blank for your IP):');
+            try {
+                const res = await fetch(`https://ipapi.co/${ip || ''}/json/`);
+                const data = await res.json();
+                return {
+                    title: 'IP Lookup Results',
+                    html: `
+                        <div style="display:grid;gap:12px;">
+                            <div><strong>IP:</strong> ${data.ip}</div>
+                            <div><strong>City:</strong> ${data.city}</div>
+                            <div><strong>Region:</strong> ${data.region}</div>
+                            <div><strong>Country:</strong> ${data.country_name}</div>
+                            <div><strong>ISP:</strong> ${data.org}</div>
+                            <div><strong>ASN:</strong> ${data.asn}</div>
+                            <div><strong>Timezone:</strong> ${data.timezone}</div>
+                            <div><strong>Coordinates:</strong> ${data.latitude}, ${data.longitude}</div>
+                        </div>
+                    `
+                };
+            } catch (e) {
+                return { error: 'Failed to lookup IP' };
+            }
+        }
+        
+        async function pingTest() {
+            const host = prompt('Enter hostname to ping:');
+            if (!host) return { error: 'No host provided' };
+            return {
+                title: 'Ping Test',
+                html: `
+                    <p>Ping test for <strong>${host}</strong>:</p>
+                    <p style="color:#ffaa00;">Note: Browser cannot send ICMP packets. Use the desktop app for real ping.</p>
+                    <div id="ping-result">Checking HTTP response...</div>
+                `
+            };
+        }
+        
+        async function dnsLookup() {
+            const domain = prompt('Enter domain:');
+            if (!domain) return { error: 'No domain provided' };
+            try {
+                const res = await fetch(`https://dns.google/resolve?name=${domain}&type=ANY`);
+                const data = await res.json();
+                const records = data.Answer || [];
+                return {
+                    title: 'DNS Lookup: ' + domain,
+                    html: records.map(r => `<div><strong>${r.type || 'A'}:</strong> ${r.data}</div>`).join('') || '<p>No records found</p>'
+                };
+            } catch (e) {
+                return { error: 'DNS lookup failed' };
+            }
+        }
+        
+        async function whoisLookup() {
+            const domain = prompt('Enter domain for WHOIS:');
+            if (!domain) return { error: 'No domain provided' };
+            return {
+                title: 'WHOIS Lookup',
+                html: `<p>Domain: <strong>${domain}</strong></p><p style="color:#ffaa00;">Full WHOIS requires desktop app. Basic info:</p><p>Use <a href="https://who.is" target="_blank" style="color:#0088ff;">who.is</a> for detailed info.</p>`
+            };
+        }
+        
+        async function base64Tool() {
+            const action = prompt('Encode or Decode? (e/d):');
+            const text = prompt('Enter text:');
+            if (!text) return { error: 'No text provided' };
+            let result;
+            if (action === 'd') {
+                result = atob(text);
+            } else {
+                result = btoa(text);
+            }
+            return {
+                title: 'Base64 ' + (action === 'd' ? 'Decoded' : 'Encoded'),
+                html: `<textarea style="width:100%;height:200px;background:#000;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;">${result}</textarea>`
+            };
+        }
+        
+        async function hashGenerator() {
+            const text = prompt('Enter text to hash:');
+            if (!text) return { error: 'No text provided' };
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return {
+                title: 'Hash Generated',
+                html: `
+                    <div><strong>Input:</strong> ${text}</div>
+                    <div><strong>SHA-256:</strong> <code style="word-break:break-all;">${hash}</code></div>
+                `
+            };
+        }
+        
+        async function jsonFormatter() {
+            const json = prompt('Enter JSON to format:');
+            if (!json) return { error: 'No JSON provided' };
+            try {
+                const parsed = JSON.parse(json);
+                return {
+                    title: 'JSON Formatter',
+                    html: `<pre style="background:#000;padding:16px;border-radius:8px;overflow:auto;">${JSON.stringify(parsed, null, 2)}</pre>`
+                };
+            } catch (e) {
+                return { error: 'Invalid JSON: ' + e.message };
+            }
+        }
+        
+        async function passwordChecker() {
+            const pwd = prompt('Enter password to check strength:');
+            if (!pwd) return { error: 'No password provided' };
+            let strength = 0;
+            if (pwd.length >= 8) strength++;
+            if (pwd.length >= 12) strength++;
+            if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++;
+            if (/\d/.test(pwd)) strength++;
+            if (/[^a-zA-Z0-9]/.test(pwd)) strength++;
+            const levels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            const colors = ['#ff4444', '#ff8844', '#ffaa00', '#88ff00', '#00ff88'];
+            return {
+                title: 'Password Strength',
+                html: `
+                    <div style="font-size:24px;color:${colors[strength]};">${levels[strength]}</div>
+                    <div style="margin-top:16px;">
+                        <div>${pwd.length >= 8 ? '✓' : '✗'} At least 8 characters</div>
+                        <div>${/[a-z]/.test(pwd) && /[A-Z]/.test(pwd) ? '✓' : '✗'} Mixed case</div>
+                        <div>${/\d/.test(pwd) ? '✓' : '✗'} Contains numbers</div>
+                        <div>${/[^a-zA-Z0-9]/.test(pwd) ? '✓' : '✗'} Special characters</div>
+                    </div>
+                `
+            };
+        }
+        
+        async function urlEncoder() {
+            const action = prompt('Encode or Decode? (e/d):');
+            const text = prompt('Enter URL:');
+            if (!text) return { error: 'No URL provided' };
+            const result = action === 'd' ? decodeURIComponent(text) : encodeURIComponent(text);
+            return {
+                title: 'URL ' + (action === 'd' ? 'Decoded' : 'Encoded'),
+                html: `<textarea style="width:100%;height:100px;background:#000;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;">${result}</textarea>`
+            };
+        }
+        
+        async function jwtDecoder() {
+            const token = prompt('Enter JWT token:');
+            if (!token) return { error: 'No token provided' };
+            try {
+                const parts = token.split('.');
+                const header = JSON.parse(atob(parts[0]));
+                const payload = JSON.parse(atob(parts[1]));
+                return {
+                    title: 'JWT Decoded',
+                    html: `
+                        <div><strong>Header:</strong><pre>${JSON.stringify(header, null, 2)}</pre></div>
+                        <div><strong>Payload:</strong><pre>${JSON.stringify(payload, null, 2)}</pre></div>
+                        <div style="color:#ffaa00;"><strong>Note:</strong> Signature not verified</div>
+                    `
+                };
+            } catch (e) {
+                return { error: 'Invalid JWT token' };
+            }
+        }
+        
+        async function uuidGenerator() {
+            const count = parseInt(prompt('How many UUIDs?') || '1');
+            const uuids = [];
+            for (let i = 0; i < Math.min(count, 100); i++) {
+                uuids.push(crypto.randomUUID());
+            }
+            return {
+                title: 'UUIDs Generated',
+                html: `<textarea style="width:100%;height:200px;background:#000;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;">${uuids.join('\n')}</textarea>`
+            };
+        }
+        
+        async function timestampConverter() {
+            const input = prompt('Enter timestamp (or leave blank for current):');
+            let date, ts;
+            if (input) {
+                ts = parseInt(input);
+                date = new Date(ts * 1000);
+            } else {
+                date = new Date();
+                ts = Math.floor(date.getTime() / 1000);
+            }
+            return {
+                title: 'Timestamp Converter',
+                html: `
+                    <div><strong>Unix:</strong> ${ts}</div>
+                    <div><strong>ISO:</strong> ${date.toISOString()}</div>
+                    <div><strong>Local:</strong> ${date.toLocaleString()}</div>
+                    <div><strong>UTC:</strong> ${date.toUTCString()}</div>
+                `
+            };
+        }
+        
+        async function colorPicker() {
+            const color = prompt('Enter color (hex/name):') || '#dc143c';
+            return {
+                title: 'Color Picker',
+                html: `
+                    <div style="width:100%;height:100px;background:${color};border-radius:8px;margin-bottom:16px;"></div>
+                    <div><strong>HEX:</strong> ${color}</div>
+                    <div><strong>RGB:</strong> Enter in browser tools for RGB values</div>
+                `
+            };
+        }
+        
+        async function usernameSearch() {
+            const username = prompt('Enter username to search:');
+            if (!username) return { error: 'No username provided' };
+            const sites = ['twitter.com', 'instagram.com', 'github.com', 'reddit.com', 'youtube.com', 'tiktok.com', 'twitch.tv'];
+            return {
+                title: 'Username Search: ' + username,
+                html: sites.map(s => `<div><a href="https://${s}/${username}" target="_blank" style="color:#0088ff;">${s}/${username}</a></div>`).join('')
+            };
+        }
+        
+        async function phoneLookup() {
+            const phone = prompt('Enter phone number (with country code):');
+            if (!phone) return { error: 'No phone provided' };
+            return {
+                title: 'Phone Lookup',
+                html: `<p>Phone: <strong>${phone}</strong></p><p style="color:#ffaa00;">Full phone OSINT requires desktop app.</p>`
+            };
+        }
+        
+        async function domainLookup() {
+            const domain = prompt('Enter domain:');
+            if (!domain) return { error: 'No domain provided' };
+            return {
+                title: 'Domain OSINT',
+                html: `
+                    <p>Domain: <strong>${domain}</strong></p>
+                    <div style="margin-top:16px;">
+                        <a href="https://who.is/whois/${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">WHOIS Lookup</a>
+                        <a href="https://dnsdumpster.com/?target=${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">DNS Dumpster</a>
+                        <a href="https://crt.sh/?q=${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">Certificate Search</a>
+                        <a href="https://builtwith.com/${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">Tech Stack</a>
+                    </div>
+                `
+            };
+        }
+        
+        async function subdomainFinder() {
+            const domain = prompt('Enter domain:');
+            if (!domain) return { error: 'No domain provided' };
+            return {
+                title: 'Subdomain Finder',
+                html: `
+                    <p>Domain: <strong>${domain}</strong></p>
+                    <div style="margin-top:16px;">
+                        <a href="https://crt.sh/?q=%.${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">Certificate Transparency</a>
+                        <a href="https://dnsdumpster.com/?target=${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">DNS Dumpster</a>
+                        <a href="https://virustotal.com/gui/domain/${domain}" target="_blank" style="display:block;color:#0088ff;margin:8px 0;">VirusTotal</a>
+                    </div>
+                `
+            };
+        }
+        
+        async function headersAnalyzer() {
+            const url = prompt('Enter URL:');
+            if (!url) return { error: 'No URL provided' };
+            try {
+                const res = await fetch(url, { method: 'HEAD', mode: 'cors' });
+                const headers = {};
+                res.headers.forEach((v, k) => headers[k] = v);
+                return {
+                    title: 'HTTP Headers',
+                    html: Object.entries(headers).map(([k, v]) => `<div><strong>${k}:</strong> ${v}</div>`).join('')
+                };
+            } catch (e) {
+                return { error: 'Could not fetch headers (CORS blocked). Use desktop app.' };
+            }
+        }
+        
+        async function macLookup() {
+            const mac = prompt('Enter MAC address:');
+            if (!mac) return { error: 'No MAC provided' };
+            const oui = mac.replace(/[:\-]/g, '').toUpperCase().substring(0, 6);
+            return {
+                title: 'MAC Lookup',
+                html: `
+                    <p>MAC: <strong>${mac}</strong></p>
+                    <p>OUI: <strong>${oui}</strong></p>
+                    <a href="https://maclookup.app/search/result?mac=${oui}" target="_blank" style="color:#0088ff;">Lookup on maclookup.app</a>
+                `
+            };
+        }
+        
+        async function sslChecker() {
+            const domain = prompt('Enter domain:');
+            if (!domain) return { error: 'No domain provided' };
+            return {
+                title: 'SSL Checker',
+                html: `
+                    <p>Domain: <strong>${domain}</strong></p>
+                    <a href="https://www.ssllabs.com/ssltest/analyze.html?d=${domain}" target="_blank" style="color:#0088ff;">SSL Labs Test</a>
+                `
+            };
+        }
     </script>
 </body>
 </html>
