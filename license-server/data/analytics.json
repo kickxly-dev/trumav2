@@ -406,6 +406,28 @@
       },
       "timestamp": "2026-03-07T22:57:11.664Z",
       "ip": "unknown"
+    },
+    {
+      "event": "license_generated",
+      "data": {
+        "key": "TRUMA-B433-EA03-302B-D59C-9758-E8C8",
+        "user": "cappingforclout",
+        "expiryDays": 365,
+        "createdBy": "admin"
+      },
+      "timestamp": "2026-03-07T23:04:51.480Z",
+      "ip": "unknown"
+    },
+    {
+      "event": "license_revoked",
+      "data": {
+        "key": "TRUMA-B433-EA03-302B-D59C-9758-E8C8",
+        "user": "cappingforclout",
+        "reason": "extra",
+        "revokedBy": "admin"
+      },
+      "timestamp": "2026-03-07T23:05:06.205Z",
+      "ip": "unknown"
     }
   ]
 }

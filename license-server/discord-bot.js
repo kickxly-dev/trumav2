@@ -279,6 +279,30 @@ const commands = [
                 .setRequired(false)),
     
     new SlashCommandBuilder()
+        .setName('announceupdate')
+        .setDescription('Announce a tool update (Admin only)')
+        .addStringOption(option =>
+            option.setName('tool')
+                .setDescription('Name of the tool')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('version')
+                .setDescription('Version number (e.g., 1.4)')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('changes')
+                .setDescription('List of changes (use commas to separate)')
+                .setRequired(true))
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Channel to post (default: updates channel)')
+                .setRequired(false)),
+    
+    new SlashCommandBuilder()
+        .setName('servicestatus')
+        .setDescription('Check status of all TRAUMA services'),
+    
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Show TRAUMA bot help')
 ];
@@ -1406,6 +1430,93 @@ client.on('interactionCreate', async interaction => {
             } catch (e) {
                 await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
             }
+            break;
+        }
+        
+        case 'announceupdate': {
+            if (!isAdmin(user.id)) {
+                await interaction.reply({ content: '❌ Admin only command', ephemeral: true });
+                break;
+            }
+            
+            const toolName = options.getString('tool');
+            const version = options.getString('version');
+            const changesStr = options.getString('changes');
+            const targetChannel = options.getChannel('channel');
+            
+            // Parse changes - split by comma or newline
+            const changes = changesStr.split(/[,\n]/).map(c => c.trim()).filter(c => c);
+            
+            const embed = new EmbedBuilder()
+                .setColor(0xdc143c)
+                .setTitle('🚨 TRAUMA Tool Update')
+                .addFields(
+                    { name: 'Tool', value: toolName, inline: true },
+                    { name: 'Version', value: `v${version}`, inline: true }
+                )
+                .setDescription('**Changes:**\n' + changes.map(c => `• ${c}`).join('\n'))
+                .setFooter({ text: 'TRAUMA Toolkit' })
+                .setTimestamp();
+            
+            try {
+                const channel = targetChannel || interaction.channel;
+                await channel.send({ embeds: [embed] });
+                await interaction.reply({ content: `✅ Update announced in ${channel}`, ephemeral: true });
+            } catch (e) {
+                await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true });
+            }
+            break;
+        }
+        
+        case 'servicestatus': {
+            await interaction.deferReply();
+            
+            // Service endpoints to check
+            const services = {
+                'Website': { url: 'http://localhost:3001', timeout: 5000 },
+                'API': { url: 'http://localhost:3001/api/health', timeout: 5000 },
+                'OSINT Engine': { url: 'http://localhost:3001/osint/status', timeout: 5000 },
+                'License Server': { url: 'http://localhost:3001/api/admin/licenses', timeout: 5000 }
+            };
+            
+            const statusResults = [];
+            
+            for (const [name, config] of Object.entries(services)) {
+                let status = '🔴 Offline';
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+                    
+                    const response = await fetch(config.url, { 
+                        method: 'GET',
+                        signal: controller.signal 
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok || response.status === 401 || response.status === 404) {
+                        status = '🟢 Online';
+                    }
+                } catch (e) {
+                    status = '🔴 Offline';
+                }
+                statusResults.push({ name, status });
+            }
+            
+            const embed = new EmbedBuilder()
+                .setColor(0x0088ff)
+                .setTitle('📊 TRAUMA Services Status')
+                .addFields(
+                    statusResults.map(r => ({
+                        name: r.name,
+                        value: r.status,
+                        inline: true
+                    }))
+                )
+                .setFooter({ text: `Checked at ${new Date().toLocaleTimeString()}` })
+                .setTimestamp();
+            
+            await interaction.editReply({ embeds: [embed] });
             break;
         }
     }

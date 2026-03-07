@@ -1480,6 +1480,25 @@
       "claimed": false,
       "claimedBy": null,
       "claimedAt": null
+    },
+    {
+      "key": "TRUMA-B433-EA03-302B-D59C-9758-E8C8",
+      "user": "cappingforclout",
+      "timestamp": 1772924691471,
+      "expiry": "2027-03-07T23:04:51.471Z",
+      "created": "2026-03-07T23:04:51.471Z",
+      "features": [
+        "all"
+      ],
+      "referralCode": null,
+      "createdBy": "admin",
+      "createdAt": "2026-03-07T23:04:51.478Z",
+      "validationCount": 0,
+      "activationCount": 0,
+      "revoked": true,
+      "revokedAt": "2026-03-07T23:05:06.203Z",
+      "revokedBy": "admin",
+      "revokedReason": "extra"
     }
   ]
 }
